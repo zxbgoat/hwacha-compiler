@@ -725,3 +725,6 @@ t2 循环走满 T 用 select 做因果掩码以保持均匀）、att_value（t2 
 配 hw_expf；softmax_row 每行一个 lane。宿主要提供 `__math_oflowf/__math_uflowf`（newlib tanhf 引用，libm 里缺）。
 Spike：argmax 与 x86 参考全同，logits 逐元素零差，概率最大差 <1e-9；PASS。10 个区域，matmul 体 `vlw; vfmadd`。
 RTL 运行中（标量约 2000 万 Spike 指令，预计 3 小时）。
+GPT-2 前向 RTL 结果（16 token）：标量 31244913 周期，hwacha-cc 1627888 周期（19.2×，每 token 约 10 万），argmax 全同、logits 零差、PASS。
+分解：matmul 912654（56%）、softmax 307563（18%）、attention 248756（15%）、gelu 77073、layernorm 67127、encoder 8361、residual 5595。
+softmax_row 与 att_softmax 每行一个 lane（vl=16 或 64），利用率低，是下一步该按 (行, 元素) 展平并做跨 lane 归约的地方。
