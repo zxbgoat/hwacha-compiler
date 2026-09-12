@@ -158,6 +158,12 @@ void att_value_ct(long n, float *out, const float *att, const float *qkv, int T_
 void gelu_ct(long n, float *out, const float *inp, float gelu_scale);
 void residual_ct(long n, float *out, const float *a, const float *b);
 void softmax_row_ct(long n, float *probs, const float *logits, int V_);
+void layernorm_ct(long n, float *out, const float *inp, const float *w, const float *b, int C_);
+void att_softmax_g_ct(long n, float *att, const float *preatt, int T_);
+void softmax_g_ct(long n, float *probs, const float *logits, int V_);
+static int use_red;   // 1: row stages written with work_group_reduce (one row per work-group)
+#define LN(out, inp, w, b) do { if (use_red) KT(K_LN, layernorm_ct(T * C, out, inp, w, b, C)); \
+  else { KT(K_LN, ln_stats_ct(T, a->mean, a->rstd, inp, C)); KT(K_LN, ln_apply_ct(T * C, out, inp, a->mean, a->rstd, w, b, C)); } } while (0)
 enum { K_ENC, K_LN, K_MM, K_ATT, K_GELU, K_RES, K_SMAX, K_N };
 static const char *kname[K_N] = {"encoder", "layernorm", "matmul", "attention", "gelu", "residual", "softmax"};
 static unsigned long kcyc[K_N];
@@ -178,23 +184,23 @@ static void forward_hw(Acts *a) {
   float *residual = a->encoded;
   for (int l = 0; l < L; l++) {
     Layer *p = &layers[l];
-    KT(K_LN, ln_stats_ct(T, a->mean, a->rstd, residual, C)); KT(K_LN, ln_apply_ct(T * C, a->ln1, residual, a->mean, a->rstd, p->ln1w, p->ln1b, C));
+    LN(a->ln1, residual, p->ln1w, p->ln1b);
     KT(K_MM, mm_rows(a->qkv, a->ln1, qkvwT[l], p->qkvb, C, 3 * C));
     KT(K_ATT, att_score_ct(NH * T * T, a->preatt, a->qkv, T, C, NH, scale));
-    KT(K_ATT, att_softmax_ct(NH * T, a->att, a->preatt, T));
+    if (use_red) KT(K_ATT, att_softmax_g_ct(NH * T * T, a->att, a->preatt, T)); else KT(K_ATT, att_softmax_ct(NH * T, a->att, a->preatt, T));
     KT(K_ATT, att_value_ct(T * C, a->atty, a->att, a->qkv, T, C, NH));
     KT(K_MM, mm_rows(a->attproj, a->atty, attprojwT[l], p->attprojb, C, C));
     KT(K_RES, residual_ct(T * C, a->residual2, residual, a->attproj));
-    KT(K_LN, ln_stats_ct(T, a->mean, a->rstd, a->residual2, C)); KT(K_LN, ln_apply_ct(T * C, a->ln2, a->residual2, a->mean, a->rstd, p->ln2w, p->ln2b, C));
+    LN(a->ln2, a->residual2, p->ln2w, p->ln2b);
     KT(K_MM, mm_rows(a->fch, a->ln2, fcwT[l], p->fcb, C, 4 * C));
     KT(K_GELU, gelu_ct(T * 4 * C, a->fch_gelu, a->fch, gs));
     KT(K_MM, mm_rows(a->fcproj, a->fch_gelu, fcprojwT[l], p->fcprojb, 4 * C, C));
     KT(K_RES, residual_ct(T * C, a->residual3[l], a->residual2, a->fcproj));
     residual = a->residual3[l];
   }
-  KT(K_LN, ln_stats_ct(T, a->mean, a->rstd, residual, C)); KT(K_LN, ln_apply_ct(T * C, a->lnf, residual, a->mean, a->rstd, lnfw, lnfb, C));
+  LN(a->lnf, residual, lnfw, lnfb);
   KT(K_MM, mm_rows(a->logits, a->lnf, wteT, NULL, C, V));
-  KT(K_SMAX, softmax_row_ct(T, a->probs, a->logits, V));
+  if (use_red) KT(K_SMAX, softmax_g_ct(T * 128, a->probs, a->logits, V)); else KT(K_SMAX, softmax_row_ct(T, a->probs, a->logits, V));
 }
 #endif
 
@@ -212,20 +218,27 @@ int main(void) {
   report("scalar", &ar);
 #ifndef X86
   make_transposed();
-  c0 = cyc(); forward_hw(&ah); c1 = cyc();
-  REPORT("gpt2 hwacha-cc", c0, c1, T);
-  report("hwacha", &ah);
-  unsigned long tot = 0; for (int i = 0; i < K_N; i++) tot += kcyc[i];
-  for (int i = 0; i < K_N; i++) printf("  %s: %lu cycles (%lu%%)\n", kname[i], kcyc[i], tot ? kcyc[i] * 100 / tot : 0);
-  float maxd = 0; int mism = 0;
-  for (int t = 0; t < T; t++) {
-    for (int i = 0; i < V; i++) { float d = ar.logits[t * V + i] - ah.logits[t * V + i]; if (d < 0) d = -d; if (d > maxd) maxd = d; }
-    if (argmax(ar.logits + t * V, V) != argmax(ah.logits + t * V, V)) mism++;
+  int allok = 1;
+  for (use_red = 0; use_red < 2; use_red++) {
+    memset(&ah, 0, sizeof ah); memset(kcyc, 0, sizeof kcyc);
+    c0 = cyc(); forward_hw(&ah); c1 = cyc();
+    REPORT(use_red ? "gpt2 hwacha-cc (reductions)" : "gpt2 hwacha-cc (lane per row)", c0, c1, T);
+    report("hwacha", &ah);
+    unsigned long tot = 0; for (int i = 0; i < K_N; i++) tot += kcyc[i];
+    for (int i = 0; i < K_N; i++) printf("  %s: %lu cycles (%lu%%)\n", kname[i], kcyc[i], tot ? kcyc[i] * 100 / tot : 0);
+    float maxd = 0; int mism = 0;
+    for (int t = 0; t < T; t++) {
+      for (int i = 0; i < V; i++) { float d = ar.logits[t * V + i] - ah.logits[t * V + i]; if (d < 0) d = -d; if (d > maxd) maxd = d; }
+      if (argmax(ar.logits + t * V, V) != argmax(ah.logits + t * V, V)) mism++;
+    }
+    float maxp = 0; for (int i = 0; i < T * V; i++) { float d = ar.probs[i] - ah.probs[i]; if (d < 0) d = -d; if (d > maxp) maxp = d; }
+    printf("max |logit diff| %ld e-6, max |prob diff| %ld e-9, argmax mismatches %d / %d\n", (long)(maxd * 1e6), (long)(maxp * 1e9), mism, T);
+    int ok = mism == 0 && maxd < 1e-2f && maxp < 1e-5f;
+    printf("gpt2 %s %s\n", use_red ? "reductions" : "lane-per-row", ok ? "PASS" : "FAIL");
+    allok &= ok;
   }
-  float maxp = 0; for (int i = 0; i < T * V; i++) { float d = ar.probs[i] - ah.probs[i]; if (d < 0) d = -d; if (d > maxp) maxp = d; }
-  printf("max |logit diff| %ld e-6, max |prob diff| %ld e-9, argmax mismatches %d / %d\n", (long)(maxd * 1e6), (long)(maxp * 1e9), mism, T);
-  printf("gpt2 %s\n", (mism == 0 && maxd < 1e-2f) ? "PASS" : "FAIL");
-  return !(mism == 0 && maxd < 1e-2f);
+  printf("gpt2 %s\n", allok ? "PASS" : "FAIL");
+  return !allok;
 #else
   return 0;
 #endif

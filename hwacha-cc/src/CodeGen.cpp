@@ -107,10 +107,18 @@ public:
     bool NeedFence = false;                                   // a vector store issued before the region may alias its scalar loads
     DenseMap<const BasicBlock *, std::string> BlockSeg;       // one vf block per kernel block
     DenseMap<std::pair<const BasicBlock *, const BasicBlock *>, std::string> EdgeSeg;   // phi moves that could not be merged into the source block
+    DenseMap<const BasicBlock *, std::vector<std::pair<int, std::string>>> BlockTail;   // (reduction, next segment) pairs splitting a block
   };
   std::vector<CTLoop> CTLoops;
   DenseMap<const Loop *, int> CTLoopOf;
-  struct Segment { std::string Label; int CT; };           // vf blocks in issue order; CT >= 0: body of CTLoops[CT]
+  struct Segment { std::string Label; int CT; int Reduce = -1; };   // vf blocks in issue order; CT >= 0: region issued before it; Reduce >= 0: reduction done before it
+  // ---- cross-lane reductions (work_group_reduce_*). The worker ISA has no reduction, so the lanes
+  // store their values (identity where masked off) to a scratch buffer, the vf block ends, and the
+  // control thread reduces the vl values in scalar code after a fence and sends the result by vmcs.
+  struct Reduction { unsigned VS; Value *V; std::string Op; Type *Ty; };
+  std::vector<Reduction> Reductions;
+  unsigned ScratchVA = 0;     // va register holding the scratch buffer (set when a reduction exists)
+  bool BlockSplit = false;    // the current block was split by a reduction (no skip jump around it)
   std::vector<Segment> Segments;
   unsigned NumVV = 0, NumVP = 1, NumVS = 0, NumVW = 0;
   unsigned NumInsts = 0, NumJumps = 0, NumMasks = 0, NumMoves = 0;
@@ -244,7 +252,7 @@ private:
   // constants of floating-point type may stay in vs as broadcast operands.
   bool needsFPU(const Value *V) const {
     auto *I = dyn_cast<Instruction>(V);
-    if (!I || isa<LoadInst>(I)) return false;
+    if (!I || isa<LoadInst>(I) || isWorkGroupReduce(I)) return false;   // a reduction result arrives by vmcs
     if (I->getType()->isFloatingPointTy()) return true;                 // FP result (arith, phi, select, cvt)
     for (const Value *Op : I->operands()) if (Op->getType()->isFloatingPointTy()) return true;   // fptosi etc.
     return false;
@@ -281,7 +289,7 @@ private:
     while (Changed) {
       Changed = false;
       for (Instruction &I : instructions(F)) {
-        if (ClassMap[&I] != RC::VS) continue;
+        if (ClassMap[&I] != RC::VS || isWorkGroupReduce(&I)) continue;   // a reduction legitimately reads vectors
         for (Value *Op : I.operands()) {
           auto It = ClassMap.find(Op);
           if (It != ClassMap.end() && isVec(It->second)) { ClassMap[&I] = vecClass(&I); Changed = true; break; }
@@ -397,7 +405,7 @@ bool WTGen::ctLoadOK(LoadInst *LD) {
     AA->addAAResult(*BAA); AA->addAAResult(*TBAA);
   }
   for (Instruction &I : instructions(F)) {
-    if (!I.mayWriteToMemory()) continue;
+    if (!I.mayWriteToMemory() || isWorkGroupReduce(&I)) continue;
     if (isa<StoreInst>(I) && !isModSet(AA->getModRefInfo(&I, MemoryLocation::get(LD)))) continue;
     BasicBlock *BS = I.getParent();
     bool Reaches = BS == BL ? (I.comesBefore(LD) || LI->getLoopFor(BL) != nullptr) : isPotentiallyReachable(BS, BL, nullptr, DT.get(), LI.get());
@@ -421,6 +429,7 @@ bool WTGen::ctCloneableImpl(Value *V, DenseSet<Value *> &Seen, unsigned Depth) {
   if (!I || !isUniform(I)) return false;
   if (isWorkItemId(I)) return false;
   if (isLocalSizeCall(I) || isGroupIdCall(I)) return true;
+  if (isWorkGroupReduce(I)) return true;   // the control thread computes it itself
   if (isa<CallBase>(I)) return false;
   if (auto *LD = dyn_cast<LoadInst>(I)) { if (!ctLoadOK(LD)) return false; return ctCloneable(LD->getPointerOperand(), Seen, Depth + 1); }
   if (auto *Phi = dyn_cast<PHINode>(I)) {
@@ -483,6 +492,7 @@ void WTGen::selectCTLoops() {
       for (Instruction &I : *BB) {
         if (!Ok) break;
         if (I.isTerminator() || isa<StoreInst>(I)) continue;
+        if (isWorkGroupReduce(&I)) continue;                                                     // a segment boundary inside the region
         if (isBarrierCall(&I) || (isa<CallBase>(I) && I.mayWriteToMemory())) { Ok = false; break; }   // barriers, atomics
         if (isa<CallBase>(I) && !isLocalSizeCall(&I) && !isGroupIdCall(&I)) { if (isUniform(&I)) Ok = false; continue; }   // uniform builtin
         if (isUniform(&I)) Ok = ctCloneable(&I, Seen);
@@ -851,6 +861,7 @@ bool WTGen::emitBlock(BasicBlock *BB, unsigned &Pos) {
   releaseAt(Pos);
   // ---- body (skipped with a consensual jump when no lane is active in this block)
   size_t BodyStart = Text.size();
+  BlockSplit = false;
   for (Instruction &I : *BB) {
     if (isa<PHINode>(I)) continue;
     Pos++;
@@ -861,7 +872,7 @@ bool WTGen::emitBlock(BasicBlock *BB, unsigned &Pos) {
   // until the vector unit answers). A loop header is executed every iteration and is only ever
   // fully inactive right before the loop exits, so skipping it is pure overhead: never emit
   // the jump there. Other blocks are skipped when they hold at least two instructions.
-  if (Pred != 0 && !Opts.NoSkip && !IsHeader) {
+  if (Pred != 0 && !Opts.NoSkip && !IsHeader && !BlockSplit) {
     size_t Lines = std::count(Text.begin() + BodyStart, Text.end(), '\n');
     bool HasUniformMem = false;
     for (Instruction &I : *BB)
@@ -1030,13 +1041,16 @@ bool WTGen::run() {
     if (!L->getLoopPreheader() || !L->getLoopLatch()) return fail("loop is not in simplified form");
   selectCTLoops();
   if (!materializeAddresses()) return false;
-  { unsigned Next = Streams.size(); for (auto &S : Streams) if (!S.Unit) S.StrideVA = Next++; }
+  { unsigned Next = Streams.size(); for (auto &S : Streams) if (!S.Unit) S.StrideVA = Next++; ScratchVA = Next; }
   KA.recomputeUniformity();
   computeNeeded();
   for (auto &KV : GatherBase) ImplicitUsers.insert(KV.second);
   for (auto &KV : GatherIndex) ImplicitUsers.insert(KV.second);
   computeClasses();
   Segments.push_back({F.getName().str() + "_wt", -1});
+  // the link register of consensual jumps: a skip jump is inserted in front of a block after the
+  // block was emitted, so the register must not be one that a value dying in that block used
+  LinkVS = alloc(RC::VS).Idx;
   SmallPtrSet<BasicBlock *, 32> All; for (BasicBlock &B : F) All.insert(&B);
   linearize(nullptr, All, &F.getEntryBlock());
   if (Order.size() < F.size()) return fail("could not linearize the CFG");
@@ -1312,6 +1326,32 @@ bool WTGen::emitInst(Instruction &I, unsigned Pos) {
   }
   if (auto *CI = dyn_cast<CallInst>(&I)) {
     if (isBarrierCall(CI)) { UsesBarrier = true; emit("", "vfence", {}); return true; }
+    if (StringRef Op; isWorkGroupReduce(CI, &Op)) {
+      // lanes write their value (identity if masked off) to the scratch buffer; the control thread
+      // reduces it after this segment and delivers the result in a vs register
+      bool InRegion = inCTBody(&I);
+      if (!InRegion && !LoopStack.empty()) return fail("work_group_reduce inside a vector-fetch loop (make the loop uniform or move the reduction out)", &I);
+      Value *X = CI->getArgOperand(0);
+      Constant *Id;
+      if (T->isFloatingPointTy()) Id = Op == "add" ? ConstantFP::get(T, 0.0) : ConstantFP::getInfinity(T, /*Negative=*/Op == "max");
+      else Id = Op == "add" ? ConstantInt::get(T, 0) : Op == "max" ? ConstantInt::get(T, APInt::getSignedMinValue(T->getIntegerBitWidth())) : ConstantInt::get(T, APInt::getSignedMaxValue(T->getIntegerBitWidth()));
+      std::string Mv = isNarrow(X) ? "vaddw" : "vadd";
+      Reg Tmp = alloc(isNarrow(X) ? RC::VW : RC::VV);
+      emit("", Mv, {Tmp.str(), R(Id), "vs0"});
+      emit(VP, Mv, {Tmp.str(), R(X), "vs0"});
+      bool IsFloat; std::string Suf = memSuffix(T, IsFloat);
+      emit("", "vs" + Suf, {Tmp.str(), "va" + std::to_string(ScratchVA)});
+      (Tmp.Class == RC::VV ? VVUsed : VWUsed)[Tmp.Idx] = false;
+      Reg Res = alloc(RC::VS); RegOf[&I] = Res;
+      int RIdx = Reductions.size();
+      Reductions.push_back({Res.Idx, &I, Op.str(), T});
+      std::string Label = F.getName().str() + "_wt_x" + std::to_string(RIdx);
+      Out << "    vstop\n    .globl " << Label << "\n" << Label << ":\n";
+      if (InRegion) CTLoops[CTLoopOf[outermost(I.getParent())]].BlockTail[I.getParent()].push_back({RIdx, Label});
+      else Segments.push_back({Label, -1, RIdx});
+      BlockSplit = true;
+      return true;
+    }
     if (Function *Callee = CI->getCalledFunction()) {
       StringRef N = Callee->getName();
       StringRef Body = N.starts_with("_Z") ? N.drop_front(2).drop_while([](char c) { return isdigit(c); }) : N;
@@ -1321,6 +1361,9 @@ bool WTGen::emitInst(Instruction &I, unsigned Pos) {
         auto name1 = [&](StringRef Fn) { return Body.starts_with(Fn) && Body.drop_front(Fn.size()).size() <= 2; };
         if (name1("sqrt") || name1("native_sqrt") || name1("half_sqrt")) { std::string D = dest(I); emit(PV(D), "vfsqrt" + S, {D, R(CI->getArgOperand(0))}); return true; }
         if (name1("fabs")) { std::string D = dest(I), A = R(CI->getArgOperand(0)); emit(PV(D), "vfsgnjx" + S, {D, A, A}); return true; }
+        if (name1("rsqrt") || name1("native_rsqrt") || name1("half_rsqrt")) {   // no rsqrt in the ISA: 1 / sqrt
+          std::string D = dest(I), One = R(ConstantFP::get(T, 1.0));
+          emit(PV(D), "vfsqrt" + S, {D, R(CI->getArgOperand(0))}); emit(PV(D), "vfdiv" + S, {D, One, D}); return true; }
         if (name1("fmin") && CI->arg_size() == 2) { std::string D = dest(I); emit(PV(D), "vfmin" + S, {D, R(CI->getArgOperand(0)), R(CI->getArgOperand(1))}); return true; }
         if (name1("fmax") && CI->arg_size() == 2) { std::string D = dest(I); emit(PV(D), "vfmax" + S, {D, R(CI->getArgOperand(0)), R(CI->getArgOperand(1))}); return true; }
       }
@@ -1601,6 +1644,12 @@ static bool generateCT(Function &K, WTGen &WT, Module &CT, raw_ostream &Err) {
     StrideVals.push_back(SV);
     if (!S.Unit) asmCall(B, "vmca va" + std::to_string(S.StrideVA) + ", $0", "r", {SV});
   }
+  if (!WT.Reductions.empty()) {   // scratch buffer for cross-lane reductions: one 64-bit slot per lane
+    ArrayType *AT = ArrayType::get(I64, 2048);
+    auto *Scratch = new GlobalVariable(CT, AT, false, GlobalValue::InternalLinkage, Constant::getNullValue(AT), K.getName() + "_scratch");
+    Scratch->setAlignment(Align(64));
+    asmCall(B, "vmca va" + std::to_string(WT.ScratchVA) + ", $0", "r", {Scratch});
+  }
   B.CreateCondBr(B.CreateICmpNE(N, ConstantInt::get(I64, 0)), Loop, Exit);
 
   B.SetInsertPoint(Loop);
@@ -1671,6 +1720,40 @@ static bool generateCT(Function &K, WTGen &WT, Module &CT, raw_ostream &Err) {
     }
     Reached[BB] = R; return R;
   };
+  // A cross-lane reduction: wait for the lanes' stores, reduce the vl scratch slots in scalar code,
+  // send the result to its vs register; the control thread keeps the value too (GMap).
+  GlobalVariable *ScratchGV = WT.Reductions.empty() ? nullptr : CT.getGlobalVariable((K.getName() + "_scratch").str(), true);
+  auto emitReduce = [&](int RIdx) -> bool {
+    const WTGen::Reduction &R = WT.Reductions[RIdx];
+    Type *T = R.Ty;
+    asmCall(B, "fence", "", {});
+    BasicBlock *Pre = B.GetInsertBlock();
+    BasicBlock *LoopB = BasicBlock::Create(Ctx, "red_loop", F), *Done = BasicBlock::Create(Ctx, "red_done", F);
+    Value *Id;
+    if (T->isFloatingPointTy()) Id = R.Op == "add" ? ConstantFP::get(T, 0.0) : ConstantFP::getInfinity(T, R.Op == "max");
+    else Id = R.Op == "add" ? ConstantInt::get(T, 0) : R.Op == "max" ? ConstantInt::get(T, APInt::getSignedMinValue(T->getIntegerBitWidth())) : ConstantInt::get(T, APInt::getSignedMaxValue(T->getIntegerBitWidth()));
+    B.CreateBr(LoopB);
+    B.SetInsertPoint(LoopB);
+    PHINode *I = B.CreatePHI(I64, 2, "ri"), *Acc = B.CreatePHI(T, 2, "racc");
+    Value *Slot = B.CreateGEP(T, ScratchGV, I);   // lanes stored with the element's width
+    Value *V = B.CreateLoad(T, Slot);
+    Value *Next;
+    if (R.Op == "add") Next = T->isFloatingPointTy() ? B.CreateFAdd(Acc, V) : B.CreateAdd(Acc, V);
+    else {
+      Value *Cmp = T->isFloatingPointTy() ? (R.Op == "max" ? B.CreateFCmpOGT(V, Acc) : B.CreateFCmpOLT(V, Acc))
+                                          : (R.Op == "max" ? B.CreateICmpSGT(V, Acc) : B.CreateICmpSLT(V, Acc));
+      Next = B.CreateSelect(Cmp, V, Acc);
+    }
+    Value *In = B.CreateAdd(I, ConstantInt::get(I64, 1));
+    I->addIncoming(ConstantInt::get(I64, 0), Pre); I->addIncoming(In, LoopB);
+    Acc->addIncoming(Id, Pre); Acc->addIncoming(Next, LoopB);
+    B.CreateCondBr(B.CreateICmpULT(In, VL), LoopB, Done);
+    B.SetInsertPoint(Done);
+    Value *Payload = toI64Payload(B, Next, Err); if (!Payload) return false;
+    asmCall(B, "vmcs vs" + std::to_string(R.VS) + ", $0", "r", {Payload});
+    GMap[R.V] = Next;
+    return true;
+  };
   // A control-thread region: the loop nest's CFG mirrored in scalar code, one vf per kernel block
   auto emitRegion = [&](const WTGen::CTLoop &C, int RIdx) -> bool {
     llvm::Loop *L = C.L; BasicBlock *H = L->getHeader(), *Pre = L->getLoopPreheader();
@@ -1680,9 +1763,11 @@ static bool generateCT(Function &K, WTGen &WT, Module &CT, raw_ostream &Err) {
     BasicBlock *Check = B.GetInsertBlock();
     bool MayBeSkipped = !(isa<ConstantInt>(Reach) && cast<ConstantInt>(Reach)->isOne());
     BasicBlock *After = BasicBlock::Create(Ctx, "ct_after", F);
-    DenseMap<const BasicBlock *, BasicBlock *> CtBlock;
-    for (BasicBlock *BB : L->blocks()) CtBlock[BB] = BasicBlock::Create(Ctx, "ct_" + BB->getName(), F);
-    Cl.L = L; Cl.CtBlock = &CtBlock;
+    // CtBlock: entry clone of each kernel block (branch targets); CtEnd: where its code currently
+    // ends (a reduction splices its scalar loop in, so a block can become several)
+    DenseMap<const BasicBlock *, BasicBlock *> CtBlock, CtEnd;
+    for (BasicBlock *BB : L->blocks()) CtEnd[BB] = CtBlock[BB] = BasicBlock::Create(Ctx, "ct_" + BB->getName(), F);
+    Cl.L = L; Cl.CtBlock = &CtEnd;
     // uniform phis -> control-thread phis (incomings filled below)
     SmallVector<std::pair<PHINode *, PHINode *>, 8> Phis;
     for (BasicBlock *BB : L->blocks())
@@ -1711,33 +1796,58 @@ static bool generateCT(Function &K, WTGen &WT, Module &CT, raw_ostream &Err) {
     auto edgeSource = [&](BasicBlock *P, BasicBlock *S) -> BasicBlock * {
       edgeTarget(P, S);
       auto It = EdgeBlk.find({P, S});
-      return It != EdgeBlk.end() ? It->second : CtBlock[P];
+      return It != EdgeBlk.end() ? It->second : CtEnd[P];
     };
-    // per block: iteration inputs defined here, stream bases used here, then the block's vf
+    // per block: iteration inputs defined here, stream bases used here, then the block's vf.
+    // A reduction splits the block: inputs defined after it are sent after the control thread has
+    // reduced (they may depend on the result), before the next segment.
     for (BasicBlock *BB : L->blocks()) {
-      for (auto &[VS, V] : C.IterInputs) {
-        if (cast<Instruction>(V)->getParent() != BB) continue;
-        Value *CV = Cl.clone(V); if (!CV) return false;
-        IRBuilder<> IB(CtBlock[BB]);
-        CV = toI64Payload(IB, CV, Err); if (!CV) return false;
-        asmCall(IB, "vmcs vs" + std::to_string(VS) + ", $0", "r", {CV});
+      auto TailIt = C.BlockTail.find(BB);
+      std::vector<std::pair<int, std::string>> Tails; if (TailIt != C.BlockTail.end()) Tails = TailIt->second;
+      auto bucketOf = [&](const Value *V) -> unsigned {   // number of reductions of BB preceding V
+        auto *VI = dyn_cast<Instruction>(V);
+        if (!VI || VI->getParent() != BB) return 0;
+        unsigned n = 0;
+        for (auto &[RI, Lbl] : Tails) if (cast<Instruction>(WT.Reductions[RI].V)->comesBefore(VI)) n++;
+        return n;
+      };
+      auto emitBucket = [&](unsigned Bk) -> bool {
+        for (auto &[VS, V] : C.IterInputs) {
+          if (cast<Instruction>(V)->getParent() != BB || bucketOf(V) != Bk) continue;
+          Value *CV = Cl.clone(V); if (!CV) return false;
+          IRBuilder<> IB(CtEnd[BB]);
+          CV = toI64Payload(IB, CV, Err); if (!CV) return false;
+          asmCall(IB, "vmcs vs" + std::to_string(VS) + ", $0", "r", {CV});
+        }
+        for (auto &S : WT.Streams) {
+          if (S.PerIter != RIdx || !S.Blocks.count(BB) || bucketOf(S.Base) != Bk) continue;
+          Value *Bv = Cl.clone(S.Base); if (!Bv) return false;
+          IRBuilder<> IB(CtEnd[BB]);
+          // this group's lanes: streams indexed by the local id are already relative to the group
+          Value *Adv = S.Local ? Bv : IB.CreatePtrAdd(Bv, IB.CreateMul(Off, StrideVals[S.VA]));
+          asmCall(IB, "vmca va" + std::to_string(S.VA) + ", $0", "r", {Adv});
+        }
+        return true;
+      };
+      if (!emitBucket(0)) return false;
+      { IRBuilder<> IB(CtEnd[BB]); asmCall(IB, "vf 0($0)", "r", {segSym(C.BlockSeg.lookup(BB))}); }
+      for (unsigned k = 0; k < Tails.size(); k++) {
+        // the reduction's scalar loop lives in its own blocks; splice them into this block's clone
+        auto Saved = B.saveIP();
+        B.SetInsertPoint(CtEnd[BB]);
+        if (!emitReduce(Tails[k].first)) return false;
+        CtEnd[BB] = B.GetInsertBlock();   // the block continues after the reduction loop
+        B.restoreIP(Saved);
+        if (!emitBucket(k + 1)) return false;
+        IRBuilder<> IB(CtEnd[BB]); asmCall(IB, "vf 0($0)", "r", {segSym(Tails[k].second)});
       }
-      for (auto &S : WT.Streams) {
-        if (S.PerIter != RIdx || !S.Blocks.count(BB)) continue;
-        Value *Bv = Cl.clone(S.Base); if (!Bv) return false;
-        IRBuilder<> IB(CtBlock[BB]);
-        Value *Adv = IB.CreatePtrAdd(Bv, IB.CreateMul(Off, StrideVals[S.VA]));   // this group's lanes
-        asmCall(IB, "vmca va" + std::to_string(S.VA) + ", $0", "r", {Adv});
-      }
-      IRBuilder<> IB(CtBlock[BB]);
-      asmCall(IB, "vf 0($0)", "r", {segSym(C.BlockSeg.lookup(BB))});
     }
     // terminators
     for (BasicBlock *BB : L->blocks()) {
       auto *Br = cast<BranchInst>(BB->getTerminator());
       Value *Cond = nullptr;
       if (Br->isConditional()) { Cond = Cl.clone(Br->getCondition()); if (!Cond) return false; }
-      IRBuilder<> IB(CtBlock[BB]);
+      IRBuilder<> IB(CtEnd[BB]);
       if (Cond) IB.CreateCondBr(Cond, edgeTarget(BB, Br->getSuccessor(0)), edgeTarget(BB, Br->getSuccessor(1)));
       else IB.CreateBr(edgeTarget(BB, Br->getSuccessor(0)));
     }
@@ -1767,6 +1877,7 @@ static bool generateCT(Function &K, WTGen &WT, Module &CT, raw_ostream &Err) {
   };
   for (const WTGen::Segment &Seg : WT.Segments) {
     if (Seg.CT >= 0 && !emitRegion(WT.CTLoops[Seg.CT], Seg.CT)) return false;
+    if (Seg.Reduce >= 0 && !emitReduce(Seg.Reduce)) return false;
     asmCall(B, "vf 0($0)", "r", {segSym(Seg.Label)});
   }
   BasicBlock *Last = B.GetInsertBlock();

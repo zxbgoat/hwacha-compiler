@@ -11,7 +11,7 @@ CFLAGS  := -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -f
 LDFLAGS := -static -nostdlib -nostartfiles -lm -lgcc -T $(COMMON)/test.ld
 SPIKE   := spike --isa=rv64gc --extension=hwacha
 
-TESTS := spec gather cf lc local misc flag pfmin
+TESTS := spec gather cf lc local misc flag pfmin red
 
 all: $(addsuffix .riscv,$(TESTS))
 run: $(addsuffix .run,$(TESTS))

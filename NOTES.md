@@ -728,3 +728,21 @@ RTL 运行中（标量约 2000 万 Spike 指令，预计 3 小时）。
 GPT-2 前向 RTL 结果（16 token）：标量 31244913 周期，hwacha-cc 1627888 周期（19.2×，每 token 约 10 万），argmax 全同、logits 零差、PASS。
 分解：matmul 912654（56%）、softmax 307563（18%）、attention 248756（15%）、gelu 77073、layernorm 67127、encoder 8361、residual 5595。
 softmax_row 与 att_softmax 每行一个 lane（vl=16 或 64），利用率低，是下一步该按 (行, 元素) 展平并做跨 lane 归约的地方。
+
+## 跨 lane 归约（2026-09-13）
+工作线程 ISA 里唯一的跨 lane 原语是 `vfirst`（取第一个活跃 lane 的值到 vs），没有树形归约，逐元素用它归约要 5 条指令乘 vl。
+实现走内存 + 控制线程：`work_group_reduce_add/min/max`（OpenCL 2.0 名字，CL1.2 下用 `test/run/hwacha_builtins.h` 的
+overloadable 声明；作用域 = 一个 stripmine 组 = work-group）。
+- 向量侧：`tmp = identity; @P tmp = x; vsw tmp, va_scratch`（被掩掉的 lane 写单位元），然后 `vstop` 切段（`<k>_wt_x<n>`）。
+- 控制线程：`fence` 等向量 store 落地，标量循环按 vl 归约暂存区（顺序与标量参考一致，layernorm 的结果逐位相同），
+  `vmcs` 送回 vs 寄存器；控制线程自己也保留该值（区域内依赖它的均匀计算可以直接用）。
+- 区域内的归约把块切成多段（BlockTail），控制线程在段之间插入归约循环；区域外走 Segments。
+- 分析侧：归约调用标为 AlwaysUniform；class 传播里它是唯一合法的"读向量写标量"；不算 store、可克隆。
+- 顺手补：`rsqrt`（vfsqrt + vfdiv），以及一个潜伏 bug：consensual 跳转的链接寄存器 LinkVS 原来在块体发射之后才分配，
+  而跳转插在块体之前，块内死掉的值的寄存器可能被选中当链接寄存器并被覆盖；现在整个 kernel 预留一个 vs。
+- 区域内随循环推进的 Local 流（按 local id 索引）不能再加 offset·stride，之前多加了，第二个组起全错。
+测试 `test/run/red.cl`：rsum/rmax/risum、掩码贡献 + 广播（rnorm）、layernorm 式两次归约（rln）、区域循环内归约（rrows），全 PASS。
+限制：归约不能出现在 vf 内的（发散）循环里；`if (lid==0) out[g]=s` 这种写法在区域里是发散分支，改成所有 lane 写同一地址
+（均匀 store）即可。
+GPT-2：layernorm 合成一个 kernel（组 = 一行 64 lane）、att_softmax 组 = 16、词表 softmax 组 = 128 lane 每 lane 8 个元素。
+Spike 上两版都 PASS，概率最大差 2e-9。RTL 运行中。

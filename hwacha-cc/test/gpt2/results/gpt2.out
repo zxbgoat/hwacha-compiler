@@ -1,2 +1,19 @@
 ==> gpt2.riscv start 16:44:33
 gpt2 tiny: V 1024 C 64 NH 4 L 2 T 16
+gpt2 scalar: 31244913 cycles, 1952807.06 cyc/elem
+scalar argmax: 141 153 199 696 387 387 387 803 199 387 803 977 977 166 199 977
+scalar logits sum 40071 e-3, p[0][argmax] 1896 e-6
+gpt2 hwacha-cc: 1627888 cycles, 101743.00 cyc/elem
+hwacha argmax: 141 153 199 696 387 387 387 803 199 387 803 977 977 166 199 977
+hwacha logits sum 40071 e-3, p[0][argmax] 1896 e-6
+  encoder: 8361 cycles (0%)
+  layernorm: 67127 cycles (4%)
+  matmul: 912654 cycles (56%)
+  attention: 248756 cycles (15%)
+  gelu: 77073 cycles (4%)
+  residual: 5595 cycles (0%)
+  softmax: 307563 cycles (18%)
+max |logit diff| 0 e-6, max |prob diff| 0 e-9, argmax mismatches 0 / 16
+gpt2 PASS
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> gpt2.riscv end 23:38:56 rc=0

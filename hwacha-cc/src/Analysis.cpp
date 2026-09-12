@@ -30,6 +30,16 @@ bool hwacha::isLocalId(const Value *V) { return dim0Call(V, "_Z12get_local_idj")
 bool hwacha::isWorkItemId(const Value *V) { return isGlobalId(V) || isLocalId(V); }
 bool hwacha::isLocalSizeCall(const Value *V) { return dim0Call(V, "_Z14get_local_sizej"); }
 bool hwacha::isGroupIdCall(const Value *V) { return dim0Call(V, "_Z12get_group_idj"); }
+bool hwacha::isWorkGroupReduce(const Value *V, StringRef *Op) {
+  auto *CB = dyn_cast<CallBase>(V);
+  if (!CB || !CB->getCalledFunction() || CB->arg_size() != 1) return false;
+  StringRef N = CB->getCalledFunction()->getName();
+  if (!N.consume_front("_Z21work_group_reduce_")) return false;
+  StringRef O = N.take_front(3);
+  if (O != "add" && O != "min" && O != "max") return false;
+  if (Op) *Op = O;
+  return true;
+}
 bool hwacha::isBarrierCall(const Value *V) {
   auto *CB = dyn_cast<CallBase>(V);
   return CB && CB->getCalledFunction() && CB->getCalledFunction()->getName() == "_Z7barrierj";
@@ -41,7 +51,9 @@ struct HwachaTTIImpl : public TargetTransformInfoImplBase {
   explicit HwachaTTIImpl(const DataLayout &DL) : TargetTransformInfoImplBase(DL) {}
   bool hasBranchDivergence(const Function *) const override { return true; }
   ValueUniformity getValueUniformity(const Value *V) const override {
-    return isWorkItemId(V) ? ValueUniformity::NeverUniform : ValueUniformity::Default;
+    if (isWorkItemId(V)) return ValueUniformity::NeverUniform;
+    if (isWorkGroupReduce(V)) return ValueUniformity::AlwaysUniform;   // the reduced value is the same in every lane
+    return ValueUniformity::Default;
   }
 };
 } // namespace

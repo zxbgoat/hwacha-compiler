@@ -31,6 +31,8 @@ bool isLocalId(const llvm::Value *V);
 bool isLocalSizeCall(const llvm::Value *V);
 bool isGroupIdCall(const llvm::Value *V);
 bool isBarrierCall(const llvm::Value *V);
+// work_group_reduce_{add,min,max}(x): cross-lane reduction over the work-group; Op receives "add"/"min"/"max"
+bool isWorkGroupReduce(const llvm::Value *V, llvm::StringRef *Op = nullptr);
 
 enum class AddrKind { Stream, Uniform, Gather };
 

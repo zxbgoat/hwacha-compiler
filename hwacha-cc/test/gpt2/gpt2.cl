@@ -104,3 +104,44 @@ __kernel void softmax_row(__global float *probs, __global const float *logits, i
   for (int i = 0; i < V; i++) { float e = hw_expf(l[i] - maxval); p[i] = e; sum += e; }
   for (int i = 0; i < V; i++) p[i] /= sum;
 }
+
+// ---- the same three row-wise stages written with cross-lane reductions (work-group = one row) ----
+#include "../run/hwacha_builtins.h"
+// layernorm in one kernel: 64 lanes = one row (C must equal the work-group size)
+__kernel __attribute__((reqd_work_group_size(64, 1, 1)))
+void layernorm(__global float *out, __global const float *inp, __global const float *w, __global const float *b, int C) {
+  int gid = get_global_id(0), i = get_local_id(0);
+  float x = inp[gid];
+  float m = work_group_reduce_add(x) / C;
+  float d = x - m;
+  float v = work_group_reduce_add(d * d) / C;
+  float s = 1.0f / sqrt(v + 1e-5f);
+  out[gid] = (s * d) * w[i] + b[i];
+}
+// causal softmax: 16 lanes = one (h,t) row over t2
+__kernel __attribute__((reqd_work_group_size(16, 1, 1)))
+void att_softmax_g(__global float *att, __global const float *preatt, int T) {
+  int gid = get_global_id(0), t2 = get_local_id(0);
+  int t = get_group_id(0) % T;
+  float p = t2 <= t ? preatt[gid] : -1.0e30f;
+  float maxval = fmax(-10000.0f, work_group_reduce_max(p));
+  float e = t2 <= t ? hw_expf(p - maxval) : 0.0f;
+  float expsum = work_group_reduce_add(e);
+  float inv = expsum == 0.0f ? 0.0f : 1.0f / expsum;
+  att[gid] = e * inv;
+}
+// vocabulary softmax: 128 lanes = one row, each lane owns V/128 consecutive logits
+__kernel __attribute__((reqd_work_group_size(128, 1, 1)))
+void softmax_g(__global float *probs, __global const float *logits, int V) {
+  int row = get_group_id(0), lane = get_local_id(0);
+  int per = V / 128;
+  __global const float *l = logits + row * V + lane * per;
+  __global float *p = probs + row * V + lane * per;
+  float mx = -10000.0f;
+  for (int i = 0; i < per; i++) mx = fmax(mx, l[i]);
+  float maxval = work_group_reduce_max(mx);
+  float sum = 0.0f;
+  for (int i = 0; i < per; i++) { float e = hw_expf(l[i] - maxval); p[i] = e; sum += e; }
+  float total = work_group_reduce_add(sum);
+  for (int i = 0; i < per; i++) p[i] /= total;
+}
