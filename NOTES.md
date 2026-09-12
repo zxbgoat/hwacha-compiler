@@ -746,3 +746,5 @@ overloadable 声明；作用域 = 一个 stripmine 组 = work-group）。
 （均匀 store）即可。
 GPT-2：layernorm 合成一个 kernel（组 = 一行 64 lane）、att_softmax 组 = 16、词表 softmax 组 = 128 lane 每 lane 8 个元素。
 Spike 上两版都 PASS，概率最大差 2e-9。RTL 运行中。
+备注：llama 的"循环留在 vf 内"基线（llama_rtl_noct）跑了 22 小时后随会话结束被杀，没有拿到数字；标量阶段之后向量阶段
+已超过 20 小时，说明它至少比区域版慢 40 倍以上。区域的收益已由 kmeans/pgain/divloop 的成对对照给出，不再重跑。
