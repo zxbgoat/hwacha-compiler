@@ -1,0 +1,203 @@
+; ModuleID = 'saxpy.ll'
+source_filename = "saxpy.ll"
+target datalayout = "e-m:e-i1:8:16-i8:8:16-i64:64-f80:128-n32:64"
+target triple = "riscv64-unknown--elf"
+
+define void @saxpy(float %a, float* %x, float* %y) #0 {
+entry:
+  %id = call i64 @llvm.hwacha.veidx()
+  %px = getelementptr inbounds float, float* %x, i64 %id
+  %py = getelementptr inbounds float, float* %y, i64 %id
+  %vx = load float, float* %px
+  %vy = load float, float* %py
+  %m = fmul float %a, %vx
+  %r = fadd float %m, %vy
+  store float %r, float* %py
+  ret void
+}
+
+define void @host(float %a, float* %x, float* %y) #0 {
+entry:
+  call void @saxpy(float %a, float* %x, float* %y)
+  ret void
+}
+
+; Function Attrs: nounwind
+declare i64 @llvm.hwacha.veidx() #1
+
+attributes #0 = { "target-cpu"="Rocket" "target-features"="+xhwacha" }
+attributes #1 = { nounwind "target-cpu"="Rocket" "target-features"="+xhwacha" }
+
+!opencl.kernels = !{!0}
+!hwacha.vfcfg = !{!1}
+
+!0 = !{void (float, float*, float*)* @saxpy}
+!1 = !{i64 0, i64 0, i64 0, i64 0}
+
+define void @saxpy(float %a, float* %x, float* %y) #0 {
+entry:
+  %id = call i64 @llvm.hwacha.veidx()
+  %px = getelementptr inbounds float, float* %x, i64 %id
+  %py = getelementptr inbounds float, float* %y, i64 %id
+  %vx = load float, float* %px
+  %vy = load float, float* %py
+  %m = fmul float %a, %vx
+  %r = fadd float %m, %vy
+  store float %r, float* %py
+  ret void
+}
+
+
+define void @saxpy(float %a, float* %x, float* %y) #0 {
+entry:
+  %id = call i64 @llvm.hwacha.veidx()
+  %px = getelementptr inbounds float, float* %x, i64 %id
+  %py = getelementptr inbounds float, float* %y, i64 %id
+  %vx = load float, float* %px
+  %vy = load float, float* %py
+  %m = fmul float %a, %vx
+  %r = fadd float %m, %vy
+  store float %r, float* %py
+  ret void
+}
+
+  %vx = load float, float* %px
+((4 * %id)<nsw> + %x)<nsw>
+RUNNING PDG
+RUNNING PDG
+found load inst in opencl kernel, trying to hoist
+HOISTED ADDR
+  %vy = load float, float* %py
+((4 * %id)<nsw> + %y)<nsw>
+found load inst in opencl kernel, trying to hoist
+HOISTED ADDR
+  store float %r, float* %py
+((4 * %id)<nsw> + %y)<nsw>
+found store inst in opencl kernel, trying to hoist
+HOISTED ADDR
+
+define void @host(float %a, float* %x, float* %y) #0 {
+entry:
+  %scevgep = getelementptr float, float* %x, i64 1
+  %scevgep1 = getelementptr float, float* %y, i64 1
+  call void @saxpy(float %a, float* %x, float* %y, float* byval %scevgep, float* byval %scevgep1, float* byval %scevgep1)
+  ret void
+}
+
+
+define void @host(float %a, float* %x, float* %y) #0 {
+entry:
+  %scevgep = getelementptr float, float* %x, i64 1
+  %scevgep1 = getelementptr float, float* %y, i64 1
+  call void @saxpy(float %a, float* %x, float* %y, float* byval %scevgep, float* byval %scevgep1, float* byval %scevgep1)
+  ret void
+}
+
+; ModuleID = 'saxpy.ll'
+source_filename = "saxpy.ll"
+target datalayout = "e-m:e-i1:8:16-i8:8:16-i64:64-f80:128-n32:64"
+target triple = "riscv64-unknown--elf"
+
+define internal void @saxpy(float %a, float* %x, float* %y, float* byval, float* byval, float* byval) #0 {
+entry:
+  %id = call i64 @llvm.hwacha.veidx()
+  %px = getelementptr inbounds float, float* %x, i64 %id
+  %py = getelementptr inbounds float, float* %y, i64 %id
+  %vx = load float, float* %0
+  %vy = load float, float* %1
+  %m = fmul float %a, %vx
+  %r = fadd float %m, %vy
+  store volatile float %r, float* %2
+  ret void
+}
+
+declare void @0(float, float*, float*) #0
+
+define void @host(float %a, float* %x, float* %y) #0 {
+entry:
+  %scevgep = getelementptr float, float* %x, i64 1
+  %scevgep1 = getelementptr float, float* %y, i64 1
+  call void @saxpy(float %a, float* %x, float* %y, float* byval %scevgep, float* byval %scevgep1, float* byval %scevgep1)
+  ret void
+}
+
+; Function Attrs: nounwind
+declare i64 @llvm.hwacha.veidx() #1
+
+attributes #0 = { "target-cpu"="Rocket" "target-features"="+xhwacha" }
+attributes #1 = { nounwind "target-cpu"="Rocket" "target-features"="+xhwacha" }
+
+!opencl.kernels = !{!0}
+!hwacha.vfcfg = !{!1}
+
+!0 = !{void (float, float*, float*, float*, float*, float*)* @saxpy}
+!1 = !{i64 0, i64 0, i64 0, i64 0}
+# Machine code for function saxpy: Properties: <SSA, tracking liveness, HasVRegs>
+Function Live Ins: %fa0 in %vreg0, %a1_64 in %vreg1, %a2_64 in %vreg2, %a3_64 in %vreg3
+
+BB#0: derived from LLVM BB %entry
+    Live Ins: %fa0 %a1_64 %a2_64 %a3_64
+	%vreg3<def> = COPY %a3_64; GR64Bit:%vreg3
+	%vreg2<def> = COPY %a2_64; GR64Bit:%vreg2
+	%vreg1<def> = COPY %a1_64; GR64Bit:%vreg1
+	%vreg0<def> = COPY %fa0; FP64Bit:%vreg0
+	%vreg4<def> = VEIDX; VVRBit:%vreg4
+	%vreg5<def> = FLW64 0, %vreg1; mem:LD4[%0] FP32Bit:%vreg5 GR64Bit:%vreg1
+	%vreg7<def> = COPY %vreg0; FP32Bit:%vreg7 FP64Bit:%vreg0
+	%vreg6<def> = FMUL_S_RDY %vreg7, %vreg5<kill>; FP32Bit:%vreg6,%vreg7,%vreg5
+	%vreg8<def> = FLW64 0, %vreg2; mem:LD4[%1] FP32Bit:%vreg8 GR64Bit:%vreg2
+	%vreg9<def> = FADD_S_RDY %vreg6<kill>, %vreg8<kill>; FP32Bit:%vreg9,%vreg6,%vreg8
+	FSW64 %vreg9<kill>, 0, %vreg3; mem:Volatile ST4[%2] FP32Bit:%vreg9 GR64Bit:%vreg3
+	RET %a0<imp-def,dead>, %a1<imp-def,dead>
+
+# End machine code for function saxpy.
+
+Writing 'pdg.saxpy.dot'...
+  %vreg10<def> = VPSET; VPRBit:%vreg10
+RUNNING PDG
+RUNNING PDG
+ProcessingFunctionAfterISel
+RUNNING PDG
+Inst:invar?0
+  %vreg10<def> = VPSET; VPRBit:%vreg10
+  %vreg3<def> = COPY %a3_64; GR64Bit:%vreg3
+Unable to handle Opcode:607 in OpenCL kernel
+Inst:invar?1
+  %vreg2<def> = COPY %a2_64; GR64Bit:%vreg2
+Inst:invar?1
+  %vreg1<def> = COPY %a1_64; GR64Bit:%vreg1
+Inst:invar?1
+  %vreg0<def> = COPY %fa0; FP64Bit:%vreg0
+Inst:invar?1
+  %vreg4<def> = VEIDX; VVRBit:%vreg4
+Inst:invar?0
+  %vreg4<def> = VEIDX; VVRBit:%vreg4
+  %vreg5<def> = FLW64 0, %vreg1; mem:LD4[%0] FP32Bit:%vreg5 GR64Bit:%vreg1
+Unable to handle Opcode:462 in OpenCL kernel
+Inst:invar?1
+llc: /home/tesla/hwacha-compiler/esp-llvm/include/llvm/CodeGen/MachineOperand.h:268: unsigned int llvm::MachineOperand::getReg() const: Assertion `isReg() && "This is not a register operand!"' failed.
+0  llc       0x00005ccd4d47151f llvm::sys::PrintStackTrace(llvm::raw_ostream&) + 63
+1  llc       0x00005ccd4d46ecd6 llvm::sys::RunSignalHandlers() + 70
+2  llc       0x00005ccd4d46ee64
+3  libc.so.6 0x00007180d8e45330
+4  libc.so.6 0x00007180d8e9ec0c pthread_kill + 284
+5  libc.so.6 0x00007180d8e4527e gsignal + 30
+6  libc.so.6 0x00007180d8e288ff abort + 223
+7  libc.so.6 0x00007180d8e2881b
+8  libc.so.6 0x00007180d8e3b517
+9  llc       0x00005ccd4cb321c1
+10 llc       0x00005ccd4cb34f80
+11 llc       0x00005ccd4cb38090
+12 llc       0x00005ccd4cdd7717 llvm::MachineFunctionPass::runOnFunction(llvm::Function&) + 711
+13 llc       0x00005ccd4d0d26d2 llvm::FPPassManager::runOnFunction(llvm::Function&) + 738
+14 llc       0x00005ccd4d0d2aab llvm::FPPassManager::runOnModule(llvm::Module&) + 43
+15 llc       0x00005ccd4d0d1e95 llvm::legacy::PassManagerImpl::run(llvm::Module&) + 789
+16 llc       0x00005ccd4cb29be8
+17 llc       0x00005ccd4cb023a8 main + 312
+18 libc.so.6 0x00007180d8e2a1ca
+19 libc.so.6 0x00007180d8e2a28b __libc_start_main + 139
+20 llc       0x00005ccd4cb1d4e5 _start + 37
+Stack dump:
+0.	Program arguments: /home/tesla/hwacha-compiler/build/llvm39/bin/llc -mtriple=riscv64-unknown-elf -mcpu=Rocket -mattr=+xhwacha -O2 saxpy.ll -o saxpy.s 
+1.	Running pass 'Function Pass Manager' on module 'saxpy.ll'.
+2.	Running pass 'RISCV Vector Fetch MachOpt' on function '@saxpy'

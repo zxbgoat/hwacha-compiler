@@ -1,0 +1,15 @@
+N=1024
+saxpy scalar: 12963 cycles, 12.65 cyc/elem
+saxpy hwacha-cc: 1572 cycles, 1.53 cyc/elem
+saxpy hand-written: 1329 cycles, 1.29 cyc/elem
+clamp scalar: 17458 cycles, 17.04 cyc/elem
+clamp hwacha-cc: 1021 cycles, 0.99 cyc/elem
+clamp hand-written: 1024 cycles, 1.00 cyc/elem
+divloop scalar: 69024 cycles, 67.40 cyc/elem
+divloop hwacha-cc: 17281 cycles, 16.87 cyc/elem
+stencil scalar: 20550 cycles, 20.06 cyc/elem
+stencil hwacha-cc: 1815 cycles, 1.77 cyc/elem
+gather scalar: 13184 cycles, 12.87 cyc/elem
+gather hwacha-cc: 2243 cycles, 2.19 cyc/elem
+ALL VERIFIED
+DONE

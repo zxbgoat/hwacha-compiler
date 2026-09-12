@@ -1,0 +1,14 @@
+[UART] UART0 is here (stdin/stdout).
+start mul32
+mul32 PASS
+start uni_store
+uni_store PASS (flag=7 bflag=3)
+start mul64
+mul64 PASS
+start dblfma
+dblfma PASS
+start atom
+atom PASS
+ALL DONE
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+EXIT=0

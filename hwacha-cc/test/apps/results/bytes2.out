@@ -1,0 +1,7 @@
+[UART] UART0 is here (stdin/stdout).
+wscatter PASS (0) 1981 cycles
+bscatter PASS (0) 1729 cycles
+bgather PASS (0) 1486 cycles
+ALL KERNELS PASSED
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+EXIT=0

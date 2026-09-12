@@ -1,0 +1,4 @@
+gpt2 tiny: V 1024 C 64 NH 4 L 2 T 16
+gpt2 scalar: (x86, no cycles)
+scalar argmax: 141 153 199 696 387 387 387 803 199 387 803 977 977 166 199 977
+scalar logits sum 40071 e-3, p[0][argmax] 1896 e-6

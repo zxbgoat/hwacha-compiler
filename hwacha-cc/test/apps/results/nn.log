@@ -1,0 +1,4 @@
+nn scalar: 99464 cycles, 48.56 cyc/elem
+nn hwacha-cc: 15077 cycles, 7.36 cyc/elem
+nn PASS (0 mismatches / 2048)
+DONE

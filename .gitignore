@@ -1,0 +1,23 @@
+# upstream trees and toolchains (cloned/built separately, see README)
+/chipyard/
+/esp-isa-sim/
+/esp-llvm/
+/esp-opcodes/
+/esp-tests/
+/esp-tools/
+/hwacha/
+/install/
+/install-hlog/
+/build/
+# build outputs
+hwacha-cc/build/
+*.riscv
+*.ll
+*.o
+hwacha-cc/test/*/*.s
+hwacha-cc/test/*/*.ct.ll
+hwacha-cc/test/llama/run_x86
+hwacha-cc/test/gpt2/gpt2_x86
+*.err
+hwacha-cc/test/*/results/*.err
+hwacha-cc/test/berkeley/*.riscv

@@ -1,0 +1,10 @@
+[UART] UART0 is here (stdin/stdout).
+start half_bs
+half_bs done
+start sparse_sh
+sparse_sh done
+start sparse_sxb
+sparse_sxb done
+start sparse_bs3
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+EXIT=0

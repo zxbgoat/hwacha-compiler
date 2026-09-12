@@ -1,0 +1,3 @@
+[UART] UART0 is here (stdin/stdout).
+bfs scalar: 16590 cycles, 64.80 cyc/elem
+EXIT=124

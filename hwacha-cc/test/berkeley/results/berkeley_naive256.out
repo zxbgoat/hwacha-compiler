@@ -1,0 +1,5 @@
+==> vec-sgemm-naive256.riscv start 14:27:28
+mcycle = 13918519
+minstret = 1378098
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> vec-sgemm-naive256.riscv end 16:35:59 rc=0

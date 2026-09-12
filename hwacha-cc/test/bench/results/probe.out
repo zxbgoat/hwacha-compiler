@@ -1,0 +1,11 @@
+[UART] UART0 is here (stdin/stdout).
+N=1024
+saxpy scalar: 12934 cycles, 12.63 cyc/elem
+saxpy hwacha-cc: 1516 cycles, 1.48 cyc/elem
+saxpy hand-written: 1332 cycles, 1.30 cyc/elem
+clamp scalar: 17592 cycles, 17.17 cyc/elem
+clamp hwacha-cc: 1267 cycles, 1.23 cyc/elem
+clamp hand-written: 990 cycles, 0.96 cyc/elem
+divloop scalar: 68777 cycles, 67.16 cyc/elem
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+EXIT=0

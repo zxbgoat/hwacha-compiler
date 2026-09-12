@@ -1,0 +1,30 @@
+==> llama_rtl_ct2.riscv start 02:07:32
+stories260K: dim 64 hid 172 layers 5 heads 8 kv 4 vocab 512, 4 steps
+llama scalar: 11544459 cycles, 2886114.75 cyc/elem
+scalar: Once upon a time
+llama hwacha-cc (row-major W): 1834396 cycles, 458599.00 cyc/elem
+hwacha: Once upon a time
+  matmul: 1633462 cycles (91%)
+  rmsnorm: 9451 cycles (0%)
+  rope: 13992 cycles (0%)
+  att_score: 21427 cycles (1%)
+  att_softmax: 16281 cycles (0%)
+  att_value: 35744 cycles (1%)
+  residual: 6161 cycles (0%)
+  silu_mul: 30524 cycles (1%)
+  host(reductions): 25180 cycles (1%)
+llama hwacha-cc (transposed W): 1021721 cycles, 255430.25 cyc/elem
+hwacha: Once upon a time
+  matmul: 821990 cycles (83%)
+  rmsnorm: 9368 cycles (0%)
+  rope: 13791 cycles (1%)
+  att_score: 21291 cycles (2%)
+  att_softmax: 16015 cycles (1%)
+  att_value: 35615 cycles (3%)
+  residual: 5922 cycles (0%)
+  silu_mul: 30339 cycles (3%)
+  host(reductions): 25390 cycles (2%)
+generated token diffs 0 / 4
+llama PASS
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> llama_rtl_ct2.riscv end 04:51:16 rc=0

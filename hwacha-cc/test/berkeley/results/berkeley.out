@@ -1,0 +1,15 @@
+==> vec-saxpy.riscv start 14:24:55
+mcycle = 13167
+minstret = 145
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> vec-saxpy.riscv end 14:26:06 rc=0
+==> vec-sgemm-naive.riscv start 14:26:06
+mcycle = 22116
+minstret = 11319
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> vec-sgemm-naive.riscv end 14:26:28 rc=0
+==> vec-sgemm-opt.riscv start 14:26:28
+mcycle = 4262080
+minstret = 193627
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> vec-sgemm-opt.riscv end 15:13:18 rc=0

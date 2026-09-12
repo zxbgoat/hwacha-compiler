@@ -1,0 +1,12 @@
+Running with RISCV=/home/tesla/hwacha-compiler/chipyard/.conda-env/esp-tools
+mkdir -p /home/tesla/hwacha-compiler/chipyard/sims/verilator/output/chipyard.harness.TestHarness.HwachaRocketConfig
+if [ "/home/tesla/hwacha-compiler/build/tests-isa/rv64uv-p-vvadd_d" != "none" ] && [ ! -f "/home/tesla/hwacha-compiler/build/tests-isa/rv64uv-p-vvadd_d" ]; then printf "\n\nBinary /home/tesla/hwacha-compiler/build/tests-isa/rv64uv-p-vvadd_d not found\n\n"; exit 1; fi
+(set -o pipefail &&  /home/tesla/hwacha-compiler/chipyard/sims/verilator/simulator-chipyard.harness-HwachaRocketConfig +permissive +dramsim +dramsim_ini_dir=/home/tesla/hwacha-compiler/chipyard/generators/testchipip/src/main/resources/dramsim2_ini +max-cycles=10000000     +verbose +permissive-off /home/tesla/hwacha-compiler/build/tests-isa/rv64uv-p-vvadd_d </dev/null 2> >(spike-dasm > /home/tesla/hwacha-compiler/chipyard/sims/verilator/output/chipyard.harness.TestHarness.HwachaRocketConfig/rv64uv-p-vvadd_d.out) | tee /home/tesla/hwacha-compiler/chipyard/sims/verilator/output/chipyard.harness.TestHarness.HwachaRocketConfig/rv64uv-p-vvadd_d.log)
+[UART] UART0 is here (stdin/stdout).
+[170805000] %Error: ScalarUnit.sv:1149: Assertion failed in TOP.TestDriver.testHarness.chiptop0.system.tile_prci_domain.element_reset_domain_rockettile.hwacha.scalar: Assertion failed: illegal instruction exception!
+    at scalar-unit.scala:296 assert(!vf_active || !io.imem.resp.valid || id_ctrl.ival, "illegal instruction exception!")
+
+%Error: /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/ScalarUnit.sv:1149: Verilog $stop
+Aborting...
+make: *** [/home/tesla/hwacha-compiler/chipyard/common.mk:372: /home/tesla/hwacha-compiler/build/tests-isa/rv64uv-p-vvadd_d.run] Error 255
+RUNBIN_EXIT=2

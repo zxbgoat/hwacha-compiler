@@ -1,0 +1,16 @@
+==> kmeans_noct.riscv start 01:32:09
+kmeans scalar: 1355233 cycles, 1323.46 cyc/elem
+kmeans_swap hwacha-cc: 35159 cycles, 34.33 cyc/elem
+kmeans_swap PASS (0 mismatches)
+kmeans_c hwacha-cc: 130709 cycles, 127.64 cyc/elem
+kmeans_c PASS (0 mismatches / 1024)
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> kmeans_noct.riscv end 01:50:15 rc=0
+==> kmeans.riscv start 01:50:15
+kmeans scalar: 1269172 cycles, 1239.42 cyc/elem
+kmeans_swap hwacha-cc: 23664 cycles, 23.10 cyc/elem
+kmeans_swap PASS (0 mismatches)
+kmeans_c hwacha-cc: 73055 cycles, 71.34 cyc/elem
+kmeans_c PASS (0 mismatches / 1024)
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> kmeans.riscv end 02:07:02 rc=0

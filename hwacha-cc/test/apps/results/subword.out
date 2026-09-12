@@ -1,0 +1,9 @@
+[UART] UART0 is here (stdin/stdout).
+u8store  PASS (0) 315 cycles
+u8load   FAIL (98) 209 cycles
+u8copy   PASS (0) 203 cycles
+u16copy  PASS (0) 189 cycles
+u8gath   FAIL (98) 493 cycles
+ALL DONE
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+EXIT=0

@@ -1,0 +1,6 @@
+kmeans scalar: 1348765 cycles, 1317.15 cyc/elem
+kmeans_swap hwacha-cc: 34303 cycles, 33.49 cyc/elem
+kmeans_swap PASS (0 mismatches)
+kmeans_c hwacha-cc: 130925 cycles, 127.85 cyc/elem
+kmeans_c PASS (0 mismatches / 1024)
+DONE

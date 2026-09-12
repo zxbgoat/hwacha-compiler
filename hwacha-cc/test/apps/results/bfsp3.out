@@ -1,0 +1,20 @@
+[UART] UART0 is here (stdin/stdout).
+BFS_1 #0 start
+BFS_1 #0 done
+BFS_2 #0 start
+BFS_2 #0 done over=1
+BFS_1 #1 start
+BFS_1 #1 done
+BFS_2 #1 start
+BFS_2 #1 done over=1
+BFS_1 #2 start
+BFS_1 #2 done
+BFS_2 #2 start
+BFS_2 #2 done over=1
+BFS_1 #3 start
+BFS_1 #3 done
+BFS_2 #3 start
+BFS_2 #3 done over=1
+reached 178
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+EXIT=0

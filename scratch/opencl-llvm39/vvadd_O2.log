@@ -1,0 +1,9 @@
+0  llc       0x000058c81a53c51f llvm::sys::PrintStackTrace(llvm::raw_ostream&) + 63
+1  llc       0x000058c81a539cd6 llvm::sys::RunSignalHandlers() + 70
+2  llc       0x000058c81a539e64
+3  libc.so.6 0x0000758317445330
+4  llc       0x000058c81a553e64 llvm::TargetMachine::getOptLevel() const + 4
+5  llc       0x000058c819bf807d
+6  llc       0x000058c81c4e5cf0
+Stack dump:
+0.	Program arguments: /home/tesla/hwacha-compiler/build/llvm39/bin/llc -mtriple=riscv64-unknown-elf -mcpu=Rocket -mattr=+xhwacha -O2 -debug-pass=Executions vvadd.ll -o vvadd_O2.s 

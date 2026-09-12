@@ -1,0 +1,4 @@
+pgain scalar: 330023 cycles, 322.28 cyc/elem
+pgain hwacha-cc: 39254 cycles, 38.33 cyc/elem
+pgain PASS (0 mismatches)
+DONE

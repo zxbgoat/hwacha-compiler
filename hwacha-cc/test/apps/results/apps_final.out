@@ -1,0 +1,22 @@
+==> nn.riscv start 14:24:12
+nn scalar: 100377 cycles, 49.01 cyc/elem
+nn hwacha-cc: 15072 cycles, 7.35 cyc/elem
+nn PASS (0 mismatches / 2048)
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> nn.riscv end 14:28:22 rc=0
+==> pathfinder.riscv start 14:28:22
+pathfinder scalar: 248183 cycles, 242.36 cyc/elem
+pathfinder emulation vs reference: 0 mismatches
+pathfinder hwacha-cc: 144914 cycles, 141.51 cyc/elem
+  dev: 22 16 16 8 14 20 26 18 19 12 9 14 | 20 14 10 15 12 12 14 18 9 17 12 24 
+  ref: 22 16 16 8 14 20 26 18 19 12 9 14 | 20 14 10 15 12 12 14 18 9 17 12 24 
+  src: 8 8 8 8 0 8 2 2 5 5 4 3 | 2 6 2 1 4 6 2 5 0 8 1 5 
+pathfinder PASS (0 mismatches / 1024)
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> pathfinder.riscv end 14:42:04 rc=0
+==> bfs.riscv start 14:42:04
+bfs scalar: 191905 cycles, 93.70 cyc/elem
+bfs hwacha-cc: 621840 cycles, 303.63 cyc/elem
+bfs PASS (0 mismatches / 2048, 10 levels)
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> bfs.riscv end 14:51:34 rc=0

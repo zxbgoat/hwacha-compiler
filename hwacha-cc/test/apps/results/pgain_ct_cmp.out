@@ -1,0 +1,12 @@
+==> pgain_noct.riscv start 01:35:25
+pgain scalar: 331495 cycles, 323.72 cyc/elem
+pgain hwacha-cc: 39339 cycles, 38.41 cyc/elem
+pgain PASS (0 mismatches)
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> pgain_noct.riscv end 01:45:20 rc=0
+==> pgain.riscv start 01:45:20
+pgain scalar: 331274 cycles, 323.50 cyc/elem
+pgain hwacha-cc: 28776 cycles, 28.10 cyc/elem
+pgain PASS (0 mismatches)
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> pgain.riscv end 01:55:13 rc=0

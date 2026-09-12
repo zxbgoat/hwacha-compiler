@@ -1,0 +1,4 @@
+pathfinder scalar: 247489 cycles, 241.68 cyc/elem
+pathfinder hwacha-cc: 143617 cycles, 140.25 cyc/elem
+pathfinder PASS (0 mismatches / 1024)
+DONE

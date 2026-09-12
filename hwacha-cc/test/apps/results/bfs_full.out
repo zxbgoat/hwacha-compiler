@@ -1,0 +1,6 @@
+[UART] UART0 is here (stdin/stdout).
+bfs scalar: 182333 cycles, 89.02 cyc/elem
+bfs hwacha-cc: 645785 cycles, 315.32 cyc/elem
+bfs PASS (0 mismatches / 2048, 10 levels)
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+EXIT=0

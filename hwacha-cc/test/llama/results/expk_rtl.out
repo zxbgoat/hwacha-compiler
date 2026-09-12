@@ -1,0 +1,6 @@
+==> expk.riscv start 00:47:53
+expk hwacha-cc: 4871 cycles, 4.75 cyc/elem
+expk max rel err 70 e-9 at x=48826/1000 (0 > 4e-7 of 1024)
+expk PASS
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> expk.riscv end 00:54:09 rc=0

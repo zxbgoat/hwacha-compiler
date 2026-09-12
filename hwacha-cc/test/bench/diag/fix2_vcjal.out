@@ -1,0 +1,7 @@
+[UART] UART0 is here (stdin/stdout).
+[159139000] %Error: ScalarUnit.sv:1150: Assertion failed in TOP.TestDriver.testHarness.chiptop0.system.tile_prci_domain.element_reset_domain_rockettile.hwacha.scalar: Assertion failed: illegal instruction exception!
+    at scalar-unit.scala:296 assert(!vf_active || !io.imem.resp.valid || id_ctrl.ival, "illegal instruction exception!")
+
+%Error: /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/ScalarUnit.sv:1150: Verilog $stop
+Aborting...
+EXIT=255

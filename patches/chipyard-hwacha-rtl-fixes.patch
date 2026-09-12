@@ -1,0 +1,114 @@
+diff --git a/src/main/scala/configs.scala b/src/main/scala/configs.scala
+index 5294576..a57147b 100644
+--- a/src/main/scala/configs.scala
++++ b/src/main/scala/configs.scala
+@@ -15,7 +15,9 @@ class DefaultHwachaConfig extends Config((site, here, up) => {
+     case HwachaIcacheKey => ICacheParams(
+       nSets = 64,
+       nWays = 1,
+-      rowBits = 1 * 64,
++      // must match the system-bus beat width: the ICache derives its refill row indexing from
++      // rowBits, and Chipyard's sbus is 128 bits wide (a 64-bit row read data 16 bytes off)
++      rowBits = 128,
+       nTLBWays = 8,
+       fetchBytes = 8, // Fetch one 8 byte instruction
+       latency = 1
+diff --git a/src/main/scala/frontend.scala b/src/main/scala/frontend.scala
+index f89f8d3..d536c96 100644
+--- a/src/main/scala/frontend.scala
++++ b/src/main/scala/frontend.scala
+@@ -60,8 +60,9 @@ class MiniFrontend(val cacheParams: ICacheParams)(implicit p: Parameters) extend
+   val stall = !io.front.req.valid && (io.front.resp.valid && !io.front.resp.ready || !io.front.active)
+   val s1_kill = io.front.req.valid || icmiss || s1_replay
+   val s0_npc = s1_pc + UInt(HwachaElementInstBytes)
+-  val s0_same_block =
+-    !s1_kill && ((s0_npc & UInt(rowBytes)) === (s1_pc & UInt(rowBytes)))
++  // The rocket-chip ICache now returns exactly fetchBytes (the requested 8-byte instruction), not
++  // a whole row, so a row can never be reused for the next instruction: request every word.
++  val s0_same_block = Bool(false)
+   val s0_req_valid = !stall && !s0_same_block
+ 
+   io.back.s0_req.valid := s0_req_valid
+@@ -100,11 +101,12 @@ class MiniFrontend(val cacheParams: ICacheParams)(implicit p: Parameters) extend
+   io.front.resp.bits.pf := s2_xcpt_if
+ 
+   require(cacheParams.fetchBytes <= rowBytes)
+-  val fetch_data =
+-    if (cacheParams.fetchBytes == rowBytes) s2_line.io.deq.bits
+-    else s2_line.io.deq.bits >> (s2_pc(log2Up(rowBytes)-1,log2Up(cacheParams.fetchBytes)) << log2Up(cacheParams.fetchBytes*8))
++  val fetch_data = s2_line.io.deq.bits   // already the fetchBytes-wide word selected by the ICache
+ 
+     io.front.resp.bits.data := fetch_data
++  when (io.front.resp.valid) {
++    printf("H: IFETCH pc=%x data=%x pf=%d\n", s2_pc, fetch_data, s2_xcpt_if)
++  }
+ }
+ 
+ class HwachaFrontend(implicit p : Parameters) extends LazyModule {
+@@ -160,6 +162,16 @@ class HwachaFrontendModule(outer: HwachaFrontend)(implicit p: Parameters) extend
+   tlb.io.req.bits.vaddr := s1_pc
+   tlb.io.req.bits.passthrough := Bool(false)
+   tlb.io.req.bits.size := UInt(log2Ceil(cacheParams.fetchBytes))
++  // newer rocket-chip TLBs take the privilege level, command and virtualization mode from the
++  // request itself (not from status); leaving them unconnected made every fetch a U-mode access
++  val s1_prv = RegEnable(req.bits.status.prv, req.valid)
++  tlb.io.req.bits.prv := s1_prv
++  tlb.io.req.bits.cmd := freechips.rocketchip.rocket.M_XRD
++  tlb.io.req.bits.v := Bool(false)
++  when (tlb.io.req.valid) {
++    printf("H: ITLB vaddr=%x paddr=%x prv=%d miss=%d pf=%d ae=%d\n", s1_pc, tlb.io.resp.paddr, s1_prv,
++      tlb.io.resp.miss, tlb.io.resp.pf.inst, tlb.io.resp.ae.inst)
++  }
+   tlb.io.sfence.valid := false.B
+ 
+   req.ready := Bool(true)
+diff --git a/src/main/scala/smu.scala b/src/main/scala/smu.scala
+index 9921c10..b618640 100644
+--- a/src/main/scala/smu.scala
++++ b/src/main/scala/smu.scala
+@@ -91,6 +91,9 @@ class SMUModule(outer: SMU)(implicit p: Parameters) extends LazyModuleImp(outer)
+   tlb.req.bits.passthrough := Bool(false)
+   tlb.req.bits.size := req_mt.shift()
+   tlb.req.bits.cmd := Mux(req_store, M_XWR, M_XRD)
++  // newer rocket-chip TLBs take the privilege level from the request (the VMU already does this)
++  tlb.req.bits.prv := req.status.dprv
++  tlb.req.bits.v := req.status.dv
+   tlb.status := req.status
+   io.irq <> tbox.io.irq
+ 
+diff --git a/src/main/scala/vfu-rpred.scala b/src/main/scala/vfu-rpred.scala
+index f70e839..fafc73a 100644
+--- a/src/main/scala/vfu-rpred.scala
++++ b/src/main/scala/vfu-rpred.scala
+@@ -24,17 +24,22 @@ class RPredLane(implicit p: Parameters) extends VXUModule()(p) {
+   val fn = Reg(new VRPUFn)
+   val cond = Reg(Bool())
+ 
+-  when (io.op.valid) {
+-    fn := io.op.bits
+-    when (io.op.bits.op_is(FR_ALL)) { cond := Bool(true) }
+-    when (io.op.bits.op_is(FR_ANY)) { cond := Bool(false) }
+-  }
++  // A new op resets the accumulator. If the first operand strip arrives in the same cycle as the
++  // op, the original code let the accumulate assignment win, so the reduction started from the
++  // previous branch's result (a stale "true" kept @vp vcjal.any loops spinning forever).
++  val start = io.op.valid
++  val cur_fn = Mux(start, io.op.bits, fn)
++  val init = Mux(io.op.bits.op_is(FR_ALL), Bool(true), Bool(false))
++  val base = Mux(start, init, cond)
++  when (start) { fn := io.op.bits }
+ 
+   io.req.ready := Bool(true)
+-  when (io.req.fire) {
+-    when (fn.op_is(FR_ALL)) { cond := cond & (io.req.bits.pred | ~io.req.bits.active).orR }
+-    when (fn.op_is(FR_ANY)) { cond := cond | (io.req.bits.pred & io.req.bits.active).orR }
+-  }
++  // ALL: every active element of this strip must have the predicate set (the original .orR made
++  // "all" behave like "any", so @!vp vcjal.all skipped a loop body as soon as one lane finished)
++  val acc_all = base & (io.req.bits.pred | ~io.req.bits.active).andR
++  val acc_any = base | (io.req.bits.pred & io.req.bits.active).orR
++  val acc = Mux(cur_fn.op_is(FR_ALL), acc_all, acc_any)
++  when (start || io.req.fire) { cond := Mux(io.req.fire, acc, base) }
+ 
+   io.result.bits.cond := cond
+ }

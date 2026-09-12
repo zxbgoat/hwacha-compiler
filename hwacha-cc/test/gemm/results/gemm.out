@@ -1,0 +1,3 @@
+==> gemm_rtl.riscv start 14:26:12
+gemm_row hwacha-cc: 5211891 cycles, 79.52 cyc/elem
+gemm_row PASS (0 mismatches / 65536)
