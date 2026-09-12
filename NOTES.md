@@ -712,6 +712,7 @@ Spike：36 回归 kernel、5 Rodinia、expk、llama、微基准全部 PASS。RTL
 | Berkeley 手写朴素版（每个 (i,j) 一个 vf，C 行每次读写） | 13918519 | 1.2 |
 | hwacha-cc gemm_row（宿主按行发射，j 循环为控制线程区域，累加器留在寄存器） | 5211891 | 3.2 |
 | Berkeley 手写优化版（4×4 寄存器分块） | 4262080 | 3.9 |
+| hwacha-cc gemm_flat（整块一次发射，i=gid/n，A、B 都成 gather） | 36499744 | 0.46 |
 编译器生成的版本比手写朴素版快 2.7 倍、比手写优化版慢 22%。与 llama 的 1.4 MAC/周期对照：这里 vl=256，
 每次迭代一个 vf 的固定开销被摊薄；剩下的差距就是寄存器分块（一个 vf 里做多行多 j）。
 
