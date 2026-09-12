@@ -173,7 +173,7 @@ respective `results/` directory.
 | pathfinder 8 x 1024 | 248183 | 144914 | 1.7x |
 | bfs 2048 nodes (GPU-style level-synchronous, work-inefficient by design) | 191905 | 621840 | 0.3x |
 | llama2.c stories260K, per token (transposed weights) | 2.88M | 235k | 12.3x |
-| GPT-2 forward (llm.c), tiny model, 16 tokens | 31244913 | 1627888 | 19.2x |
+| GPT-2 forward (llm.c), tiny model, 16 tokens | 31244913 | 1627888 (with `work_group_reduce` kernels: 1733738) | 19.2x |
 | sgemm 256^3 | (hand-written naive 13918519, opt 4262080) | 5211891 | 2.7x naive, 0.82x opt |
 
 What the numbers say: unit-stride streams and control-thread-driven loops get the compiler within
