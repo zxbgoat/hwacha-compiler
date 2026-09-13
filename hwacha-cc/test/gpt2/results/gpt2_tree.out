@@ -1,0 +1,32 @@
+==> gpt2/gpt2.riscv start 10:38:17
+gpt2 tiny: V 1024 C 64 NH 4 L 2 T 16
+gpt2 scalar: 31212936 cycles, 1950808.50 cyc/elem
+scalar argmax: 141 153 199 696 387 387 387 803 199 387 803 977 977 166 199 977
+scalar logits sum 40071 e-3, p[0][argmax] 1896 e-6
+gpt2 hwacha-cc (lane per row): 1632504 cycles, 102031.50 cyc/elem
+hwacha argmax: 141 153 199 696 387 387 387 803 199 387 803 977 977 166 199 977
+hwacha logits sum 40071 e-3, p[0][argmax] 1896 e-6
+  encoder: 8255 cycles (0%)
+  layernorm: 67062 cycles (4%)
+  matmul: 921055 cycles (56%)
+  attention: 247951 cycles (15%)
+  gelu: 77009 cycles (4%)
+  residual: 4793 cycles (0%)
+  softmax: 305312 cycles (18%)
+max |logit diff| 0 e-6, max |prob diff| 0 e-9, argmax mismatches 0 / 16
+gpt2 lane-per-row PASS
+gpt2 hwacha-cc (reductions): 1633700 cycles, 102106.25 cyc/elem
+hwacha argmax: 141 153 199 696 387 387 387 803 199 387 803 977 977 166 199 977
+hwacha logits sum 40071 e-3, p[0][argmax] 1896 e-6
+  encoder: 8244 cycles (0%)
+  layernorm: 135447 cycles (8%)
+  matmul: 916683 cycles (56%)
+  attention: 300516 cycles (18%)
+  gelu: 76889 cycles (4%)
+  residual: 4454 cycles (0%)
+  softmax: 190855 cycles (11%)
+max |logit diff| 0 e-6, max |prob diff| 1 e-9, argmax mismatches 0 / 16
+gpt2 reductions PASS
+gpt2 PASS
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> gpt2/gpt2.riscv end 17:28:07 rc=0
