@@ -28,3 +28,6 @@ run: $(addsuffix .run,$(TESTS))
 clean:
 	rm -f *.ll *.s *.riscv
 .PRECIOUS: %.ll %.s
+# scalar-FP probe: uniform FP ops kept in vs registers (the RTL's shared-FPU path)
+sfp.s: sfp.ll $(HWCC)
+	$(HWCC) $< -o $@ --scalar-fp
