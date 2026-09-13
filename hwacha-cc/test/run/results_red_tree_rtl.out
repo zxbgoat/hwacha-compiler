@@ -1,0 +1,10 @@
+==> run/red.riscv start 10:37:50
+rsum     PASS (0 mismatches)
+rmax     PASS (0 mismatches)
+risum    PASS (0 mismatches)
+rnorm    PASS (0 mismatches)
+rln      PASS (0 mismatches)
+rrows    PASS (0 mismatches)
+ALL KERNELS PASSED
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> run/red.riscv end 10:39:04 rc=0

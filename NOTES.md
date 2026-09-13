@@ -760,3 +760,13 @@ RTL 结果（2026-09-14，GPT-2 16 token，标量 31219278）：
 比"每行一个 lane 串行循环"贵得多；只有行长（1024）且每 lane 先串行部分归约再跨 lane 时才划算（快 25%）。
 改进方向：(1) 归约树在向量单元内做——把 vl 个值存回后用递减 vl 的 vf 段做 log 步加法，避免标量循环；(2) 让控制线程
 在同一个 kernel 里同时推进多个组（组间流水），把 fence 的排空开销摊到多次归约上；(3) 编译器按行长自动选写法。
+
+### 归约树进向量单元（2026-09-14）
+三项改进的落地：
+1. 归约树：lane 存值后，控制线程发 log2(vl) 个树步 vf（`<k>_wt_t<n>`：`vfence; vlw a, va_lo; vlw b, va_hi; op; vsw a, va_lo`），
+   每步 `vsetvl n−m`、`vmca va_hi, scratch+m·esz`，m=⌈n/2⌉（非 2 的幂也对），最后 `vsetvl VL` 恢复；整数 min/max 用 vcmplt + 谓词 move。
+2. 无 fence：结果留在 scratch[0]，下一段开头 `vfence; vlsw vsRes, vsScratch` 由向量单元自己取回，控制线程不停顿，
+   多个组之间自然流水。控制线程只有在自己需要该值（区域里依赖它的均匀计算）时才懒惰地 `fence` + load。
+3. 按行长选写法只能在 kernel 层做（重新映射 NDRange），编译器给出代价模型：树步约 log2(vl) 次固定开销，无排空；
+   行短时"每 lane 串行 + 最后一步跨 lane"仍是正确写法，见下表。
+Spike：red 六个、36 回归、Rodinia、llama、gemm、GPT-2 两版全 PASS；RTL：red 六个 PASS。GPT-2 对比运行中。

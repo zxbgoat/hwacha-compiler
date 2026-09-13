@@ -115,9 +115,14 @@ public:
   // ---- cross-lane reductions (work_group_reduce_*). The worker ISA has no reduction, so the lanes
   // store their values (identity where masked off) to a scratch buffer, the vf block ends, and the
   // control thread reduces the vl values in scalar code after a fence and sends the result by vmcs.
-  struct Reduction { unsigned VS; Value *V; std::string Op; Type *Ty; };
+  // Reduction tree in the vector unit: the control thread issues log2(vl) steps of TreeLabel with
+  // shrinking vl (vsetvl) and the upper half's address in TreeVA; the segment after the reduction
+  // starts with a vfence and a scalar load of slot 0 into VS. No fence on the control thread.
+  struct Reduction { unsigned VS; Value *V; std::string Op; Type *Ty; std::string TreeLabel; };
   std::vector<Reduction> Reductions;
   unsigned ScratchVA = 0;     // va register holding the scratch buffer (set when a reduction exists)
+  unsigned TreeVA = 0;        // va register for the upper half during the tree steps
+  unsigned ScratchVS = 0;     // vs register holding the scratch address (scalar load of the result)
   bool BlockSplit = false;    // the current block was split by a reduction (no skip jump around it)
   std::vector<Segment> Segments;
   unsigned NumVV = 0, NumVP = 1, NumVS = 0, NumVW = 0;
@@ -1041,7 +1046,7 @@ bool WTGen::run() {
     if (!L->getLoopPreheader() || !L->getLoopLatch()) return fail("loop is not in simplified form");
   selectCTLoops();
   if (!materializeAddresses()) return false;
-  { unsigned Next = Streams.size(); for (auto &S : Streams) if (!S.Unit) S.StrideVA = Next++; ScratchVA = Next; }
+  { unsigned Next = Streams.size(); for (auto &S : Streams) if (!S.Unit) S.StrideVA = Next++; ScratchVA = Next; TreeVA = Next + 1; }
   KA.recomputeUniformity();
   computeNeeded();
   for (auto &KV : GatherBase) ImplicitUsers.insert(KV.second);
@@ -1342,11 +1347,31 @@ bool WTGen::emitInst(Instruction &I, unsigned Pos) {
       bool IsFloat; std::string Suf = memSuffix(T, IsFloat);
       emit("", "vs" + Suf, {Tmp.str(), "va" + std::to_string(ScratchVA)});
       (Tmp.Class == RC::VV ? VVUsed : VWUsed)[Tmp.Idx] = false;
+      if (!ScratchVS) ScratchVS = allocInputVS().Idx;
       Reg Res = alloc(RC::VS); RegOf[&I] = Res;
       int RIdx = Reductions.size();
-      Reductions.push_back({Res.Idx, &I, Op.str(), T});
       std::string Label = F.getName().str() + "_wt_x" + std::to_string(RIdx);
-      Out << "    vstop\n    .globl " << Label << "\n" << Label << ":\n";
+      std::string Tree = F.getName().str() + "_wt_t" + std::to_string(RIdx);
+      Reductions.push_back({Res.Idx, &I, Op.str(), T, Tree});
+      // tree step: s[i] = op(s[i], s[i + m]) for i < n - m, issued by the control thread with vl = n - m
+      {
+        RC C = isNarrow(X) ? RC::VW : RC::VV;
+        Reg A = alloc(C), Bv = alloc(C);
+        std::string FS = fpSuffix(T);
+        Out << "    vstop\n    .globl " << Tree << "\n" << Tree << ":\n";
+        emit("", "vfence", {});
+        emit("", "vl" + Suf, {A.str(), "va" + std::to_string(ScratchVA)});
+        emit("", "vl" + Suf, {Bv.str(), "va" + std::to_string(TreeVA)});
+        if (T->isFloatingPointTy()) emit("", (Op == "add" ? "vfadd" : Op == "max" ? "vfmax" : "vfmin") + FS, {A.str(), A.str(), Bv.str()});
+        else if (Op == "add") emit("", Mv, {A.str(), A.str(), Bv.str()});
+        else { Reg P = alloc(RC::VP); emit("", "vcmplt", {P.str(), Op == "max" ? A.str() : Bv.str(), Op == "max" ? Bv.str() : A.str()}); emit(P.str(), Mv, {A.str(), Bv.str(), "vs0"}); VPUsed[P.Idx] = false; }
+        emit("", "vs" + Suf, {A.str(), "va" + std::to_string(ScratchVA)});
+        Out << "    vstop\n";
+        (C == RC::VV ? VVUsed : VWUsed)[A.Idx] = false; (C == RC::VV ? VVUsed : VWUsed)[Bv.Idx] = false;
+      }
+      Out << "    .globl " << Label << "\n" << Label << ":\n";
+      emit("", "vfence", {});
+      emit("", "vls" + Suf, {Res.str(), "vs" + std::to_string(ScratchVS)});   // slot 0 holds the result
       if (InRegion) CTLoops[CTLoopOf[outermost(I.getParent())]].BlockTail[I.getParent()].push_back({RIdx, Label});
       else Segments.push_back({Label, -1, RIdx});
       BlockSplit = true;
@@ -1556,7 +1581,7 @@ struct CTCloner {
   Function &K; WTGen &WT; ValueToValueMapTy &VMap; raw_ostream &Err; LoopInfo &LI;
   IRBuilder<> *Outside = nullptr; Loop *L = nullptr;
   DenseMap<const BasicBlock *, BasicBlock *> *CtBlock = nullptr;   // region block -> its control-thread clone
-  Value *VL = nullptr, *Grp = nullptr;
+  Value *VL = nullptr, *Grp = nullptr; GlobalVariable *Scratch = nullptr;
   Value *clone(Value *V) {
     if (auto It = VMap.find(V); It != VMap.end()) return It->second;
     IRBuilder<> &B = *Outside;
@@ -1569,6 +1594,12 @@ struct CTCloner {
     if (auto *Phi = dyn_cast<PHINode>(I)) {
       if (Phi->getNumIncomingValues() == 1) { Value *C = clone(Phi->getIncomingValue(0)); VMap[V] = C; return C; }   // LCSSA
       Err << "hwacha-cc: control thread cannot evaluate " << *V << "\n"; return nullptr;
+    }
+    if (isWorkGroupReduce(I)) {   // result sits in scratch slot 0 after the tree: wait for the vector unit, read it
+      IRBuilder<> &RB = B;
+      asmCall(RB, "fence", "", {});
+      Value *R = RB.CreateLoad(I->getType(), Scratch);
+      VMap[V] = R; return R;
     }
     if (isa<CallBase>(I)) { Err << "hwacha-cc: control thread cannot evaluate " << *V << "\n"; return nullptr; }
     Instruction *C = I->clone();
@@ -1649,6 +1680,7 @@ static bool generateCT(Function &K, WTGen &WT, Module &CT, raw_ostream &Err) {
     auto *Scratch = new GlobalVariable(CT, AT, false, GlobalValue::InternalLinkage, Constant::getNullValue(AT), K.getName() + "_scratch");
     Scratch->setAlignment(Align(64));
     asmCall(B, "vmca va" + std::to_string(WT.ScratchVA) + ", $0", "r", {Scratch});
+    asmCall(B, "vmcs vs" + std::to_string(WT.ScratchVS) + ", $0", "r", {B.CreatePtrToInt(Scratch, I64)});
   }
   B.CreateCondBr(B.CreateICmpNE(N, ConstantInt::get(I64, 0)), Loop, Exit);
 
@@ -1693,6 +1725,7 @@ static bool generateCT(Function &K, WTGen &WT, Module &CT, raw_ostream &Err) {
   // (they can depend on the offset / vl), so start from the entry-level map each time.
   ValueToValueMapTy GMap; for (auto KV : VMap) GMap[KV.first] = KV.second;
   CTCloner Cl{K, WT, GMap, Err, KLI}; Cl.VL = VL; Cl.Grp = Grp; Cl.Outside = &B;
+  Cl.Scratch = WT.Reductions.empty() ? nullptr : CT.getGlobalVariable((K.getName() + "_scratch").str(), true);
   DenseMap<BasicBlock *, Value *> Reached;
   std::function<Value *(BasicBlock *)> reached = [&](BasicBlock *BB) -> Value * {
     if (auto It = Reached.find(BB); It != Reached.end()) return It->second;
@@ -1725,33 +1758,21 @@ static bool generateCT(Function &K, WTGen &WT, Module &CT, raw_ostream &Err) {
   GlobalVariable *ScratchGV = WT.Reductions.empty() ? nullptr : CT.getGlobalVariable((K.getName() + "_scratch").str(), true);
   auto emitReduce = [&](int RIdx) -> bool {
     const WTGen::Reduction &R = WT.Reductions[RIdx];
-    Type *T = R.Ty;
-    asmCall(B, "fence", "", {});
+    uint64_t ESz = K.getParent()->getDataLayout().getTypeStoreSize(R.Ty);
+    FunctionType *VLT = FunctionType::get(I64, {I64}, false);
     BasicBlock *Pre = B.GetInsertBlock();
-    BasicBlock *LoopB = BasicBlock::Create(Ctx, "red_loop", F), *Done = BasicBlock::Create(Ctx, "red_done", F);
-    Value *Id;
-    if (T->isFloatingPointTy()) Id = R.Op == "add" ? ConstantFP::get(T, 0.0) : ConstantFP::getInfinity(T, R.Op == "max");
-    else Id = R.Op == "add" ? ConstantInt::get(T, 0) : R.Op == "max" ? ConstantInt::get(T, APInt::getSignedMinValue(T->getIntegerBitWidth())) : ConstantInt::get(T, APInt::getSignedMaxValue(T->getIntegerBitWidth()));
-    B.CreateBr(LoopB);
+    BasicBlock *LoopB = BasicBlock::Create(Ctx, "tree_loop", F), *Done = BasicBlock::Create(Ctx, "tree_done", F);
+    B.CreateCondBr(B.CreateICmpUGT(VL, ConstantInt::get(I64, 1)), LoopB, Done);
     B.SetInsertPoint(LoopB);
-    PHINode *I = B.CreatePHI(I64, 2, "ri"), *Acc = B.CreatePHI(T, 2, "racc");
-    Value *Slot = B.CreateGEP(T, ScratchGV, I);   // lanes stored with the element's width
-    Value *V = B.CreateLoad(T, Slot);
-    Value *Next;
-    if (R.Op == "add") Next = T->isFloatingPointTy() ? B.CreateFAdd(Acc, V) : B.CreateAdd(Acc, V);
-    else {
-      Value *Cmp = T->isFloatingPointTy() ? (R.Op == "max" ? B.CreateFCmpOGT(V, Acc) : B.CreateFCmpOLT(V, Acc))
-                                          : (R.Op == "max" ? B.CreateICmpSGT(V, Acc) : B.CreateICmpSLT(V, Acc));
-      Next = B.CreateSelect(Cmp, V, Acc);
-    }
-    Value *In = B.CreateAdd(I, ConstantInt::get(I64, 1));
-    I->addIncoming(ConstantInt::get(I64, 0), Pre); I->addIncoming(In, LoopB);
-    Acc->addIncoming(Id, Pre); Acc->addIncoming(Next, LoopB);
-    B.CreateCondBr(B.CreateICmpULT(In, VL), LoopB, Done);
+    PHINode *N = B.CreatePHI(I64, 2, "tn");
+    Value *M = B.CreateLShr(B.CreateAdd(N, ConstantInt::get(I64, 1)), ConstantInt::get(I64, 1));   // m = ceil(n/2)
+    B.CreateCall(InlineAsm::get(VLT, "vsetvl $0, $1", "=r,r", true), {B.CreateSub(N, M)});
+    asmCall(B, "vmca va" + std::to_string(WT.TreeVA) + ", $0", "r", {B.CreatePtrAdd(ScratchGV, B.CreateMul(M, ConstantInt::get(I64, ESz)))});
+    asmCall(B, "vf 0($0)", "r", {segSym(R.TreeLabel)});
+    N->addIncoming(VL, Pre); N->addIncoming(M, LoopB);
+    B.CreateCondBr(B.CreateICmpUGT(M, ConstantInt::get(I64, 1)), LoopB, Done);
     B.SetInsertPoint(Done);
-    Value *Payload = toI64Payload(B, Next, Err); if (!Payload) return false;
-    asmCall(B, "vmcs vs" + std::to_string(R.VS) + ", $0", "r", {Payload});
-    GMap[R.V] = Next;
+    B.CreateCall(InlineAsm::get(VLT, "vsetvl $0, $1", "=r,r", true), {VL});   // back to the group's vector length
     return true;
   };
   // A control-thread region: the loop nest's CFG mirrored in scalar code, one vf per kernel block
