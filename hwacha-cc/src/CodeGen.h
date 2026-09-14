@@ -16,7 +16,8 @@ struct CodeGenOptions {
   bool NoSkip = false;     // do not emit consensual jumps around inactive blocks (ablation)
   bool NoCoalesce = false; // do not coalesce loop-carried values into their phi register (ablation)
   bool ScalarFP = false;   // allow scalar (vs) floating-point ops in the block (hangs on Chipyard RTL)
-  bool NoSubwordRMW = false; // emit masked sub-word unit-stride stores directly (hangs on Chipyard RTL when sparse)
+  bool SubwordRMW = false;   // lower masked sub-word unit-stride stores to load/select/store: workaround for the
+                             // unpatched Hwacha RTL (store-credit overflow, see patches/); default: emit them directly
   bool NoCTLoops = false;  // keep every loop inside the vf block (ablation: no control-thread-driven loops)
 };
 

@@ -38,7 +38,7 @@ Only first-party work is tracked. Large upstream trees and build products are **
 |---|---|---|
 | `esp-isa-sim.patch` | `esp-isa-sim` (Spike) | `insn_t::bits()` undefined shift for 8-byte insns (every worker insn reads 0 under GCC 13); missing `<cstdint>` |
 | `esp-isa-sim-hwacha-trace.patch` | `esp-isa-sim` | optional `H:` commit-log of Hwacha commands, for debugging vf blocks |
-| `chipyard-hwacha-rtl-fixes.patch` | `chipyard/generators/hwacha` | four integration bugs (icache row width, frontend row reuse, SMU TLB `prv`, predicate ALL reduction), the FPU type-tag fix, and plusarg-gated VMU/TileLink trace |
+| `chipyard-hwacha-rtl-fixes.patch` | `chipyard/generators/hwacha` | four integration bugs (icache row width, frontend row reuse, SMU TLB `prv`, predicate ALL reduction), the FPU type-tag fix, the VMU store-credit overflow fix (masked sub-word store deadlock), and plusarg-gated VMU/TileLink/credit traces |
 | `chipyard-rocketchip-fpu-fix.patch` | `chipyard/generators/rocket-chip` | RoCC FPU port was tied to `DontCare` after the arbiter connection, hanging Hwacha scalar FP |
 
 ## Prerequisites
@@ -149,7 +149,7 @@ Each kernel `k(args...)` becomes a C-callable `void k_ct(long n, args...)` that 
 NDRange of `n` work-items and returns after a `fence`. `__local`/`barrier` are supported for one
 work-group per stripmine; `hwacha_group_size` caps the vector length to the work-group size.
 Useful flags: `--analyze`, `--kstats`, `--keep`, `--verbose`; ablations `--no-ct-loops`, `--no-skip`,
-`--no-coalesce`, `--no-v32`; and `--scalar-fp` / `--no-subword-rmw` (see "Known RTL constraints").
+`--no-coalesce`, `--no-v32`; `--scalar-fp` (vs-destination FP); `--subword-rmw` (re-enable the masked sub-word store workaround for an unpatched RTL).
 
 ## Reproduce the tests
 
@@ -195,16 +195,20 @@ kernels; the gemm gap is register blocking. NOTES.md has the ablations and per-k
 
 ## Known RTL constraints and fixes
 
-The four Chipyard-integration bugs and the two scalar-FP bugs are **fixed** by the patches above
-(`sfp` test passes; loops run). The compiler still works around two hardware issues:
+All six RTL bugs found in this project are **fixed** by the patches above: the four Chipyard-integration
+bugs (no loop ran on the RTL), the two scalar-FP bugs (FPU type tags inverted; RoCC FPU port tied to
+`DontCare` after the arbiter connection), and the VMU store-credit overflow (a masked byte-store beat
+credited at request time in the same cycle as an 8-element store response wrapped 8+8 to 0 in a 4-bit
+add, so the sequencer waited forever for the outstanding stores — the "masked sub-word store deadlock").
+`sfp`, `pfmin` and `bfs` run on the patched RTL without any compiler workaround.
 
-- **Masked sub-word unit-stride store** hangs the VMU on sparse patterns — a store-credit leak on the
-  byte-store response path (localized in NOTES.md, not yet fixed in RTL). The compiler lowers masked
-  byte/half stores to load/select/store; `--no-subword-rmw` disables that workaround.
+What the compiler still does because of the hardware:
+
 - **Predicate-logic ops are never masked** (Spike and RTL agree): conditional predicate moves are
   3-input `vpop` muxes.
-- A **consensual jump (`vcjal`) costs ~50 cycles**, so blocks are skipped only when they hold ≥2
+- A **consensual jump (`vcjal`) costs ~50 cycles**: blocks are skipped only when they hold ≥2
   instructions and never at loop headers; uniform loops leave the vf block entirely (control-thread
   regions).
-- Scalar (vs-destination) FP is now functional on RTL after the FPU patches; the compiler still keeps
-  FP in vector registers by default (`needsFPU`), `--scalar-fp` opts into vs-destination FP.
+- FP work is kept in vector registers by default (`needsFPU`); `--scalar-fp` opts into vs-destination
+  FP, which needs the FPU patches. `--subword-rmw` lowers masked sub-word stores to load/select/store
+  for an RTL without the store-credit patch.

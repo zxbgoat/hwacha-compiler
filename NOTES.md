@@ -809,3 +809,18 @@ Rocket FPU 三处加握手打印后定位到两个独立的 bug：
    (RocketTile FPU 端口 DontCare 守卫)。补丁里还含 plusarg 门控的 TileLink/VMU/MRT 跟踪(默认关闭,用于性能模型和信用泄漏调试)。
 3. **多线程仿真器速度:** VERILATOR_THREADS=8 + SIM_OPT_CXXFLAGS=-O2,实测 **约 14000 周期/秒**,对比原单线程 -O1 的 2700,
    快 5.2 倍。GPT-2 那种约 3100 万周期的运行从 6 小时降到约 40 分钟。构建脚本 `scripts/build-sim.sh`。
+
+## 稀疏字节 store 死锁的根因与修复（2026-09-14 晚）
+用 `+hwacha_sret_trace=1` 逐 beat 对账后发现:9 个真正写内存的 beat 都发出了 PutPartial、都收到了 AccessAck、VMT 也都
+读回了正确的 ecnt(8,1,1,…)并置了 sret_resp——响应路径完全正常。泄漏在最后一行:
+`io.sret.cnt := Mux(req_en, req_cnt, 0) + Mux(resp_en, resp_cnt, 0)`。两个操作数都是 4 位(`CInt.decode()` 给 1..8),
+Chisel 的 `+` 不扩位,先按 4 位截断再赋给 5 位端口。字节模式下一个全掩掉 beat 的请求时归还(8)与一个 8 元素 store 的
+响应归还(8)落在同一拍 → 16 截成 0 → 两份信用一起丢,正好是 MRT 卡在 496/512 的 16。
+- 只有字节模式的 beat 才有 8 个元素(字模式最多 4+4=8 不溢出)→ 只有子字 store 触发;
+- 需要两种归还事件同拍 → 依赖访存时序,单 lane 探针撞不上,bfs 能撞上;
+- 与"只有 lane 0 活跃"无关,之前的表征是巧合。
+修复:`+` 改 `+&`(扩位加)。属于 Hwacha 原有 bug(不是 Chipyard 集成腐烂)。
+验证(修复后的仿真器,22:40 构建):bfs 去掉绕过 PASS(607864 周期,比带绕过的 621840 还快 2%),pfmin_raw 四个 kernel PASS,
+red、spec 无回归;Spike 上 36 回归 + Rodinia + llama + GPT-2 用新默认全 PASS。
+编译器默认改为直接发射掩码子字 store;`--no-subword-rmw` 改名为 `--subword-rmw`(为未打补丁的 RTL 保留绕过)。
+至此本项目发现的 6 个 RTL bug 全部修复,补丁在 patches/。

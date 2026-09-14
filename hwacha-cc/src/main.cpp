@@ -25,7 +25,7 @@ static cl::opt<bool> NoCoalesce("no-coalesce", cl::desc("ablation: no phi coales
 static cl::opt<bool> ScalarFP("scalar-fp", cl::desc("allow uniform floating-point ops in vs registers (Spike only)"));
 static cl::opt<bool> VerboseOpt("verbose", cl::desc("print code generation diagnostics"));
 static cl::opt<bool> NoCTLoops("no-ct-loops", cl::desc("do not run uniform loops on the control thread (ablation)"));
-static cl::opt<bool> NoSubwordRMW("no-subword-rmw", cl::desc("emit masked sub-word stores directly instead of load/select/store (Spike only)"));
+static cl::opt<bool> SubwordRMW("subword-rmw", cl::desc("lower masked sub-word stores to load/select/store (workaround for the unpatched Hwacha RTL store-credit bug)"));
 static cl::opt<std::string> LLCPath("llc", cl::desc("path to llc"), cl::init(LLC_DEFAULT_PATH));
 
 int main(int argc, char **argv) {
@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
   CT->setTargetTriple(M->getTargetTriple());
   CT->setDataLayout(M->getDataLayout());
   std::string WTText; raw_string_ostream WT(WTText);
-  hwacha::CodeGenOptions Opts; Opts.Stats = Stats; Opts.NoV32 = NoV32; Opts.NoSkip = NoSkip; Opts.NoCoalesce = NoCoalesce; Opts.ScalarFP = ScalarFP; Opts.NoSubwordRMW = NoSubwordRMW; Opts.NoCTLoops = NoCTLoops; Opts.Verbose = VerboseOpt;
+  hwacha::CodeGenOptions Opts; Opts.Stats = Stats; Opts.NoV32 = NoV32; Opts.NoSkip = NoSkip; Opts.NoCoalesce = NoCoalesce; Opts.ScalarFP = ScalarFP; Opts.SubwordRMW = SubwordRMW; Opts.NoCTLoops = NoCTLoops; Opts.Verbose = VerboseOpt;
   int n = 0;
   for (Function &F : *M) {
     if (!hwacha::isKernel(F)) continue;

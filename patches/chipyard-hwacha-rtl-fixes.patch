@@ -178,7 +178,7 @@ index f70e839..fafc73a 100644
    io.result.bits.cond := cond
  }
 diff --git a/src/main/scala/vmu-memif.scala b/src/main/scala/vmu-memif.scala
-index 71e7222..5a8ffb4 100644
+index 71e7222..85183a2 100644
 --- a/src/main/scala/vmu-memif.scala
 +++ b/src/main/scala/vmu-memif.scala
 @@ -58,6 +58,16 @@ class MBox(implicit p: Parameters) extends VMUModule()(p) {
@@ -198,9 +198,17 @@ index 71e7222..5a8ffb4 100644
    vmt.io.w.valid := fire(vmt_ready, pred)
    req.valid := fire(req_ready, pred)
  
-@@ -109,6 +119,17 @@ class MBox(implicit p: Parameters) extends VMUModule()(p) {
+@@ -106,9 +116,24 @@ class MBox(implicit p: Parameters) extends VMUModule()(p) {
+   val sret_resp_cnt = vmt.io.r.record.store().ecnt.decode()
+ 
+   io.sret.update := Bool(true)
++  // Both counts are 4 bits (1..8 elements). Chisel's `+` does not widen, so when a masked beat is
++  // credited at request time in the same cycle a store response of 8 elements arrives (byte mode),
++  // 8 + 8 wrapped to 0 and both credits were lost: the sequencer then waited forever for the
++  // outstanding stores (the "masked sub-word store deadlock"). Use the widening add.
    io.sret.cnt :=
-     Mux(sret_req_en, sret_req_cnt, 0.U) +
+-    Mux(sret_req_en, sret_req_cnt, 0.U) +
++    Mux(sret_req_en, sret_req_cnt, 0.U) +&
      Mux(sret_resp_en, sret_resp_cnt, 0.U)
 +
 +  // +hwacha_sret_trace=1: pin the byte-store credit leak — request vs response accounting per beat
@@ -216,7 +224,7 @@ index 71e7222..5a8ffb4 100644
  }
  
  class VMUTileLink(edge: TLEdgeOut)(implicit p: Parameters) extends VMUModule()(p) {
-@@ -154,6 +175,21 @@ class VMUTileLink(edge: TLEdgeOut)(implicit p: Parameters) extends VMUModule()(p
+@@ -154,6 +179,21 @@ class VMUTileLink(edge: TLEdgeOut)(implicit p: Parameters) extends VMUModule()(p
    val resp_en = edge.hasData(grant.bits) || resp.bits.store
    grant.ready := !resp_en || resp.ready
  

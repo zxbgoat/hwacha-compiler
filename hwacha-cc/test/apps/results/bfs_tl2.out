@@ -1,0 +1,593 @@
+HTL A cyc=              377488 op=4 addr=8000a080 src= 0 wait=    0
+HTL A cyc=              377489 op=4 addr=8000a090 src= 1 wait=    0
+HTL A cyc=              377490 op=4 addr=8000a090 src= 2 wait=    0
+HTL A cyc=              377491 op=4 addr=8000a0a0 src= 3 wait=    0
+HTL A cyc=              377492 op=4 addr=8000a0a0 src= 4 wait=    0
+HTL A cyc=              377493 op=4 addr=8000a0b0 src= 5 wait=    0
+HTL A cyc=              377494 op=4 addr=8000a0b0 src= 6 wait=    0
+HTL A cyc=              377495 op=4 addr=8000a0c0 src= 7 wait=    0
+HTL A cyc=              377496 op=4 addr=8000a0c0 src= 8 wait=    0
+HTL A cyc=              377497 op=4 addr=8000a0d0 src= 9 wait=    0
+HTL A cyc=              377498 op=4 addr=8000a0d0 src=10 wait=    0
+HTL A cyc=              377499 op=4 addr=8000a0e0 src=11 wait=    0
+HTL A cyc=              377500 op=4 addr=8000a0e0 src=12 wait=    0
+HTL A cyc=              377501 op=4 addr=8000a0f0 src=13 wait=    0
+HTL D cyc=              377501 op=1 src= 7 wait=    0
+HTL A cyc=              377502 op=4 addr=8000a0f0 src= 7 wait=    0
+HTL D cyc=              377502 op=1 src= 8 wait=    0
+HTL A cyc=              377503 op=4 addr=8000a100 src= 8 wait=    0
+HTL A cyc=              377504 op=4 addr=8000a100 src=14 wait=    0
+HTL D cyc=              377504 op=1 src= 0 wait=    0
+HTL A cyc=              377505 op=4 addr=8000a110 src= 0 wait=    0
+HTL D cyc=              377505 op=1 src= 9 wait=    0
+HTL A cyc=              377506 op=4 addr=8000a110 src= 9 wait=    0
+HTL A cyc=              377507 op=4 addr=8000a120 src=15 wait=    0
+HTL D cyc=              377507 op=1 src=10 wait=    0
+HTL A cyc=              377508 op=4 addr=8000a120 src=10 wait=    0
+HTL D cyc=              377508 op=1 src= 1 wait=    0
+HTL D cyc=              377509 op=1 src=11 wait=    0
+HTL D cyc=              377510 op=1 src= 8 wait=    0
+HTL D cyc=              377511 op=1 src= 2 wait=    0
+HTL D cyc=              377512 op=1 src=12 wait=    0
+HTL D cyc=              377513 op=1 src=14 wait=    0
+HTL D cyc=              377514 op=1 src= 3 wait=    0
+HTL D cyc=              377515 op=1 src=13 wait=    0
+HTL D cyc=              377516 op=1 src= 0 wait=    0
+HTL D cyc=              377517 op=1 src= 4 wait=    0
+HTL D cyc=              377518 op=1 src= 7 wait=    0
+HTL D cyc=              377519 op=1 src= 9 wait=    0
+HTL D cyc=              377520 op=1 src= 5 wait=    0
+HTL D cyc=              377521 op=1 src=15 wait=    0
+HTL D cyc=              377522 op=1 src= 6 wait=    0
+HTL D cyc=              377523 op=1 src=10 wait=    0
+HTL A cyc=              377683 op=1 addr=8000a080 src= 0 wait=    0
+SREQB store beat: pred=1 mt_b=1 ecnt= 8 wtag= 0 vmt_wr=1 vmt_wready=1 sret_req=0 sret_reqcnt= 8
+HTL D cyc=              377695 op=0 src= 0 wait=    0
+SRETB store resp: rtag= 0 is_store=1 reccnt= 8 sret_resp=1
+HTL A cyc=              377712 op=4 addr=80012880 src= 0 wait=    0
+HTL D cyc=              377724 op=1 src= 0 wait=    0
+HTL A cyc=              377886 op=4 addr=80012880 src= 0 wait=    0
+HTL D cyc=              377893 op=1 src= 0 wait=    0
+HTL A cyc=              378054 op=4 addr=8000a880 src= 0 wait=    0
+HTL D cyc=              378060 op=1 src= 0 wait=    0
+HTL A cyc=              378222 op=4 addr=80009080 src= 0 wait=    0
+HTL D cyc=              378238 op=1 src= 0 wait=    0
+HTL A cyc=              378393 op=4 addr=80007080 src= 0 wait=    0
+HTL D cyc=              378409 op=1 src= 0 wait=    0
+HTL A cyc=              378438 op=1 addr=80007080 src= 0 wait=    0
+SREQB store beat: pred=1 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=1 vmt_wready=1 sret_req=0 sret_reqcnt= 1
+HTL D cyc=              378450 op=0 src= 0 wait=    0
+SRETB store resp: rtag= 0 is_store=1 reccnt= 1 sret_resp=1
+HTL A cyc=              378606 op=1 addr=80009880 src= 0 wait=    0
+SREQB store beat: pred=1 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=1 vmt_wready=1 sret_req=0 sret_reqcnt= 1
+HTL D cyc=              378622 op=0 src= 0 wait=    0
+SRETB store resp: rtag= 0 is_store=1 reccnt= 1 sret_resp=1
+HTL A cyc=              378774 op=4 addr=80012880 src= 0 wait=    0
+HTL D cyc=              378780 op=1 src= 0 wait=    0
+HTL A cyc=              378942 op=4 addr=80012880 src= 0 wait=    0
+HTL D cyc=              378948 op=1 src= 0 wait=    0
+HTL A cyc=              379458 op=4 addr=8000a880 src= 0 wait=    0
+HTL D cyc=              379464 op=1 src= 0 wait=    0
+HTL A cyc=              379626 op=4 addr=80009420 src= 0 wait=    0
+HTL D cyc=              379644 op=1 src= 0 wait=    0
+HTL A cyc=              379799 op=4 addr=80007080 src= 0 wait=    0
+HTL D cyc=              379805 op=1 src= 0 wait=    0
+HTL A cyc=              379844 op=1 addr=80007ef0 src= 0 wait=    0
+SREQB store beat: pred=1 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=1 vmt_wready=1 sret_req=0 sret_reqcnt= 1
+HTL D cyc=              379863 op=0 src= 0 wait=    0
+SRETB store resp: rtag= 0 is_store=1 reccnt= 1 sret_resp=1
+HTL A cyc=              380012 op=1 addr=80009c20 src= 0 wait=    0
+SREQB store beat: pred=1 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=1 vmt_wready=1 sret_req=0 sret_reqcnt= 1
+HTL D cyc=              380030 op=0 src= 0 wait=    0
+SRETB store resp: rtag= 0 is_store=1 reccnt= 1 sret_resp=1
+HTL A cyc=              380180 op=4 addr=80012880 src= 0 wait=    0
+HTL D cyc=              380186 op=1 src= 0 wait=    0
+HTL A cyc=              380348 op=4 addr=80012880 src= 0 wait=    0
+HTL D cyc=              380354 op=1 src= 0 wait=    0
+HTL A cyc=              380863 op=4 addr=8000a890 src= 0 wait=    0
+HTL D cyc=              380869 op=1 src= 0 wait=    0
+HTL A cyc=              381031 op=4 addr=80009510 src= 0 wait=    0
+HTL D cyc=              381049 op=1 src= 0 wait=    0
+HTL A cyc=              381204 op=4 addr=80007080 src= 0 wait=    0
+HTL D cyc=              381210 op=1 src= 0 wait=    0
+HTL A cyc=              381249 op=1 addr=800082b0 src= 0 wait=    0
+SREQB store beat: pred=1 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=1 vmt_wready=1 sret_req=0 sret_reqcnt= 1
+HTL D cyc=              381268 op=0 src= 0 wait=    0
+SRETB store resp: rtag= 0 is_store=1 reccnt= 1 sret_resp=1
+HTL A cyc=              381417 op=1 addr=80009d10 src= 0 wait=    0
+SREQB store beat: pred=1 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=1 vmt_wready=1 sret_req=0 sret_reqcnt= 1
+HTL D cyc=              381435 op=0 src= 0 wait=    0
+SRETB store resp: rtag= 0 is_store=1 reccnt= 1 sret_resp=1
+HTL A cyc=              381585 op=4 addr=80012880 src= 0 wait=    0
+HTL D cyc=              381591 op=1 src= 0 wait=    0
+HTL A cyc=              381753 op=4 addr=80012880 src= 0 wait=    0
+HTL D cyc=              381759 op=1 src= 0 wait=    0
+HTL A cyc=              382268 op=4 addr=8000a890 src= 0 wait=    0
+HTL D cyc=              382274 op=1 src= 0 wait=    0
+HTL A cyc=              382436 op=4 addr=800090e0 src= 0 wait=    0
+HTL D cyc=              382454 op=1 src= 0 wait=    0
+HTL A cyc=              382609 op=4 addr=80007080 src= 0 wait=    0
+HTL D cyc=              382615 op=1 src= 0 wait=    0
+HTL A cyc=              382654 op=1 addr=800071e0 src= 0 wait=    0
+SREQB store beat: pred=1 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=1 vmt_wready=1 sret_req=0 sret_reqcnt= 1
+HTL D cyc=              382660 op=0 src= 0 wait=    0
+SRETB store resp: rtag= 0 is_store=1 reccnt= 1 sret_resp=1
+HTL A cyc=              382822 op=1 addr=800098e0 src= 0 wait=    0
+SREQB store beat: pred=1 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=1 vmt_wready=1 sret_req=0 sret_reqcnt= 1
+HTL D cyc=              382840 op=0 src= 0 wait=    0
+SRETB store resp: rtag= 0 is_store=1 reccnt= 1 sret_resp=1
+HTL A cyc=              382990 op=4 addr=80012880 src= 0 wait=    0
+HTL D cyc=              382996 op=1 src= 0 wait=    0
+HTL A cyc=              383158 op=4 addr=80012880 src= 0 wait=    0
+HTL D cyc=              383164 op=1 src= 0 wait=    0
+HTL A cyc=              383952 op=4 addr=8000a130 src= 0 wait=    0
+HTL A cyc=              383953 op=4 addr=8000a130 src= 1 wait=    0
+HTL A cyc=              383954 op=4 addr=8000a140 src= 2 wait=    0
+HTL A cyc=              383955 op=4 addr=8000a140 src= 3 wait=    0
+HTL A cyc=              383956 op=4 addr=8000a150 src= 4 wait=    0
+HTL A cyc=              383957 op=4 addr=8000a150 src= 5 wait=    0
+HTL A cyc=              383958 op=4 addr=8000a160 src= 6 wait=    0
+HTL D cyc=              383958 op=1 src= 0 wait=    0
+HTL A cyc=              383959 op=4 addr=8000a160 src= 0 wait=    0
+HTL D cyc=              383959 op=1 src= 1 wait=    0
+HTL A cyc=              383960 op=4 addr=8000a170 src= 1 wait=    0
+HTL A cyc=              383961 op=4 addr=8000a170 src= 7 wait=    0
+HTL A cyc=              383962 op=4 addr=8000a180 src= 8 wait=    0
+HTL A cyc=              383963 op=4 addr=8000a180 src= 9 wait=    0
+HTL A cyc=              383964 op=4 addr=8000a190 src=10 wait=    0
+HTL A cyc=              383965 op=4 addr=8000a190 src=11 wait=    0
+HTL A cyc=              383966 op=4 addr=8000a1a0 src=12 wait=    0
+HTL A cyc=              383967 op=4 addr=8000a1a0 src=13 wait=    0
+HTL A cyc=              383968 op=4 addr=8000a1b0 src=14 wait=    0
+HTL A cyc=              383969 op=4 addr=8000a1b0 src=15 wait=    0
+HTL A cyc=              383970 op=4 addr=8000a1c0 src=16 wait=    0
+HTL D cyc=              383970 op=1 src= 2 wait=    0
+HTL A cyc=              383971 op=4 addr=8000a1c0 src= 2 wait=    0
+HTL A cyc=              383972 op=4 addr=8000a1d0 src=17 wait=    0
+HTL D cyc=              383973 op=1 src= 3 wait=    0
+HTL D cyc=              383974 op=1 src= 4 wait=    0
+HTL D cyc=              383975 op=1 src= 5 wait=    0
+HTL D cyc=              383977 op=1 src= 6 wait=    0
+HTL D cyc=              383978 op=1 src= 0 wait=    0
+HTL D cyc=              383980 op=1 src= 8 wait=    0
+HTL D cyc=              383981 op=1 src= 1 wait=    0
+HTL D cyc=              383983 op=1 src= 7 wait=    0
+HTL D cyc=              383984 op=1 src= 9 wait=    0
+HTL D cyc=              383985 op=1 src=10 wait=    0
+HTL D cyc=              383986 op=1 src=11 wait=    0
+HTL D cyc=              383987 op=1 src=12 wait=    0
+HTL D cyc=              383988 op=1 src=13 wait=    0
+HTL D cyc=              383990 op=1 src=16 wait=    0
+HTL D cyc=              383991 op=1 src=14 wait=    0
+HTL D cyc=              383993 op=1 src=15 wait=    0
+HTL D cyc=              383994 op=1 src= 2 wait=    0
+HTL D cyc=              383995 op=1 src=17 wait=    0
+HTL A cyc=              385253 op=4 addr=8000a1d0 src= 0 wait=    0
+HTL A cyc=              385254 op=4 addr=8000a1e0 src= 1 wait=    0
+HTL A cyc=              385255 op=4 addr=8000a1e0 src= 2 wait=    0
+HTL A cyc=              385256 op=4 addr=8000a1f0 src= 3 wait=    0
+HTL A cyc=              385257 op=4 addr=8000a1f0 src= 4 wait=    0
+HTL A cyc=              385258 op=4 addr=8000a200 src= 5 wait=    0
+HTL A cyc=              385259 op=4 addr=8000a200 src= 6 wait=    0
+HTL D cyc=              385259 op=1 src= 0 wait=    0
+HTL A cyc=              385260 op=4 addr=8000a210 src= 0 wait=    0
+HTL D cyc=              385260 op=1 src= 1 wait=    0
+HTL A cyc=              385261 op=4 addr=8000a210 src= 1 wait=    0
+HTL D cyc=              385261 op=1 src= 2 wait=    0
+HTL A cyc=              385262 op=4 addr=8000a220 src= 2 wait=    0
+HTL D cyc=              385262 op=1 src= 3 wait=    0
+HTL A cyc=              385263 op=4 addr=8000a220 src= 3 wait=    0
+HTL D cyc=              385263 op=1 src= 4 wait=    0
+HTL A cyc=              385264 op=4 addr=8000a230 src= 4 wait=    0
+HTL A cyc=              385265 op=4 addr=8000a230 src= 7 wait=    0
+HTL A cyc=              385266 op=4 addr=8000a240 src= 8 wait=    0
+HTL A cyc=              385267 op=4 addr=8000a240 src= 9 wait=    0
+HTL A cyc=              385268 op=4 addr=8000a250 src=10 wait=    0
+HTL A cyc=              385269 op=4 addr=8000a250 src=11 wait=    0
+HTL A cyc=              385270 op=4 addr=8000a260 src=12 wait=    0
+HTL A cyc=              385271 op=4 addr=8000a260 src=13 wait=    0
+HTL A cyc=              385272 op=4 addr=8000a270 src=14 wait=    0
+HTL A cyc=              385273 op=4 addr=8000a270 src=15 wait=    0
+HTL D cyc=              385274 op=1 src= 5 wait=    0
+HTL D cyc=              385277 op=1 src= 6 wait=    0
+HTL D cyc=              385279 op=1 src= 0 wait=    0
+HTL D cyc=              385280 op=1 src= 1 wait=    0
+HTL D cyc=              385281 op=1 src= 2 wait=    0
+HTL D cyc=              385282 op=1 src= 3 wait=    0
+HTL D cyc=              385284 op=1 src= 8 wait=    0
+HTL D cyc=              385285 op=1 src= 4 wait=    0
+HTL D cyc=              385287 op=1 src= 7 wait=    0
+HTL D cyc=              385288 op=1 src= 9 wait=    0
+HTL D cyc=              385289 op=1 src=10 wait=    0
+HTL D cyc=              385290 op=1 src=11 wait=    0
+HTL D cyc=              385291 op=1 src=12 wait=    0
+HTL D cyc=              385292 op=1 src=13 wait=    0
+HTL D cyc=              385293 op=1 src=14 wait=    0
+HTL D cyc=              385294 op=1 src=15 wait=    0
+HTL A cyc=              386528 op=4 addr=8000a280 src= 0 wait=    0
+HTL A cyc=              386529 op=4 addr=8000a280 src= 1 wait=    0
+HTL A cyc=              386530 op=4 addr=8000a290 src= 2 wait=    0
+HTL A cyc=              386531 op=4 addr=8000a290 src= 3 wait=    0
+HTL A cyc=              386532 op=4 addr=8000a2a0 src= 4 wait=    0
+HTL A cyc=              386533 op=4 addr=8000a2a0 src= 5 wait=    0
+HTL A cyc=              386534 op=4 addr=8000a2b0 src= 6 wait=    0
+HTL A cyc=              386535 op=4 addr=8000a2b0 src= 7 wait=    0
+HTL A cyc=              386536 op=4 addr=8000a2c0 src= 8 wait=    0
+HTL A cyc=              386537 op=4 addr=8000a2c0 src= 9 wait=    0
+HTL A cyc=              386538 op=4 addr=8000a2d0 src=10 wait=    0
+HTL A cyc=              386539 op=4 addr=8000a2d0 src=11 wait=    0
+HTL A cyc=              386540 op=4 addr=8000a2e0 src=12 wait=    0
+HTL A cyc=              386541 op=4 addr=8000a2e0 src=13 wait=    0
+HTL A cyc=              386542 op=4 addr=8000a2f0 src=14 wait=    0
+HTL A cyc=              386543 op=4 addr=8000a2f0 src=15 wait=    0
+HTL A cyc=              386544 op=4 addr=8000a300 src=16 wait=    0
+HTL D cyc=              386544 op=1 src= 0 wait=    0
+HTL A cyc=              386545 op=4 addr=8000a300 src= 0 wait=    0
+HTL A cyc=              386546 op=4 addr=8000a310 src=17 wait=    0
+HTL A cyc=              386547 op=4 addr=8000a310 src=18 wait=    0
+HTL D cyc=              386547 op=1 src= 1 wait=    0
+HTL A cyc=              386548 op=4 addr=8000a320 src= 1 wait=    0
+HTL D cyc=              386548 op=1 src= 2 wait=    0
+HTL D cyc=              386549 op=1 src= 3 wait=    0
+HTL D cyc=              386550 op=1 src=16 wait=    0
+HTL D cyc=              386551 op=1 src= 4 wait=    0
+HTL D cyc=              386552 op=1 src= 0 wait=    0
+HTL D cyc=              386553 op=1 src= 5 wait=    0
+HTL D cyc=              386554 op=1 src= 8 wait=    0
+HTL D cyc=              386555 op=1 src=17 wait=    0
+HTL D cyc=              386557 op=1 src= 6 wait=    0
+HTL D cyc=              386558 op=1 src=18 wait=    0
+HTL D cyc=              386559 op=1 src= 7 wait=    0
+HTL D cyc=              386560 op=1 src= 9 wait=    0
+HTL D cyc=              386561 op=1 src= 1 wait=    0
+HTL D cyc=              386562 op=1 src=10 wait=    0
+HTL D cyc=              386563 op=1 src=11 wait=    0
+HTL D cyc=              386564 op=1 src=12 wait=    0
+HTL D cyc=              386565 op=1 src=13 wait=    0
+HTL D cyc=              386566 op=1 src=14 wait=    0
+HTL D cyc=              386567 op=1 src=15 wait=    0
+HTL A cyc=              387838 op=4 addr=8000a320 src= 0 wait=    0
+HTL A cyc=              387839 op=4 addr=8000a330 src= 1 wait=    0
+HTL A cyc=              387840 op=4 addr=8000a330 src= 2 wait=    0
+HTL A cyc=              387841 op=4 addr=8000a340 src= 3 wait=    0
+HTL A cyc=              387842 op=4 addr=8000a340 src= 4 wait=    0
+HTL A cyc=              387843 op=4 addr=8000a350 src= 5 wait=    0
+HTL A cyc=              387844 op=4 addr=8000a350 src= 6 wait=    0
+HTL D cyc=              387844 op=1 src= 0 wait=    0
+HTL A cyc=              387845 op=4 addr=8000a360 src= 0 wait=    0
+HTL D cyc=              387845 op=1 src= 1 wait=    0
+HTL A cyc=              387846 op=4 addr=8000a360 src= 1 wait=    0
+HTL D cyc=              387846 op=1 src= 2 wait=    0
+HTL A cyc=              387847 op=4 addr=8000a370 src= 2 wait=    0
+HTL A cyc=              387848 op=4 addr=8000a370 src= 7 wait=    0
+HTL A cyc=              387849 op=4 addr=8000a380 src= 8 wait=    0
+HTL A cyc=              387850 op=4 addr=8000a380 src= 9 wait=    0
+HTL A cyc=              387851 op=4 addr=8000a390 src=10 wait=    0
+HTL A cyc=              387852 op=4 addr=8000a390 src=11 wait=    0
+HTL A cyc=              387853 op=4 addr=8000a3a0 src=12 wait=    0
+HTL A cyc=              387854 op=4 addr=8000a3a0 src=13 wait=    0
+HTL A cyc=              387855 op=4 addr=8000a3b0 src=14 wait=    0
+HTL A cyc=              387856 op=4 addr=8000a3b0 src=15 wait=    0
+HTL A cyc=              387857 op=4 addr=8000a3c0 src=16 wait=    0
+HTL D cyc=              387857 op=1 src= 3 wait=    0
+HTL A cyc=              387858 op=4 addr=8000a3c0 src= 3 wait=    0
+HTL D cyc=              387860 op=1 src= 4 wait=    0
+HTL D cyc=              387861 op=1 src= 5 wait=    0
+HTL D cyc=              387862 op=1 src= 6 wait=    0
+HTL D cyc=              387864 op=1 src= 0 wait=    0
+HTL D cyc=              387865 op=1 src= 1 wait=    0
+HTL D cyc=              387867 op=1 src= 8 wait=    0
+HTL D cyc=              387868 op=1 src= 2 wait=    0
+HTL D cyc=              387870 op=1 src= 7 wait=    0
+HTL D cyc=              387871 op=1 src= 9 wait=    0
+HTL D cyc=              387872 op=1 src=10 wait=    0
+HTL D cyc=              387873 op=1 src=11 wait=    0
+HTL D cyc=              387874 op=1 src=12 wait=    0
+HTL D cyc=              387875 op=1 src=13 wait=    0
+HTL D cyc=              387877 op=1 src=16 wait=    0
+HTL D cyc=              387878 op=1 src=14 wait=    0
+HTL D cyc=              387880 op=1 src=15 wait=    0
+HTL D cyc=              387881 op=1 src= 3 wait=    0
+HTL A cyc=              389127 op=4 addr=8000a3d0 src= 0 wait=    0
+HTL A cyc=              389128 op=4 addr=8000a3d0 src= 1 wait=    0
+HTL A cyc=              389129 op=4 addr=8000a3e0 src= 2 wait=    0
+HTL A cyc=              389130 op=4 addr=8000a3e0 src= 3 wait=    0
+HTL A cyc=              389131 op=4 addr=8000a3f0 src= 4 wait=    0
+HTL A cyc=              389132 op=4 addr=8000a3f0 src= 5 wait=    0
+HTL A cyc=              389133 op=4 addr=8000a400 src= 6 wait=    0
+HTL D cyc=              389133 op=1 src= 0 wait=    0
+HTL A cyc=              389134 op=4 addr=8000a400 src= 0 wait=    0
+HTL D cyc=              389134 op=1 src= 1 wait=    0
+HTL A cyc=              389135 op=4 addr=8000a410 src= 1 wait=    0
+HTL D cyc=              389135 op=1 src= 2 wait=    0
+HTL A cyc=              389136 op=4 addr=8000a410 src= 2 wait=    0
+HTL D cyc=              389136 op=1 src= 3 wait=    0
+HTL A cyc=              389137 op=4 addr=8000a420 src= 3 wait=    0
+HTL D cyc=              389137 op=1 src= 4 wait=    0
+HTL A cyc=              389138 op=4 addr=8000a420 src= 4 wait=    0
+HTL D cyc=              389138 op=1 src= 5 wait=    0
+HTL A cyc=              389139 op=4 addr=8000a430 src= 5 wait=    0
+HTL A cyc=              389140 op=4 addr=8000a430 src= 7 wait=    0
+HTL A cyc=              389141 op=4 addr=8000a440 src= 8 wait=    0
+HTL A cyc=              389142 op=4 addr=8000a440 src= 9 wait=    0
+HTL A cyc=              389143 op=4 addr=8000a450 src=10 wait=    0
+HTL A cyc=              389144 op=4 addr=8000a450 src=11 wait=    0
+HTL A cyc=              389145 op=4 addr=8000a460 src=12 wait=    0
+HTL A cyc=              389146 op=4 addr=8000a460 src=13 wait=    0
+HTL A cyc=              389147 op=4 addr=8000a470 src=14 wait=    0
+HTL D cyc=              389147 op=1 src= 8 wait=    0
+HTL D cyc=              389149 op=1 src= 6 wait=    0
+HTL D cyc=              389150 op=1 src= 9 wait=    0
+HTL D cyc=              389152 op=1 src=10 wait=    0
+HTL D cyc=              389153 op=1 src= 0 wait=    0
+HTL D cyc=              389155 op=1 src=11 wait=    0
+HTL D cyc=              389156 op=1 src= 1 wait=    0
+HTL D cyc=              389157 op=1 src=12 wait=    0
+HTL D cyc=              389158 op=1 src= 2 wait=    0
+HTL D cyc=              389159 op=1 src=13 wait=    0
+HTL D cyc=              389160 op=1 src= 3 wait=    0
+HTL D cyc=              389161 op=1 src=14 wait=    0
+HTL D cyc=              389162 op=1 src= 4 wait=    0
+HTL D cyc=              389163 op=1 src= 5 wait=    0
+HTL D cyc=              389164 op=1 src= 7 wait=    0
+HTL A cyc=              390402 op=4 addr=8000a470 src= 0 wait=    0
+HTL A cyc=              390403 op=4 addr=8000a480 src= 1 wait=    0
+HTL A cyc=              390404 op=4 addr=8000a480 src= 2 wait=    0
+HTL A cyc=              390405 op=4 addr=8000a490 src= 3 wait=    0
+HTL A cyc=              390406 op=4 addr=8000a490 src= 4 wait=    0
+HTL A cyc=              390407 op=4 addr=8000a4a0 src= 5 wait=    0
+HTL A cyc=              390408 op=4 addr=8000a4a0 src= 6 wait=    0
+HTL D cyc=              390408 op=1 src= 0 wait=    0
+HTL A cyc=              390409 op=4 addr=8000a4b0 src= 0 wait=    0
+HTL D cyc=              390409 op=1 src= 1 wait=    0
+HTL A cyc=              390410 op=4 addr=8000a4b0 src= 1 wait=    0
+HTL D cyc=              390410 op=1 src= 2 wait=    0
+HTL A cyc=              390411 op=4 addr=8000a4c0 src= 2 wait=    0
+HTL D cyc=              390411 op=1 src= 3 wait=    0
+HTL A cyc=              390412 op=4 addr=8000a4c0 src= 3 wait=    0
+HTL D cyc=              390412 op=1 src= 4 wait=    0
+HTL A cyc=              390413 op=4 addr=8000a4d0 src= 4 wait=    0
+HTL D cyc=              390413 op=1 src= 5 wait=    0
+HTL A cyc=              390414 op=4 addr=8000a4d0 src= 5 wait=    0
+HTL D cyc=              390414 op=1 src= 6 wait=    0
+HTL A cyc=              390415 op=4 addr=8000a4e0 src= 6 wait=    0
+HTL D cyc=              390415 op=1 src= 0 wait=    0
+HTL A cyc=              390416 op=4 addr=8000a4e0 src= 0 wait=    0
+HTL D cyc=              390416 op=1 src= 1 wait=    0
+HTL A cyc=              390417 op=4 addr=8000a4f0 src= 1 wait=    0
+HTL A cyc=              390418 op=4 addr=8000a4f0 src= 7 wait=    0
+HTL A cyc=              390419 op=4 addr=8000a500 src= 8 wait=    0
+HTL A cyc=              390420 op=4 addr=8000a500 src= 9 wait=    0
+HTL A cyc=              390421 op=4 addr=8000a510 src=10 wait=    0
+HTL A cyc=              390422 op=4 addr=8000a510 src=11 wait=    0
+HTL D cyc=              390425 op=1 src= 8 wait=    0
+HTL D cyc=              390427 op=1 src= 2 wait=    0
+HTL D cyc=              390428 op=1 src= 9 wait=    0
+HTL D cyc=              390430 op=1 src=10 wait=    0
+HTL D cyc=              390431 op=1 src= 3 wait=    0
+HTL D cyc=              390432 op=1 src=11 wait=    0
+HTL D cyc=              390433 op=1 src= 4 wait=    0
+HTL D cyc=              390434 op=1 src= 5 wait=    0
+HTL D cyc=              390435 op=1 src= 6 wait=    0
+HTL D cyc=              390436 op=1 src= 0 wait=    0
+HTL D cyc=              390437 op=1 src= 1 wait=    0
+HTL D cyc=              390438 op=1 src= 7 wait=    0
+HTL A cyc=              391686 op=4 addr=8000a520 src= 0 wait=    0
+HTL A cyc=              391687 op=4 addr=8000a520 src= 1 wait=    0
+HTL A cyc=              391688 op=4 addr=8000a530 src= 2 wait=    0
+HTL A cyc=              391689 op=4 addr=8000a530 src= 3 wait=    0
+HTL A cyc=              391690 op=4 addr=8000a540 src= 4 wait=    0
+HTL A cyc=              391691 op=4 addr=8000a540 src= 5 wait=    0
+HTL A cyc=              391692 op=4 addr=8000a550 src= 6 wait=    0
+HTL D cyc=              391692 op=1 src= 0 wait=    0
+HTL A cyc=              391693 op=4 addr=8000a550 src= 0 wait=    0
+HTL D cyc=              391693 op=1 src= 1 wait=    0
+HTL A cyc=              391694 op=4 addr=8000a560 src= 1 wait=    0
+HTL D cyc=              391694 op=1 src= 2 wait=    0
+HTL A cyc=              391695 op=4 addr=8000a560 src= 2 wait=    0
+HTL D cyc=              391695 op=1 src= 3 wait=    0
+HTL A cyc=              391696 op=4 addr=8000a570 src= 3 wait=    0
+HTL D cyc=              391696 op=1 src= 4 wait=    0
+HTL A cyc=              391697 op=4 addr=8000a570 src= 4 wait=    0
+HTL D cyc=              391697 op=1 src= 5 wait=    0
+HTL A cyc=              391698 op=4 addr=8000a580 src= 5 wait=    0
+HTL D cyc=              391698 op=1 src= 6 wait=    0
+HTL A cyc=              391699 op=4 addr=8000a580 src= 6 wait=    0
+HTL D cyc=              391699 op=1 src= 0 wait=    0
+HTL A cyc=              391700 op=4 addr=8000a590 src= 0 wait=    0
+HTL D cyc=              391700 op=1 src= 1 wait=    0
+HTL A cyc=              391701 op=4 addr=8000a590 src= 1 wait=    0
+HTL D cyc=              391701 op=1 src= 2 wait=    0
+HTL A cyc=              391702 op=4 addr=8000a5a0 src= 2 wait=    0
+HTL D cyc=              391702 op=1 src= 3 wait=    0
+HTL A cyc=              391703 op=4 addr=8000a5a0 src= 3 wait=    0
+HTL D cyc=              391703 op=1 src= 4 wait=    0
+HTL A cyc=              391704 op=4 addr=8000a5b0 src= 4 wait=    0
+HTL D cyc=              391704 op=1 src= 5 wait=    0
+HTL A cyc=              391705 op=4 addr=8000a5b0 src= 5 wait=    0
+HTL D cyc=              391705 op=1 src= 6 wait=    0
+HTL A cyc=              391706 op=4 addr=8000a5c0 src= 6 wait=    0
+HTL D cyc=              391706 op=1 src= 0 wait=    0
+HTL D cyc=              391707 op=1 src= 1 wait=    0
+HTL D cyc=              391708 op=1 src= 2 wait=    0
+HTL D cyc=              391709 op=1 src= 3 wait=    0
+HTL D cyc=              391710 op=1 src= 4 wait=    0
+HTL D cyc=              391711 op=1 src= 5 wait=    0
+HTL D cyc=              391722 op=1 src= 6 wait=    0
+HTL A cyc=              392990 op=4 addr=8000a5c0 src= 0 wait=    0
+HTL A cyc=              392991 op=4 addr=8000a5d0 src= 1 wait=    0
+HTL A cyc=              392992 op=4 addr=8000a5d0 src= 2 wait=    0
+HTL A cyc=              392993 op=4 addr=8000a5e0 src= 3 wait=    0
+HTL A cyc=              392994 op=4 addr=8000a5e0 src= 4 wait=    0
+HTL A cyc=              392995 op=4 addr=8000a5f0 src= 5 wait=    0
+HTL A cyc=              392996 op=4 addr=8000a5f0 src= 6 wait=    0
+HTL D cyc=              392996 op=1 src= 0 wait=    0
+HTL A cyc=              392997 op=4 addr=8000a600 src= 0 wait=    0
+HTL D cyc=              392997 op=1 src= 1 wait=    0
+HTL A cyc=              392998 op=4 addr=8000a600 src= 1 wait=    0
+HTL D cyc=              392998 op=1 src= 2 wait=    0
+HTL A cyc=              392999 op=4 addr=8000a610 src= 2 wait=    0
+HTL D cyc=              392999 op=1 src= 3 wait=    0
+HTL A cyc=              393000 op=4 addr=8000a610 src= 3 wait=    0
+HTL D cyc=              393000 op=1 src= 4 wait=    0
+HTL A cyc=              393001 op=4 addr=8000a620 src= 4 wait=    0
+HTL D cyc=              393001 op=1 src= 5 wait=    0
+HTL A cyc=              393002 op=4 addr=8000a620 src= 5 wait=    0
+HTL D cyc=              393002 op=1 src= 6 wait=    0
+HTL A cyc=              393003 op=4 addr=8000a630 src= 6 wait=    0
+HTL A cyc=              393004 op=4 addr=8000a630 src= 7 wait=    0
+HTL A cyc=              393005 op=4 addr=8000a640 src= 8 wait=    0
+HTL A cyc=              393006 op=4 addr=8000a640 src= 9 wait=    0
+HTL A cyc=              393007 op=4 addr=8000a650 src=10 wait=    0
+HTL A cyc=              393008 op=4 addr=8000a650 src=11 wait=    0
+HTL A cyc=              393009 op=4 addr=8000a660 src=12 wait=    0
+HTL A cyc=              393010 op=4 addr=8000a660 src=13 wait=    0
+HTL D cyc=              393013 op=1 src= 0 wait=    0
+HTL D cyc=              393016 op=1 src= 1 wait=    0
+HTL D cyc=              393017 op=1 src= 2 wait=    0
+HTL D cyc=              393018 op=1 src= 3 wait=    0
+HTL D cyc=              393019 op=1 src= 4 wait=    0
+HTL D cyc=              393020 op=1 src= 5 wait=    0
+HTL D cyc=              393021 op=1 src= 6 wait=    0
+HTL D cyc=              393023 op=1 src= 8 wait=    0
+HTL D cyc=              393024 op=1 src= 7 wait=    0
+HTL D cyc=              393026 op=1 src= 9 wait=    0
+HTL D cyc=              393027 op=1 src=10 wait=    0
+HTL D cyc=              393029 op=1 src=11 wait=    0
+HTL D cyc=              393030 op=1 src=12 wait=    0
+HTL D cyc=              393031 op=1 src=13 wait=    0
+HTL A cyc=              394274 op=4 addr=8000a670 src= 0 wait=    0
+HTL A cyc=              394275 op=4 addr=8000a670 src= 1 wait=    0
+HTL A cyc=              394276 op=4 addr=8000a680 src= 2 wait=    0
+HTL A cyc=              394277 op=4 addr=8000a680 src= 3 wait=    0
+HTL A cyc=              394278 op=4 addr=8000a690 src= 4 wait=    0
+HTL A cyc=              394279 op=4 addr=8000a690 src= 5 wait=    0
+HTL A cyc=              394280 op=4 addr=8000a6a0 src= 6 wait=    0
+HTL D cyc=              394280 op=1 src= 0 wait=    0
+HTL A cyc=              394281 op=4 addr=8000a6a0 src= 0 wait=    0
+HTL D cyc=              394281 op=1 src= 1 wait=    0
+HTL A cyc=              394282 op=4 addr=8000a6b0 src= 1 wait=    0
+HTL A cyc=              394283 op=4 addr=8000a6b0 src= 7 wait=    0
+HTL A cyc=              394284 op=4 addr=8000a6c0 src= 8 wait=    0
+HTL A cyc=              394285 op=4 addr=8000a6c0 src= 9 wait=    0
+HTL A cyc=              394286 op=4 addr=8000a6d0 src=10 wait=    0
+HTL A cyc=              394287 op=4 addr=8000a6d0 src=11 wait=    0
+HTL A cyc=              394288 op=4 addr=8000a6e0 src=12 wait=    0
+HTL A cyc=              394289 op=4 addr=8000a6e0 src=13 wait=    0
+HTL A cyc=              394290 op=4 addr=8000a6f0 src=14 wait=    0
+HTL A cyc=              394291 op=4 addr=8000a6f0 src=15 wait=    0
+HTL A cyc=              394292 op=4 addr=8000a700 src=16 wait=    0
+HTL D cyc=              394292 op=1 src= 2 wait=    0
+HTL A cyc=              394293 op=4 addr=8000a700 src= 2 wait=    0
+HTL A cyc=              394294 op=4 addr=8000a710 src=17 wait=    0
+HTL D cyc=              394295 op=1 src= 3 wait=    0
+HTL D cyc=              394296 op=1 src= 4 wait=    0
+HTL D cyc=              394297 op=1 src= 5 wait=    0
+HTL D cyc=              394299 op=1 src= 6 wait=    0
+HTL D cyc=              394300 op=1 src= 0 wait=    0
+HTL D cyc=              394302 op=1 src= 8 wait=    0
+HTL D cyc=              394303 op=1 src= 1 wait=    0
+HTL D cyc=              394305 op=1 src= 7 wait=    0
+HTL D cyc=              394306 op=1 src= 9 wait=    0
+HTL D cyc=              394307 op=1 src=10 wait=    0
+HTL D cyc=              394308 op=1 src=11 wait=    0
+HTL D cyc=              394309 op=1 src=12 wait=    0
+HTL D cyc=              394310 op=1 src=13 wait=    0
+HTL D cyc=              394312 op=1 src=16 wait=    0
+HTL D cyc=              394313 op=1 src=14 wait=    0
+HTL D cyc=              394315 op=1 src=15 wait=    0
+HTL D cyc=              394316 op=1 src= 2 wait=    0
+HTL D cyc=              394317 op=1 src=17 wait=    0
+HTL A cyc=              395575 op=4 addr=8000a710 src= 0 wait=    0
+HTL A cyc=              395576 op=4 addr=8000a720 src= 1 wait=    0
+HTL A cyc=              395577 op=4 addr=8000a720 src= 2 wait=    0
+HTL A cyc=              395578 op=4 addr=8000a730 src= 3 wait=    0
+HTL A cyc=              395579 op=4 addr=8000a730 src= 4 wait=    0
+HTL A cyc=              395580 op=4 addr=8000a740 src= 5 wait=    0
+HTL A cyc=              395581 op=4 addr=8000a740 src= 6 wait=    0
+HTL D cyc=              395581 op=1 src= 0 wait=    0
+HTL A cyc=              395582 op=4 addr=8000a750 src= 0 wait=    0
+HTL D cyc=              395582 op=1 src= 1 wait=    0
+HTL A cyc=              395583 op=4 addr=8000a750 src= 1 wait=    0
+HTL D cyc=              395583 op=1 src= 2 wait=    0
+HTL A cyc=              395584 op=4 addr=8000a760 src= 2 wait=    0
+HTL D cyc=              395584 op=1 src= 3 wait=    0
+HTL A cyc=              395585 op=4 addr=8000a760 src= 3 wait=    0
+HTL D cyc=              395585 op=1 src= 4 wait=    0
+HTL A cyc=              395586 op=4 addr=8000a770 src= 4 wait=    0
+HTL A cyc=              395587 op=4 addr=8000a770 src= 7 wait=    0
+HTL A cyc=              395588 op=4 addr=8000a780 src= 8 wait=    0
+HTL A cyc=              395589 op=4 addr=8000a780 src= 9 wait=    0
+HTL A cyc=              395590 op=4 addr=8000a790 src=10 wait=    0
+HTL A cyc=              395591 op=4 addr=8000a790 src=11 wait=    0
+HTL A cyc=              395592 op=4 addr=8000a7a0 src=12 wait=    0
+HTL A cyc=              395593 op=4 addr=8000a7a0 src=13 wait=    0
+HTL A cyc=              395594 op=4 addr=8000a7b0 src=14 wait=    0
+HTL A cyc=              395595 op=4 addr=8000a7b0 src=15 wait=    0
+HTL D cyc=              395596 op=1 src= 5 wait=    0
+HTL D cyc=              395599 op=1 src= 6 wait=    0
+HTL D cyc=              395600 op=1 src= 0 wait=    0
+HTL D cyc=              395601 op=1 src= 1 wait=    0
+HTL D cyc=              395602 op=1 src= 2 wait=    0
+HTL D cyc=              395603 op=1 src= 3 wait=    0
+HTL D cyc=              395604 op=1 src= 4 wait=    0
+HTL D cyc=              395606 op=1 src= 8 wait=    0
+HTL D cyc=              395607 op=1 src= 7 wait=    0
+HTL D cyc=              395609 op=1 src= 9 wait=    0
+HTL D cyc=              395610 op=1 src=10 wait=    0
+HTL D cyc=              395611 op=1 src=11 wait=    0
+HTL D cyc=              395612 op=1 src=12 wait=    0
+HTL D cyc=              395613 op=1 src=13 wait=    0
+HTL D cyc=              395614 op=1 src=14 wait=    0
+HTL D cyc=              395615 op=1 src=15 wait=    0
+HTL A cyc=              396855 op=4 addr=8000a7c0 src= 0 wait=    0
+HTL A cyc=              396856 op=4 addr=8000a7c0 src= 1 wait=    0
+HTL A cyc=              396857 op=4 addr=8000a7d0 src= 2 wait=    0
+HTL A cyc=              396858 op=4 addr=8000a7d0 src= 3 wait=    0
+HTL A cyc=              396859 op=4 addr=8000a7e0 src= 4 wait=    0
+HTL A cyc=              396860 op=4 addr=8000a7e0 src= 5 wait=    0
+HTL A cyc=              396861 op=4 addr=8000a7f0 src= 6 wait=    0
+HTL A cyc=              396862 op=4 addr=8000a7f0 src= 7 wait=    0
+HTL A cyc=              396863 op=4 addr=8000a800 src= 8 wait=    0
+HTL A cyc=              396864 op=4 addr=8000a800 src= 9 wait=    0
+HTL A cyc=              396865 op=4 addr=8000a810 src=10 wait=    0
+HTL A cyc=              396866 op=4 addr=8000a810 src=11 wait=    0
+HTL A cyc=              396867 op=4 addr=8000a820 src=12 wait=    0
+HTL A cyc=              396868 op=4 addr=8000a820 src=13 wait=    0
+HTL A cyc=              396869 op=4 addr=8000a830 src=14 wait=    0
+HTL A cyc=              396870 op=4 addr=8000a830 src=15 wait=    0
+HTL A cyc=              396871 op=4 addr=8000a840 src=16 wait=    0
+HTL D cyc=              396871 op=1 src= 0 wait=    0
+HTL A cyc=              396872 op=4 addr=8000a840 src= 0 wait=    0
+HTL A cyc=              396873 op=4 addr=8000a850 src=17 wait=    0
+HTL A cyc=              396874 op=4 addr=8000a850 src=18 wait=    0
+HTL D cyc=              396874 op=1 src= 1 wait=    0
+HTL A cyc=              396875 op=4 addr=8000a860 src= 1 wait=    0
+HTL D cyc=              396875 op=1 src= 2 wait=    0
+HTL D cyc=              396876 op=1 src= 3 wait=    0
+HTL D cyc=              396878 op=1 src= 4 wait=    0
+HTL D cyc=              396879 op=1 src= 5 wait=    0
+HTL D cyc=              396881 op=1 src= 8 wait=    0
+HTL D cyc=              396882 op=1 src= 6 wait=    0
+HTL D cyc=              396884 op=1 src= 7 wait=    0
+HTL D cyc=              396885 op=1 src= 9 wait=    0
+HTL D cyc=              396886 op=1 src=10 wait=    0
+HTL D cyc=              396887 op=1 src=11 wait=    0
+HTL D cyc=              396888 op=1 src=12 wait=    0
+HTL D cyc=              396889 op=1 src=13 wait=    0
+HTL D cyc=              396891 op=1 src=16 wait=    0
+HTL D cyc=              396892 op=1 src=14 wait=    0
+HTL D cyc=              396894 op=1 src=15 wait=    0
+HTL D cyc=              396895 op=1 src= 0 wait=    0
+HTL D cyc=              396896 op=1 src=17 wait=    0
+HTL D cyc=              396897 op=1 src=18 wait=    0
+HTL D cyc=              396898 op=1 src= 1 wait=    0
+HTL A cyc=              398054 op=4 addr=8000a860 src= 0 wait=    0
+HTL A cyc=              398055 op=4 addr=8000a870 src= 1 wait=    0
+HTL A cyc=              398056 op=4 addr=8000a870 src= 2 wait=    0
+HTL A cyc=              398057 op=4 addr=8000a880 src= 3 wait=    0
+HTL D cyc=              398060 op=1 src= 0 wait=    0
+HTL D cyc=              398061 op=1 src= 1 wait=    0
+HTL D cyc=              398062 op=1 src= 2 wait=    0
+HTL D cyc=              398063 op=1 src= 3 wait=    0
+==> end

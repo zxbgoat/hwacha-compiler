@@ -1,0 +1,5 @@
+bfs scalar: 191930 cycles, 93.71 cyc/elem
+bfs hwacha-cc: 607864 cycles, 296.80 cyc/elem
+bfs PASS (0 mismatches / 2048, 10 levels)
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> end rc=0

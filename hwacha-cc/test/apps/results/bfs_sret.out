@@ -1,0 +1,1676 @@
+bfs scalar: 191930 cycles, 93.71 cyc/elem
+SRETB store resp: rtag= 7 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 8 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 9 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=10 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=11 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 8 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=12 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=14 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=13 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 4 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 7 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 9 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 5 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=15 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 6 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=10 is_store=0 reccnt= 6 sret_resp=0
+SREQB store beat: pred=1 mt_b=1 ecnt= 8 wtag= 0 vmt_wr=1 vmt_wready=1 sret_req=0 sret_reqcnt= 8
+SREQB store beat: pred=0 mt_b=1 ecnt= 8 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 8
+SREQB store beat: pred=0 mt_b=1 ecnt= 8 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 8
+SREQB store beat: pred=0 mt_b=1 ecnt= 8 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 8
+SREQB store beat: pred=0 mt_b=1 ecnt= 8 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 8
+SREQB store beat: pred=0 mt_b=1 ecnt= 8 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 8
+SREQB store beat: pred=0 mt_b=1 ecnt= 8 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 8
+SREQB store beat: pred=0 mt_b=1 ecnt= 8 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 8
+SREQB store beat: pred=0 mt_b=1 ecnt= 8 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 8
+SREQB store beat: pred=0 mt_b=1 ecnt= 8 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 8
+SREQB store beat: pred=0 mt_b=1 ecnt= 8 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 8
+SRETB store resp: rtag= 0 is_store=1 reccnt= 8 sret_resp=1
+SREQB store beat: pred=0 mt_b=1 ecnt= 8 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 8
+SREQB store beat: pred=0 mt_b=1 ecnt= 8 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 8
+SREQB store beat: pred=0 mt_b=1 ecnt= 8 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 8
+SREQB store beat: pred=0 mt_b=1 ecnt= 8 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 8
+SREQB store beat: pred=0 mt_b=1 ecnt= 8 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 8
+SREQB store beat: pred=0 mt_b=1 ecnt= 8 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 8
+SREQB store beat: pred=0 mt_b=1 ecnt= 8 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 8
+SREQB store beat: pred=0 mt_b=1 ecnt= 8 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 8
+SREQB store beat: pred=0 mt_b=1 ecnt= 8 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 8
+SREQB store beat: pred=0 mt_b=1 ecnt= 8 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 8
+SRETB store resp: rtag= 0 is_store=0 reccnt= 1 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 8 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 1 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 4 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 1 sret_resp=0
+SREQB store beat: pred=1 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=1 vmt_wready=1 sret_req=0 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SRETB store resp: rtag= 0 is_store=1 reccnt= 1 sret_resp=1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=1 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=1 vmt_wready=1 sret_req=0 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SRETB store resp: rtag= 0 is_store=1 reccnt= 1 sret_resp=1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SRETB store resp: rtag= 0 is_store=0 reccnt= 8 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 1 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 8 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 1 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 8 sret_resp=0
+SREQB store beat: pred=1 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=1 vmt_wready=1 sret_req=0 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SRETB store resp: rtag= 0 is_store=1 reccnt= 1 sret_resp=1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=1 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=1 vmt_wready=1 sret_req=0 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SRETB store resp: rtag= 0 is_store=1 reccnt= 1 sret_resp=1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SRETB store resp: rtag= 0 is_store=0 reccnt= 1 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 8 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 3 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 8 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 1 sret_resp=0
+SREQB store beat: pred=1 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=1 vmt_wready=1 sret_req=0 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SRETB store resp: rtag= 0 is_store=1 reccnt= 1 sret_resp=1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=1 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=1 vmt_wready=1 sret_req=0 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SRETB store resp: rtag= 0 is_store=1 reccnt= 1 sret_resp=1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SRETB store resp: rtag= 0 is_store=0 reccnt= 8 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 1 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 4 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 3 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 8 sret_resp=0
+SREQB store beat: pred=1 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=1 vmt_wready=1 sret_req=0 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SRETB store resp: rtag= 0 is_store=1 reccnt= 1 sret_resp=1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=0 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=1 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=1 vmt_wready=1 sret_req=0 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 1 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SRETB store resp: rtag= 0 is_store=1 reccnt= 1 sret_resp=1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SREQB store beat: pred=0 mt_b=1 ecnt= 1 wtag= 0 vmt_wr=0 vmt_wready=1 sret_req=1 sret_reqcnt= 1
+SRETB store resp: rtag= 0 is_store=0 reccnt= 1 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 8 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 4 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 5 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 6 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 8 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 7 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 9 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=10 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=11 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=12 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=13 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=16 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=14 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=15 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=17 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 4 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 5 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 6 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 8 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 4 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 7 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 9 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=10 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=11 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=12 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=13 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=14 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=15 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=16 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 4 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 5 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 8 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=17 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 6 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=18 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 7 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 9 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=10 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=11 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=12 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=13 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=14 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=15 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 4 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 5 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 6 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 8 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 7 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 9 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=10 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=11 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=12 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=13 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=16 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=14 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=15 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 4 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 5 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 8 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 6 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 9 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=10 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=11 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=12 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=13 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=14 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 4 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 5 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 7 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 4 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 5 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 6 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 8 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 9 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=10 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=11 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 4 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 5 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 6 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 7 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 4 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 5 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 6 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 4 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 5 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 6 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 4 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 5 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 6 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 4 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 5 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 6 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 4 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 5 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 6 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 8 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 7 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 9 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=10 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=11 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=12 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=13 is_store=0 reccnt= 6 sret_resp=0
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+SRETB store resp: rtag= 0 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 4 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 5 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 6 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 8 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 7 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 9 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=10 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=11 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=12 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=13 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=16 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=14 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=15 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=17 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 4 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 5 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 6 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 4 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 8 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 7 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 9 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=10 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=11 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=12 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=13 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=14 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag=15 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 4 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 5 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 8 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 6 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 7 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 9 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=10 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=11 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=12 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=13 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=16 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=14 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=15 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=17 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag=18 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 7 sret_resp=0
+SRETB store resp: rtag= 0 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 1 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 2 is_store=0 reccnt= 6 sret_resp=0
+SRETB store resp: rtag= 3 is_store=0 reccnt= 6 sret_resp=0
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+MRT pending: scount= 496/ 512 lcount= 512/ 512
+==> end

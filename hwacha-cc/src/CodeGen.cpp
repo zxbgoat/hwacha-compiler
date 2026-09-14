@@ -1206,7 +1206,7 @@ bool WTGen::emitInst(Instruction &I, unsigned Pos) {
       // are inactive (a masked byte store with one active lane never completes). Work around it
       // by turning the store into load / select / unmasked store: every lane rewrites its own
       // byte, inactive lanes with the value they just read.
-      if (St.Unit && !VP.empty() && DL.getTypeStoreSize(V->getType()) < 4 && !Opts.NoSubwordRMW) {
+      if (St.Unit && !VP.empty() && DL.getTypeStoreSize(V->getType()) < 4 && Opts.SubwordRMW) {
         Reg Tmp = alloc(RC::VW);
         emit("", "vl" + Suf, {Tmp.str(), "va" + std::to_string(St.VA)});
         emit(VP, "vaddw", {Tmp.str(), Val, "vs0"});
