@@ -26,6 +26,8 @@ static cl::opt<bool> ScalarFP("scalar-fp", cl::desc("allow uniform floating-poin
 static cl::opt<bool> VerboseOpt("verbose", cl::desc("print code generation diagnostics"));
 static cl::opt<bool> NoCTLoops("no-ct-loops", cl::desc("do not run uniform loops on the control thread (ablation)"));
 static cl::opt<bool> SubwordRMW("subword-rmw", cl::desc("lower masked sub-word stores to load/select/store (workaround for the unpatched Hwacha RTL store-credit bug)"));
+static cl::opt<bool> GPUBlock1("gpu-block1", cl::desc("GPU-dialect input: treat every kernel as launched with block size 1 (block id = work-item id)"));
+static cl::opt<bool> GPUNoOpt("gpu-no-opt", cl::desc("GPU-dialect input: skip the -O2 pipeline after adaptation"));
 static cl::opt<std::string> LLCPath("llc", cl::desc("path to llc"), cl::init(LLC_DEFAULT_PATH));
 
 int main(int argc, char **argv) {
@@ -33,6 +35,9 @@ int main(int argc, char **argv) {
   LLVMContext Ctx; SMDiagnostic Err;
   std::unique_ptr<Module> M = parseIRFile(InputFile, Err, Ctx);
   if (!M) { Err.print(argv[0], errs()); return 1; }
+  bool FromGPU = false;
+  if (!hwacha::adaptGPUModule(*M, GPUBlock1, GPUNoOpt, errs(), FromGPU)) return 1;
+  if (FromGPU && KeepTemps) { std::error_code EC; raw_fd_ostream O((OutputFile.empty() ? std::string("out") : OutputFile.substr(0, OutputFile.rfind('.'))) + ".gpu.ll", EC); if (!EC) M->print(O, nullptr); }
 
   auto CT = std::make_unique<Module>("hwacha-ct", Ctx);
   CT->setTargetTriple(M->getTargetTriple());

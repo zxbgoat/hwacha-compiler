@@ -824,3 +824,64 @@ Chisel 的 `+` 不扩位,先按 4 位截断再赋给 5 位端口。字节模式�
 red、spec 无回归;Spike 上 36 回归 + Rodinia + llama + GPT-2 用新默认全 PASS。
 编译器默认改为直接发射掩码子字 store;`--no-subword-rmw` 改名为 `--subword-rmw`(为未打补丁的 RTL 保留绕过)。
 至此本项目发现的 6 个 RTL bug 全部修复,补丁在 patches/。
+
+## 接入 MLIR：gpu dialect 入口（2026-09-14 深夜）
+
+选的是"路线一"：不改 hwacha-cc 的核心，只在前面加一个 MLIR 前端，把 gpu dialect 落到
+hwacha-cc 已经理解的 OpenCL 约定上。
+
+**环境**：`conda install -c conda-forge mlir=23.1.1`（与 llvmdev/clangdev 23.1.1 同版本，装完
+libLLVM 没变，hwacha-cc 不需要重编）。带来 `mlir-opt`、`mlir-translate`、`mlir-runner`；没有
+Python 绑定。
+
+**流水线**（`hwacha-cc/tools/mlir-to-ll.sh`）：
+
+1. 输入若没有 `gpu.module`（linalg / scf.parallel 级别）：`convert-linalg-to-parallel-loops`
+   →（可选 `test-scf-parallel-loop-collapsing`，把多维并行循环压成一维）→ `gpu-map-parallel-loops`
+   → `convert-parallel-loops-to-gpu` → `gpu-kernel-outlining`。
+2. `lower-affine` → `convert-scf-to-cf` → `convert-gpu-to-nvvm`（默认 bare-ptr memref 约定，需要
+   静态 shape；`MEMREF_CONV=desc` 用 descriptor 约定，动态 shape 可用，kernel 参数变成 5 元组）
+   → `reconcile-unrealized-casts`。
+3. `tools/mlir-extract-kernels.py` 把 `gpu.module` 体抠出来单独成一个 module（丢掉宿主侧的
+   `gpu.launch_func`），`mlir-translate --mlir-to-llvmir` 得到 LLVM IR。
+
+用 NVVM 而不是自己写一个 gpu→llvm 的 conversion，是因为 `convert-gpu-to-nvvm` 已经把 gpu/arith/
+memref/math/cf 全套降到 LLVM dialect，只留下几个 NVVM 内建；把这几个内建改写掉比重写一套
+pattern 便宜得多。
+
+**hwacha-cc 里的适配层**（`src/GPUAdapt.cpp`，parseIRFile 之后自动检测 `ptx_kernel` 调用约定）：
+
+| NVVM 形式 | 改写成 |
+|---|---|
+| `ptx_kernel` 调用约定 | C 约定 + `!kernel_arg_addr_space`（这是 isKernel 的标记） |
+| `llvm.nvvm.read.ptx.sreg.tid.x / ctaid.x / ntid.x` | `trunc(_Z12get_local_idj(0)) / _Z12get_group_idj / _Z14get_local_sizej`，带 `!range [0,2^30)` |
+| 同上，但函数有 `"nvvm.maxntid"="1,1,1"`（gpu-map-parallel-loops 对一维循环的默认映射：每 block 一个线程）或 `--gpu-block1` | `ctaid.x → get_global_id(0)`，`tid.x → 0`，`ntid.x → 1` |
+| y/z 维 | 0 / 1（启动是一维的；多维循环先 collapse） |
+| `llvm.nvvm.barrier*` | `_Z7barrierj(1)` |
+| `addrspace(3)` 全局变量（gpu workgroup 内存） | addrspace(0) 的 internal 全局，指针类型沿 GEP/phi/select 传播改写 |
+| `__nv_sqrtf/fmaf/fabsf/fminf/fmaxf…`（libdevice） | `llvm.sqrt/fma/fabs/minnum/maxnum` 内建；其余去掉 `__nv_` 前缀成 libm 名 |
+| `ctaid*ntid + tid` | 折叠成 `get_global_id(0)`，-O2 前后各做一次（-O2 之后加法会被拆成两级 GEP） |
+
+改写完跑与 clang 一样的 -O2 流水线（关掉向量化和展开；MLIR 出来的 IR 是 -O0 形态，descriptor
+的 insertvalue/extractvalue 链要靠它折掉），之后就是原来的 KernelAnalysis / CodeGen。
+
+`ctaid*ntid+tid` 的折叠很关键：不折的话 hwacha-cc 不知道它等于全局 id，地址被归成 gather
+（`vlxw`），折了之后是单位步长流（`vlw va0`）。
+
+**测试**（`hwacha-cc/test/mlir`，一个二进制 `mlir.riscv`，Spike 全过）：
+
+| kernel | 写法 | 走的路径 | 生成代码 |
+|---|---|---|---|
+| saxpy_gpu | 手写 `gpu.func`，CUDA 风格 `bid*bdim+tid` + 边界判断 | bare-ptr | `vlw/vsw` 流 + 谓词 |
+| saxpy_linalg | `linalg.generic` 自动外提，block 大小 1 | descriptor | `vlstw/vsstw`（步长是运行时参数） |
+| wg | workgroup memref + `gpu.barrier` | bare-ptr | `vsw va` 到本地缓冲 + `vfence` + `vlsw` |
+| ex | `math.absf/sqrt/fma` | bare-ptr | `vfsgnjx/vfsqrt/vfmadd` |
+| mm | `linalg.matmul` 64×64，二维并行循环 collapse 成一维 | bare-ptr | 外层 `vdiv/vrem` 算行列，k 循环成为控制线程循环区域 |
+
+宿主侧没接 `gpu.launch_func`：还是 C 里直接调 `<kernel>_ct(n, args...)`，n = 总工作项数，
+`hwacha_group_size` = block 大小（descriptor 约定时每个 memref 传 5 个参数）。
+
+**没做的 / 限制**：`nctaid`（grid 大小）kernel 里拿不到；`math.exp` 变成 `__nv_expf → expf`，
+hwacha-cc 的 kernel 内不支持 libm 调用（llama 那条路是自己写的 `hw_expf`），要么在 MLIR 层
+`math-polynomial-approximation`，要么以后给 hwacha-cc 加一个向量 expf 的内建；多维 grid 只能
+靠 collapse；`test-scf-parallel-loop-collapsing` 是个 test pass，正式做要自己写 collapse。

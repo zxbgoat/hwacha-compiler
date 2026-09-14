@@ -1,0 +1,9 @@
+==> /home/tesla/hwacha-compiler/hwacha-cc/test/mlir/mlir.riscv start 23:11:59
+saxpy(gpu)     ok
+saxpy(linalg)  ok
+workgroup      ok
+math           ok
+matmul(linalg) ok
+ALL KERNELS PASSED
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> /home/tesla/hwacha-compiler/hwacha-cc/test/mlir/mlir.riscv end 23:28:22 rc=0

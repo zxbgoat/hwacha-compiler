@@ -24,3 +24,5 @@ hwacha-cc/test/berkeley/*.riscv
 .metals/
 .vscode/
 .bloop/
+hwacha-cc/test/mlir/*.ll.*.mlir
+hwacha-cc/test/*/*.gpu.ll

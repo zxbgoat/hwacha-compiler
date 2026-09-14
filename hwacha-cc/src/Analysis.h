@@ -23,6 +23,9 @@ namespace hwacha {
 
 // True for OpenCL kernels as emitted by clang (skips the __clang_ocl_kern_imp_ stubs).
 bool isKernel(const llvm::Function &F);
+// GPU-dialect entry (MLIR convert-gpu-to-nvvm + mlir-translate output): rewrite NVVM conventions into the
+// OpenCL ones above and run the -O2 pipeline. Adapted is set when the module contained ptx kernels.
+bool adaptGPUModule(llvm::Module &M, bool ForceBlock1, bool NoOpt, llvm::raw_ostream &Err, bool &Adapted);
 // Work-item id calls: get_global_id(0) / get_local_id(0). Both are divergence sources.
 bool isWorkItemId(const llvm::Value *V);
 bool isGlobalId(const llvm::Value *V);
