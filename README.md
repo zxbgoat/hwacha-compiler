@@ -2,192 +2,209 @@
 
 Research on the Hwacha vector-fetch architecture (UC Berkeley) through a compiler.
 `hwacha-cc` compiles OpenCL C kernels to Hwacha vector-fetch code: the divergent part of a kernel
-becomes vector-fetch (`vf`) blocks, the uniform control flow runs on the scalar control thread, and the
-result is verified on the Spike ISA simulator and measured on the Chipyard Verilator RTL of
+becomes vector-fetch (`vf`) blocks, the uniform control flow runs on the scalar control thread, and
+the result is verified on the Spike ISA simulator and measured on the Chipyard Verilator RTL of
 `HwachaRocketConfig`.
 
-The full engineering log (design decisions, bugs found in the RTL and in the compiler, every
-measurement, dead ends) is `NOTES.md` (Chinese). This file is the practical guide.
+The full engineering log — design decisions, every RTL and compiler bug found, all measurements, dead
+ends — is `NOTES.md` (Chinese). This file is the practical guide to rebuilding and reproducing from a
+fresh clone.
 
-## Contents
+## What is in this repository
+
+Only first-party work is tracked. Large upstream trees and build products are **not** in the repo
+(see `.gitignore`) and must be fetched/built as described below.
 
 | path | what |
 |---|---|
-| `hwacha-cc/src` | the compiler: `Analysis.{h,cpp}` (kernel/work-item id detection, id-index widening, uniformity via LLVM `UniformityInfo`, SCEV address classification into stream / strided / gather / uniform), `CodeGen.{h,cpp}` (worker-thread vf blocks with predicated linearization, control-thread IR with inline asm, control-thread regions), `main.cpp` (driver) |
-| `hwacha-cc/test/run` | 36 regression kernels in 8 binaries |
-| `hwacha-cc/test/bench` | saxpy / clamp / divloop / stencil / gather against hand-written Hwacha assembly (`hand.S`), plus ablation variants |
-| `hwacha-cc/test/apps` | Rodinia OpenCL kernels (nn, kmeans, bfs, streamcluster `pgain`, pathfinder): kernels unmodified, bare-metal hosts rewritten |
-| `hwacha-cc/test/llama` | llama2.c stories260K inference: `llama.cl`, `llama_main.c`, `hwacha_math.h` (vectorized `expf`), model + tokenizer embedded |
-| `hwacha-cc/test/gpt2` | GPT-2 forward pass from llm.c on a tiny random model, scalar reference verbatim from `train_gpt2.c` |
-| `hwacha-cc/test/gemm` | 256x256x256 sgemm, compared with the Berkeley hand-written `vec-sgemm-naive` / `vec-sgemm-opt` |
-| `hwacha-cc/test/berkeley` | RTL results of the Berkeley hand-written benchmarks |
-| `hwacha-cc/test/rtl-run.sh` | runs binaries one after another on the RTL simulator, logs to a file |
-| `patches/esp-isa-sim.patch` | Spike: `insn_t::bits()` undefined shift for 8-byte instructions (breaks every worker-thread instruction with GCC 13), missing `<cstdint>` |
-| `patches/chipyard-hwacha-rtl-fixes.patch` | Chipyard 1.11.0 `generators/hwacha`: four bugs (icache row width, frontend row reuse, SMU TLB `prv`, predicate ALL reduction) without which no loop runs on the RTL |
-| `scratch/spmd-spec` | the hand-written OpenCL-to-Hwacha mapping (kernels + hand assembly) that preceded the compiler |
-| `docs/` | Hwacha ISA, microarchitecture and evaluation manuals (UCB EECS-2015-262/263/264), also as text |
+| `hwacha-cc/src` | the compiler: `Analysis.{h,cpp}` (kernel/id detection, id-index widening, uniformity via LLVM `UniformityInfo`, SCEV address classification into stream/strided/gather/uniform), `CodeGen.{h,cpp}` (worker-thread vf blocks, control-thread IR, control-thread regions, cross-lane reduction trees), `main.cpp` |
+| `hwacha-cc/test/run` | regression: `spec gather cf lc local misc flag pfmin red` (8 binaries, ~40 kernels) |
+| `hwacha-cc/test/bench` | saxpy/clamp/divloop/stencil/gather vs hand-written Hwacha asm (`hand.S`) + ablations |
+| `hwacha-cc/test/apps` | Rodinia kernels (nn, kmeans, bfs, streamcluster `pgain`, pathfinder), unmodified kernels + bare-metal hosts |
+| `hwacha-cc/test/llama` | llama2.c stories260K inference (model + tokenizer embedded, vectorized `expf`) |
+| `hwacha-cc/test/gpt2` | GPT-2 forward from llm.c on a tiny random model, incl. `work_group_reduce` variants |
+| `hwacha-cc/test/gemm` | 256³ sgemm vs Berkeley `vec-sgemm-naive`/`opt`; `hwacha-cc/test/berkeley` holds their RTL logs |
+| `hwacha-cc/test/rtl-run.sh` | run one or more binaries on the RTL sim (adds `+loadmem`), log to a file |
+| `scripts/build-sim.sh` | build the Chipyard Verilator sim of `HwachaRocketConfig` (threads/opt configurable) |
+| `patches/` | local fixes to the upstream trees — see the table under "Patches" below |
+| `scratch/spmd-spec` | the hand-written OpenCL→Hwacha mapping that preceded the compiler |
+| `docs/` | Hwacha ISA / microarch / eval manuals (UCB EECS-2015-262/263/264), also as text |
 | `env.sh` | puts the locally built Spike and binutils on `PATH` |
+| `NOTES.md` | the full engineering log |
 
-## Requirements
+### Patches
 
-Everything was done on Linux x86-64 (WSL2, 32 cores, 15 GB RAM) without root. Two separate toolchains are
-involved because no single one covers both the modern OpenCL front end and the Hwacha assembler:
-
-| component | version used | role |
+| file | applies to | why |
 |---|---|---|
-| LLVM + clang | 23.1.1 from conda-forge (`llvmdev`, `clangdev`) | OpenCL C -> LLVM IR front end; `hwacha-cc` links against this LLVM; `llc` compiles the control threads |
-| CMake | 3.27 (3.x, not 4) | building `hwacha-cc` |
-| Spike with the `hwacha` extension | `ucb-bar/esp-isa-sim` (2022) + `patches/esp-isa-sim.patch` | functional simulation and correctness checks |
-| Hwacha-aware binutils | esp fork of binutils 2.29 (in `esp-tools`), or the `esp-tools` conda package | assembling `vf` blocks (`-march=rv64gcxhwacha`) |
-| RISC-V GCC + newlib | GCC 9.2 from the `esp-tools` conda package (Chipyard's `.conda-env/esp-tools`), accepts `-march=rv64gcxhwacha` directly | bare-metal hosts; links the generated `.s` |
-| Chipyard | 1.11.0 (the last release that still carries Hwacha) + `patches/chipyard-hwacha-rtl-fixes.patch` | RTL, Verilator simulator `simulator-chipyard.harness-HwachaRocketConfig` |
-| `esp-tests` | `ucb-bar/esp-tests` | `benchmarks/common` (crt, syscalls, linker script) used by every host program; `isa/rv64uv` tests; hand-written `vec-*` benchmarks |
+| `esp-isa-sim.patch` | `esp-isa-sim` (Spike) | `insn_t::bits()` undefined shift for 8-byte insns (every worker insn reads 0 under GCC 13); missing `<cstdint>` |
+| `esp-isa-sim-hwacha-trace.patch` | `esp-isa-sim` | optional `H:` commit-log of Hwacha commands, for debugging vf blocks |
+| `chipyard-hwacha-rtl-fixes.patch` | `chipyard/generators/hwacha` | four integration bugs (icache row width, frontend row reuse, SMU TLB `prv`, predicate ALL reduction), the FPU type-tag fix, and plusarg-gated VMU/TileLink trace |
+| `chipyard-rocketchip-fpu-fix.patch` | `chipyard/generators/rocket-chip` | RoCC FPU port was tied to `DontCare` after the arbiter connection, hanging Hwacha scalar FP |
 
-Only the last row and `esp-isa-sim` are strictly required for the Spike path; the RTL path needs Chipyard.
+## Prerequisites
 
-## Setting up
+Done on Linux x86-64 (WSL2, 32 cores, 15 GB RAM), no root. Everything installs into a user-local conda
+and a build tree next to this README. Install once:
 
-All upstream trees are expected as siblings of this README (they are git-ignored):
-`esp-isa-sim/`, `esp-tests/`, `esp-tools/`, `chipyard/`; toolchains go to `install/`.
+- **conda** (miniforge). The paths below assume `~/miniforge3`.
+- **LLVM 23 + clang** for the OpenCL front end and `llc`:
+  `conda install -c conda-forge llvmdev=23 clangdev=23 cmake=3.27`  (CMake must be 3.x, not 4)
+- **git**, a host C++ toolchain, and `dtc`/`makeinfo` (`conda install -c conda-forge dtc texinfo`).
 
-### 1. LLVM/clang and CMake
+## Layout after cloning
 
-```bash
-conda create -p ~/miniforge3 ...           # any conda; the paths below assume ~/miniforge3
-conda install -c conda-forge llvmdev=23 clangdev=23 cmake=3.27
+Clone the repo, then fetch the upstream trees as siblings inside it (they are git-ignored):
+
+```
+hwacha-compiler/            <- this repo
+├── esp-isa-sim/            <- git clone ucb-bar/esp-isa-sim   (Spike + hwacha)
+├── esp-tests/              <- git clone ucb-bar/esp-tests     (benchmarks/common, isa tests)
+├── chipyard/               <- git clone -b 1.11.0 ucb-bar/chipyard  (RTL; brings esp-tools GCC)
+├── install/  install-hlog/ <- built Spike(s) (created below)
+└── build/                  <- Spike build dirs (created below)
 ```
 
-### 2. Spike with Hwacha
+The RTL path needs `chipyard`; the Spike-only path needs just `esp-isa-sim` and `esp-tests`.
+
+## Build, step by step
+
+### 1. Spike with the Hwacha extension
 
 ```bash
+cd ~/hwacha-compiler
 git clone https://github.com/ucb-bar/esp-isa-sim
-git -C esp-isa-sim apply ../patches/esp-isa-sim.patch
-mkdir -p build/spike && cd build/spike
-../../esp-isa-sim/configure --prefix=$PWD/../../install && make -j1 && make install
-# optional: a second copy that prints an "H:" commit log of every Hwacha command (debugging vf blocks)
-mkdir -p ../spike-hlog && cd ../spike-hlog
-../../esp-isa-sim/configure --prefix=$PWD/../../install-hlog --enable-hcommitlog && make -j1 && make install
+git -C esp-isa-sim apply patches/esp-isa-sim.patch
+mkdir -p build/spike && (cd build/spike && ../../esp-isa-sim/configure --prefix=$PWD/../../install && make -j$(nproc) && make install)
+# optional commit-log build for debugging vf blocks:
+git -C esp-isa-sim apply patches/esp-isa-sim-hwacha-trace.patch
+mkdir -p build/spike-hlog && (cd build/spike-hlog && ../../esp-isa-sim/configure --prefix=$PWD/../../install-hlog --enable-hcommitlog && make -j$(nproc) && make install)
 ```
 
-Use `spike --isa=rv64gc --extension=hwacha prog.riscv`. Spike's `mcycle`/`rdcycle` counts scalar
-instructions only; use it for correctness, never for performance.
+`source env.sh` then puts `spike` on `PATH`. Spike is a functional model: use it for correctness,
+never for cycles (`rdcycle` counts scalar instructions only).
 
-### 3. RISC-V GCC with the Hwacha assembler
+### 2. RISC-V GCC with the Hwacha assembler
 
-Easiest: the `esp-tools` conda package that Chipyard's setup installs into `chipyard/.conda-env/esp-tools`
-(GCC 9.2 + binutils with `xhwacha`). All Makefiles under `hwacha-cc/test` point there:
-`CC := $(ROOT)/chipyard/.conda-env/esp-tools/bin/riscv64-unknown-elf-gcc`.
+Simplest is the `esp-tools` conda package Chipyard installs into `chipyard/.conda-env/esp-tools`
+(GCC 9.2 + binutils that accept `-march=rv64gcxhwacha`). Every Makefile under `hwacha-cc/test`
+already points at `chipyard/.conda-env/esp-tools/bin/riscv64-unknown-elf-gcc`, so doing the Chipyard
+step below also provides the compiler for the Spike path. If you only want Spike and not the RTL, build
+binutils from `esp-tools/riscv-gnu-toolchain/riscv-binutils-gdb` and use the
+`install/bin/riscv64-unknown-elf-gcc-xhwacha` wrapper (it strips `xhwacha` from `-march` for `cc1` and
+passes it to the assembler), and clone `esp-tests` for `benchmarks/common` and `env/`.
 
-Without Chipyard: build binutils from `esp-tools/riscv-gnu-toolchain/riscv-binutils-gdb` and a plain
-riscv-gnu-toolchain GCC (7.2 was used, needs `CXXFLAGS="-O2 -fpermissive -Wno-error"` with a modern host GCC),
-then use the wrapper `install/bin/riscv64-unknown-elf-gcc-xhwacha`, which strips `xhwacha` from `-march` for
-`cc1` and passes it to the assembler. Also clone `esp-tests` next to this directory (only `benchmarks/common`
-and `env/` are needed by the hosts).
-
-### 4. Chipyard RTL (optional, for cycle counts)
+### 3. Chipyard RTL (only for cycle counts)
 
 ```bash
-git clone -b 1.11.0 https://github.com/ucb-bar/chipyard && cd chipyard
+cd ~/hwacha-compiler
+git clone -b 1.11.0 https://github.com/ucb-bar/chipyard
+cd chipyard
 echo y | ./build-setup.sh esp-tools --use-lean-conda --skip-toolchain --skip-ctags --skip-firesim --skip-marshal
-# if the script dies after creating .conda-env (no conda on PATH in a lean environment), activate it and re-run
-# with --skip-conda; see NOTES.md "安装"
+# if it dies after creating .conda-env (no conda on PATH), activate it and re-run with --skip-conda (see NOTES.md "安装")
 git apply ../patches/chipyard-hwacha-rtl-fixes.patch
-source ~/miniforge3/etc/profile.d/conda.sh && conda activate $PWD/.conda-env
-source env.sh && export RISCV=$PWD/.conda-env/esp-tools
-cd sims/verilator && setsid nohup make CONFIG=HwachaRocketConfig SIM_OPT_CXXFLAGS=-O1 -j2 &
+git -C generators/rocket-chip apply ../../patches/chipyard-rocketchip-fpu-fix.patch
+cd ~/hwacha-compiler
+./scripts/build-sim.sh          # detached, ~40-60 min; edit THREADS/OPT at the top
 ```
 
-Notes that cost days: the fesvr headers/library in `$RISCV` must come from an upstream `riscv-isa-sim`
-(the esp-tools one is too old for Chipyard 1.11's `SimDRAM.cc`); with 15 GB of RAM use `-j2` and `-O1`
-and detach the build (`setsid nohup`), otherwise the memory watchdog kills it. The simulator runs at
-about 2.7k cycles/s. Run it as
+`scripts/build-sim.sh` runs `make CONFIG=HwachaRocketConfig VERILATOR_THREADS=8 SIM_OPT_CXXFLAGS=-O2`.
+The multithreaded `-O2` sim runs at **~14k cycles/s** (5.2× the single-thread `-O1` default). Notes
+that cost days the first time: the fesvr in `$RISCV` must come from an upstream `riscv-isa-sim`
+(esp-tools' is too old for Chipyard 1.11's `SimDRAM.cc`); with 15 GB RAM keep `-j2` and detach the
+build (`setsid nohup`) or the memory watchdog kills it.
+
+Run a binary on the sim (note `+loadmem` must sit inside the `+permissive` window):
 
 ```bash
-./simulator-chipyard.harness-HwachaRocketConfig +permissive +max-cycles=4000000000 +loadmem=prog.riscv +permissive-off prog.riscv
+SIM=chipyard/sims/verilator/simulator-chipyard.harness-HwachaRocketConfig
+$SIM +permissive +max-cycles=4000000000 +loadmem=$PWD/prog.riscv +permissive-off $PWD/prog.riscv
 ```
 
-`+loadmem=` loads the ELF through the DRAM model's backdoor; without it a 1 MB image (llama) takes hours
-to load over TSI. `hwacha-cc/test/rtl-run.sh` wraps this.
+`+loadmem=` back-doors the ELF into DRAM; without it a 1 MB image (llama) takes hours over TSI.
+`hwacha-cc/test/rtl-run.sh <out> <bin>...` wraps this correctly.
 
-### 5. The compiler
+### 4. The compiler
 
 ```bash
+cd ~/hwacha-compiler
 source env.sh
 cmake -S hwacha-cc -B hwacha-cc/build -DLLVM_DIR=$HOME/miniforge3/lib/cmake/llvm
 cmake --build hwacha-cc/build -j
 hwacha-cc/build/hwacha-cc --help
 ```
 
-Pipeline for one `.cl` file (what every test Makefile does):
+One `.cl` file end to end (what every test Makefile does):
 
 ```bash
 clang -x cl -cl-std=CL1.2 -Xclang -finclude-default-header --target=riscv64-unknown-elf -march=rv64gc \
       -O2 -fno-vectorize -fno-slp-vectorize -fno-unroll-loops -emit-llvm -S k.cl -o k.ll
-hwacha-cc k.ll -o k.s                 # vf blocks (<kernel>_wt...) + control threads (<kernel>_ct, via llc)
+hwacha-cc/build/hwacha-cc k.ll -o k.s            # <kernel>_wt vf blocks + <kernel>_ct control thread (via llc)
 riscv64-unknown-elf-gcc -march=rv64gcxhwacha -mabi=lp64d -mcmodel=medany -static -O2 \
-      -I esp-tests/benchmarks/common -I esp-tests/env main.c k.s esp-tests/benchmarks/common/crt.S \
-      esp-tests/benchmarks/common/syscalls.c -nostdlib -nostartfiles -lm -lgcc -T esp-tests/benchmarks/common/test.ld -o prog.riscv
+      -I esp-tests/benchmarks/common -I esp-tests/env main.c k.s \
+      esp-tests/benchmarks/common/crt.S esp-tests/benchmarks/common/syscalls.c \
+      -nostdlib -nostartfiles -lm -lgcc -T esp-tests/benchmarks/common/test.ld -o prog.riscv
 ```
 
-Host side: each kernel `k(args...)` becomes a C-callable `void k_ct(long n, args...)` that runs the whole
-1-D NDRange of `n` work-items (stripmined by the control thread) and returns after a `fence`. Uniform
-arguments are passed by value, buffers as pointers; `__local` buffers and `barrier` are supported for
-one work-group per stripmine. The globals `hwacha_group_size` (caps the vector length so a group is
-exactly that size) and `hwacha_vl_short` (set if the hardware could not provide it) are in
-`test/apps/common.h`.
+Each kernel `k(args...)` becomes a C-callable `void k_ct(long n, args...)` that runs the whole 1-D
+NDRange of `n` work-items and returns after a `fence`. `__local`/`barrier` are supported for one
+work-group per stripmine; `hwacha_group_size` caps the vector length to the work-group size.
+Useful flags: `--analyze`, `--kstats`, `--keep`, `--verbose`; ablations `--no-ct-loops`, `--no-skip`,
+`--no-coalesce`, `--no-v32`; and `--scalar-fp` / `--no-subword-rmw` (see "Known RTL constraints").
 
-Options: `--analyze` (print per-kernel uniformity and address classification and exit), `--kstats`
-(registers, instructions, masks, jumps per kernel), `--keep` (keep the control-thread `.ll`/`.s`),
-`--verbose`, and the ablations `--no-ct-loops` (keep loops inside the vf block), `--no-skip`,
-`--no-coalesce`, `--no-v32`. `--scalar-fp` and `--no-subword-rmw` produce code that runs on Spike but
-hangs the RTL (shared FPU; masked sub-word stores), see NOTES.md.
+## Reproduce the tests
 
-## Running the tests
+`source env.sh` and build the compiler first. Fastest path to confidence is the **Spike column** — it
+checks correctness in seconds to a minute per suite. The **RTL column** produces cycle counts and takes
+minutes to hours.
 
-All commands assume `source env.sh` and a built compiler. Spike runs take seconds to a minute; RTL runs are
-listed with their approximate wall time.
-
-| suite | Spike | RTL |
+| suite | Spike (correctness) | RTL (cycles) |
 |---|---|---|
-| regression (36 kernels) | `cd hwacha-cc/test/run && make run` -> 8x `ALL KERNELS PASSED` | `make <name>.rtl` for one binary |
-| microbenchmarks | `cd ../bench && make N=1024 && spike --isa=rv64gc --extension=hwacha bench-n1024.riscv` -> `ALL VERIFIED` | `./run-all.sh 1024` (5 variants in parallel, ~15 min), `make N=4096 bench-n4096.riscv` (~40 min); logs in `results/` |
-| Rodinia | `cd ../apps && make spike` -> 6x `PASS` | `./run-rtl-seq.sh results/x.out nn.riscv kmeans.riscv pgain.riscv pathfinder.riscv bfs.riscv` (~1 h total) |
-| llama2.c | `cd ../llama && make llama.riscv && spike ... llama.riscv` -> 40 tokens, text identical to x86 `run`, `llama PASS` | `make llama_rtl.riscv && ../rtl-run.sh results/x.out llama_rtl.riscv` (4 tokens: ~70 min scalar + ~25 min vector) |
-| GPT-2 forward | `cd ../gpt2 && make gpt2.riscv && spike ... gpt2.riscv` -> `gpt2 PASS`; `gcc -O2 -DX86 gpt2_main.c -lm` prints the x86 reference lines | `../rtl-run.sh results/x.out gpt2.riscv` (~3 h, scalar reference dominates) |
-| sgemm 256^3 | `cd ../gemm && make gemm.riscv && spike ... gemm.riscv` | `make gemm_rtl.riscv` (no scalar reference) then `../rtl-run.sh ...` (~2.5 h) |
-| Berkeley hand-written | `esp-tests/benchmarks`: `make RISCV_PREFIX=... vec-sgemm-opt.riscv`, see `test/berkeley/results` | same binaries with `rtl-run.sh` |
+| regression | `cd hwacha-cc/test/run && make run` → 9× `ALL KERNELS PASSED` | `make <name>.rtl` for one binary |
+| microbench | `cd ../bench && make N=1024 && spike --isa=rv64gc --extension=hwacha bench-n1024.riscv` → `ALL VERIFIED` | `./run-all.sh 1024` (~15 min); `make N=4096 bench-n4096.riscv` (~40 min) |
+| Rodinia | `cd ../apps && make spike` → 6× `PASS` | `./run-rtl-seq.sh results/x.out nn.riscv kmeans.riscv pgain.riscv pathfinder.riscv bfs.riscv` (~1 h) |
+| llama2.c | `cd ../llama && make llama.riscv && spike --isa=rv64gc --extension=hwacha llama.riscv` → 40 tokens match x86, `llama PASS` | `make llama_rtl.riscv && ../rtl-run.sh results/x.out llama_rtl.riscv` (4 tokens, ~1.5 h) |
+| GPT-2 fwd | `cd ../gpt2 && make gpt2.riscv && spike --isa=rv64gc --extension=hwacha gpt2.riscv` → `gpt2 PASS` (both lane-per-row and reduction variants) | `../rtl-run.sh results/x.out gpt2.riscv` (~3 h, scalar ref dominates) |
+| sgemm 256³ | `cd ../gemm && make gemm.riscv && spike --isa=rv64gc --extension=hwacha gemm.riscv` | `make gemm_rtl.riscv && ../rtl-run.sh results/x.out gemm_rtl.riscv` (~2.5 h) |
+| Berkeley asm | — | `cd esp-tests/benchmarks && make RISCV_PREFIX=<esp-tools>/bin/riscv64-unknown-elf- vec-sgemm-opt.riscv`, run with `rtl-run.sh` |
 
-The x86 reference for llama is `test/llama/run_x86` (`gcc -O2 run.c -lm`, run with
-`stories260K.bin -z tok512.bin -t 0 -n 40`). Expected output of every RTL run of this snapshot is in the
-respective `results/` directory.
+The x86 reference for llama is `hwacha-cc/test/llama/run_x86` (`gcc -O2 run.c -lm`, run with
+`stories260K.bin -z tok512.bin -t 0 -n 40`). Each `test/*/results/` directory holds the expected output
+of this snapshot's RTL runs.
+
+Tips: RTL runs are long — launch them detached (`setsid nohup … &`) and cap cycles (`+max-cycles`);
+the scalar reference inside llama/gpt2/gemm dominates wall time, so once its cycle count is known you
+can build `*_rtl` variants that skip it.
 
 ## Results snapshot (Chipyard HwachaRocketConfig RTL, cycles)
 
 | program | scalar Rocket | hwacha-cc | speedup |
 |---|---|---|---|
-| saxpy N=4096 | 55851 | 3776 (hand-written 3938) | 14.8x |
-| clamp N=4096 | 74176 | 3102 (hand-written 3300) | 23.9x |
-| kmeans 1024 points x 8 dims x 5 clusters | 1269172 | 96719 | 13.1x |
-| streamcluster pgain 1024 x 8 | 331274 | 28776 | 11.5x |
-| nn 2048 | 100377 | 15072 | 6.7x |
-| pathfinder 8 x 1024 | 248183 | 144914 | 1.7x |
-| bfs 2048 nodes (GPU-style level-synchronous, work-inefficient by design) | 191905 | 621840 | 0.3x |
-| llama2.c stories260K, per token (transposed weights) | 2.88M | 235k | 12.3x |
-| GPT-2 forward (llm.c), tiny model, 16 tokens | 31244913 | 1627888 (with `work_group_reduce` kernels: 1733738) | 19.2x |
-| sgemm 256^3 | (hand-written naive 13918519, opt 4262080) | 5211891 | 2.7x naive, 0.82x opt |
+| saxpy N=4096 | 55851 | 3776 (hand 3938) | 14.8× |
+| clamp N=4096 | 74176 | 3102 (hand 3300) | 23.9× |
+| kmeans 1024×8×5 | 1269172 | 96719 | 13.1× |
+| streamcluster pgain 1024×8 | 331274 | 28776 | 11.5× |
+| nn 2048 | 100377 | 15072 | 6.7× |
+| pathfinder 8×1024 | 248183 | 144914 | 1.7× |
+| bfs 2048 (work-inefficient by design) | 191905 | 621840 | 0.3× |
+| llama2.c stories260K, per token | 2.88M | 235k | 12.3× |
+| GPT-2 forward, tiny, 16 tokens | 31244913 | 1627888 | 19.2× |
+| sgemm 256³ | (hand naive 13918519, opt 4262080) | 5211891 | 2.7× naive, 0.82× opt |
 
-What the numbers say: unit-stride streams and control-thread-driven loops get the compiler within
-10-25% of hand-written code on streaming kernels; the remaining gap on gemm is register blocking (one
-vf per loop iteration is issue-bound when the vector length is small). Details and the ablations are in
-NOTES.md.
+Unit-stride streams and control-thread loops get within 10–25% of hand-written code on streaming
+kernels; the gemm gap is register blocking. NOTES.md has the ablations and per-kernel breakdowns.
 
-## Known RTL constraints the compiler works around
+## Known RTL constraints and fixes
 
-- Scalar-destination floating-point ops inside a vf block go to the shared Rocket FPU and never complete
-  on the RTL: all FP work is kept in vector registers (`needsFPU`).
-- A masked sub-word unit-stride store with a single active lane deadlocks the VMU: masked byte/half
-  stores are emitted as load / select / unmasked store.
-- Predicate-logic ops are never masked (Spike and RTL agree): conditional predicate moves are 3-input
-  `vpop` muxes.
-- A consensual jump (`vcjal`) costs ~50 cycles: blocks are skipped only when they hold at least two
-  instructions, never at loop headers, and uniform loops leave the vf block entirely.
+The four Chipyard-integration bugs and the two scalar-FP bugs are **fixed** by the patches above
+(`sfp` test passes; loops run). The compiler still works around two hardware issues:
+
+- **Masked sub-word unit-stride store** hangs the VMU on sparse patterns — a store-credit leak on the
+  byte-store response path (localized in NOTES.md, not yet fixed in RTL). The compiler lowers masked
+  byte/half stores to load/select/store; `--no-subword-rmw` disables that workaround.
+- **Predicate-logic ops are never masked** (Spike and RTL agree): conditional predicate moves are
+  3-input `vpop` muxes.
+- A **consensual jump (`vcjal`) costs ~50 cycles**, so blocks are skipped only when they hold ≥2
+  instructions and never at loop headers; uniform loops leave the vf block entirely (control-thread
+  regions).
+- Scalar (vs-destination) FP is now functional on RTL after the FPU patches; the compiler still keeps
+  FP in vector registers by default (`needsFPU`), `--scalar-fp` opts into vs-destination FP.
