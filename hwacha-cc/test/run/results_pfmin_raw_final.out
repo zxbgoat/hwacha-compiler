@@ -1,0 +1,24 @@
+==> run/pfmin_raw.riscv start 10:01:19
+  k7 gid=0: b1=0 b2=1 valid=0 vminmax=1127
+  k7 gid=40: b1=1 b2=1 valid=1 vminmax=1127
+  k7 gid=80: b1=1 b2=1 valid=1 vminmax=1127
+  k7 gid=120: b1=1 b2=1 valid=1 vminmax=1127
+  k7 gid=160: b1=1 b2=1 valid=1 vminmax=127
+  k6 tx=0: b1=0 b2=1 b3=0 sel=9
+  k6 tx=3: b1=1 b2=1 b3=1 sel=9
+  k6 tx=6: b1=1 b2=1 b3=1 sel=7
+  k6 tx=9: b1=1 b2=1 b3=1 sel=7
+  k6 tx=12: b1=1 b2=0 b3=0 sel=7
+  k5 x=0: vmin=1 vmax=127 valid=1 computed=1 blkX=-1 small=126
+  k5 x=63: vmin=1 vmax=127 valid=1 computed=1 blkX=-1 small=126
+  k5 x=126: vmin=0 vmax=127 valid=1 computed=1 blkX=125 small=126
+  k5 x=189: vmin=0 vmax=127 valid=1 computed=1 blkX=125 small=126
+  k5 x=252: vmin=0 vmax=127 valid=1 computed=1 blkX=251 small=126
+  k5 x=315: vmin=0 vmax=127 valid=1 computed=1 blkX=251 small=126
+  k5 x=378: vmin=0 vmax=122 valid=1 computed=1 blkX=377 small=126
+  k5 x=441: vmin=0 vmax=122 valid=1 computed=1 blkX=377 small=126
+k3   PASS (0 mismatches)
+k2   PASS (0 mismatches)
+k1   PASS (0 mismatches)
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> run/pfmin_raw.riscv end 10:01:49 rc=0

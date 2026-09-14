@@ -1,0 +1,17 @@
+==> run/red.riscv start 03:29:41
+rsum     PASS (0 mismatches)
+rmax     PASS (0 mismatches)
+risum    PASS (0 mismatches)
+rnorm    PASS (0 mismatches)
+rln      PASS (0 mismatches)
+rrows    PASS (0 mismatches)
+ALL KERNELS PASSED
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> run/red.riscv end 04:27:29 rc=0
+==> run/spec.riscv start 04:27:29
+saxpy        PASS (0 mismatches / 5000)
+clamp_scale  PASS (0 mismatches / 5000)
+iota         PASS (0 mismatches / 5000)
+ALL KERNELS PASSED
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> run/spec.riscv end 05:10:14 rc=0

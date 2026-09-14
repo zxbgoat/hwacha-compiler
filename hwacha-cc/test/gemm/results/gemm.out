@@ -1,3 +1,7 @@
 ==> gemm_rtl.riscv start 14:26:12
 gemm_row hwacha-cc: 5211891 cycles, 79.52 cyc/elem
 gemm_row PASS (0 mismatches / 65536)
+gemm_flat hwacha-cc: 36499744 cycles, 556.94 cyc/elem
+gemm_flat PASS (0 mismatches / 65536)
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> gemm_rtl.riscv end 22:10:24 rc=0

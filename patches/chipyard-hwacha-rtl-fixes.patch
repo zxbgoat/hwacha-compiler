@@ -178,7 +178,7 @@ index f70e839..fafc73a 100644
    io.result.bits.cond := cond
  }
 diff --git a/src/main/scala/vmu-memif.scala b/src/main/scala/vmu-memif.scala
-index 71e7222..0345403 100644
+index 71e7222..5a8ffb4 100644
 --- a/src/main/scala/vmu-memif.scala
 +++ b/src/main/scala/vmu-memif.scala
 @@ -58,6 +58,16 @@ class MBox(implicit p: Parameters) extends VMUModule()(p) {
@@ -198,7 +198,25 @@ index 71e7222..0345403 100644
    vmt.io.w.valid := fire(vmt_ready, pred)
    req.valid := fire(req_ready, pred)
  
-@@ -154,6 +164,21 @@ class VMUTileLink(edge: TLEdgeOut)(implicit p: Parameters) extends VMUModule()(p
+@@ -109,6 +119,17 @@ class MBox(implicit p: Parameters) extends VMUModule()(p) {
+   io.sret.cnt :=
+     Mux(sret_req_en, sret_req_cnt, 0.U) +
+     Mux(sret_resp_en, sret_resp_cnt, 0.U)
++
++  // +hwacha_sret_trace=1: pin the byte-store credit leak — request vs response accounting per beat
++  val st = freechips.rocketchip.util.PlusArg("hwacha_sret_trace", 0) =/= UInt(0)
++  when (st && fire(null) && cmd.store) {
++    printf("SREQB store beat: pred=%d mt_b=%d ecnt=%d wtag=%d vmt_wr=%d vmt_wready=%d sret_req=%d sret_reqcnt=%d\n",
++      pred, mt.b, abox.bits.meta.ecnt.decode(), vmt.io.w.tag, vmt.io.w.valid, vmt.io.w.ready, sret_req_en, sret_req_cnt)
++  }
++  when (st && vmt.io.r.valid) {
++    printf("SRETB store resp: rtag=%d is_store=%d reccnt=%d sret_resp=%d\n",
++      resp.bits.tag, resp.bits.store, sret_resp_cnt, sret_resp_en)
++  }
+ }
+ 
+ class VMUTileLink(edge: TLEdgeOut)(implicit p: Parameters) extends VMUModule()(p) {
+@@ -154,6 +175,21 @@ class VMUTileLink(edge: TLEdgeOut)(implicit p: Parameters) extends VMUModule()(p
    val resp_en = edge.hasData(grant.bits) || resp.bits.store
    grant.ready := !resp_en || resp.ready
  

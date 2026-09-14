@@ -1,0 +1,12 @@
+start sparse_ld
+sparse_ld done out0=1
+start sparse_st
+sparse_st done out0=5
+start sparse_sc
+sparse_sc done
+start sparse_bs
+sparse_bs done bo0=1
+ALL DONE
+[UART] UART0 is here (stdin/stdout).
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> end rc=0

@@ -1,0 +1,6 @@
+sfp_mul  PASS (0 mismatches)
+sfp_cvt  PASS (0 mismatches)
+sfp_dbl  PASS (0 mismatches)
+ALL KERNELS PASSED
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> end rc=0

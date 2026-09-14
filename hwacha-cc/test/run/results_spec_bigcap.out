@@ -1,0 +1,5 @@
+saxpy        PASS (0 mismatches / 5000)
+clamp_scale  PASS (0 mismatches / 5000)
+iota         PASS (0 mismatches / 5000)
+ALL KERNELS PASSED
+done

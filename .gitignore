@@ -21,3 +21,6 @@ hwacha-cc/test/gpt2/gpt2_x86
 *.err
 hwacha-cc/test/*/results/*.err
 hwacha-cc/test/berkeley/*.riscv
+.metals/
+.vscode/
+.bloop/

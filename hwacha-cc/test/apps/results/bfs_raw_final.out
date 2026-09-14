@@ -1,0 +1,6 @@
+bfs scalar: 191930 cycles, 93.71 cyc/elem
+*** FAILED ***                       (timeout) after              3000001 simulation cycles
+[3000000000] %Fatal: TestDriver.v:147: Assertion failed in TOP.TestDriver
+%Error: /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:147: Verilog $stop
+Aborting...
+==> end rc=255
