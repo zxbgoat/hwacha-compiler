@@ -1,0 +1,456 @@
+diff --git a/hwacha/decode_hwacha_ut.h b/hwacha/decode_hwacha_ut.h
+index 7c59842..809332c 100644
+--- a/hwacha/decode_hwacha_ut.h
++++ b/hwacha/decode_hwacha_ut.h
+@@ -136,7 +136,7 @@ static inline freg_t fregs(float128_t f)
+   if(VPRED) { \
+     reg_t addr = ARS1+stride*UTIDX; \
+     for (uint32_t j=0; j<INSN_VSEG; j++) { \
+-      printf("HMEM: read from %016lx\n", addr); \
++      if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: read from %016lx ut=%u\n", addr, (unsigned)UTIDX); \
+       UT_WRITE_##dst(UTIDX, INSN_VRD+j, p->get_mmu()->func(addr)); \
+       addr += inc; \
+     } \
+@@ -165,7 +165,7 @@ static inline freg_t fregs(float128_t f)
+     reg_t addr = ARS1+stride*UTIDX; \
+     for (uint32_t j=0; j<INSN_VSEG; j++) { \
+       reg_t stval = UT_READ_##src(UTIDX, INSN_VRD+j); \
+-      printf("HMEM: write %016lx with %016lx\n", addr, stval); \
++      if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: write %016lx with %016lx ut=%u\n", addr, stval, (unsigned)UTIDX); \
+       p->get_mmu()->func(addr, stval); \
+       addr += inc; \
+     } \
+diff --git a/hwacha/hwacha.cc b/hwacha/hwacha.cc
+index eb0aa1b..299c407 100644
+--- a/hwacha/hwacha.cc
++++ b/hwacha/hwacha.cc
+@@ -1,3 +1,4 @@
++#include <cstdlib>
+ #include "hwacha.h"
+ #include "hwacha_xcpt.h"
+ #include "mmu.h"
+@@ -151,3 +152,16 @@ void hwacha_t::take_exception(reg_t c, reg_t a)
+   raise_interrupt();
+   throw std::logic_error("unreachable!");
+ }
++
++// 性能模型踪迹输出：设置环境变量 HWACHA_TRACE=<file> 时启用
++FILE *hwacha_trace_stream()
++{
++  static FILE *f = nullptr;
++  static bool init = false;
++  if (!init) {
++    init = true;
++    const char *path = getenv("HWACHA_TRACE");
++    if (path) f = fopen(path, "w");
++  }
++  return f;
++}
+diff --git a/hwacha/hwacha.h b/hwacha/hwacha.h
+index 904f637..08f6d1f 100644
+--- a/hwacha/hwacha.h
++++ b/hwacha/hwacha.h
+@@ -1,6 +1,8 @@
+ #ifndef _HWACHA_H
+ #define _HWACHA_H
+ 
++#include <cstdio>
++FILE *hwacha_trace_stream();
+ #include "extension.h"
+ #include <random>
+ #include <limits>
+diff --git a/hwacha/insns/vf.h b/hwacha/insns/vf.h
+index 9c414f2..49abf88 100644
+--- a/hwacha/insns/vf.h
++++ b/hwacha/insns/vf.h
+@@ -21,6 +21,19 @@ vf_loop:
+   insn_t ut_insn = p->get_mmu()->load_insn(VF_PC).insn;
+ 
+   bool matched = false;
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  // 性能模型用的指令级踪迹：pc、指令字、vl、每元素活跃掩码（LSB = 元素 0；标量指令为 '-'）
++  reg_t trace_pc = VF_PC;
++  std::string trace_mask;
++  if (!ut_insn.v_is_scalar() && hwacha_trace_stream()) {
++    for (uint32_t i = 0; i < VL; i += 4) {
++      unsigned nib = 0;
++      for (uint32_t b = 0; b < 4 && i + b < VL; b++)
++        if (read_ppr(h, ut_insn, i + b, ut_insn.vpred()) ^ ut_insn.vn()) nib |= 1u << b;
++      trace_mask.push_back("0123456789abcdef"[nib]);
++    }
++  } else trace_mask = "-";
++#endif
+ 
+   #define DECLARE_INSN(name, match, mask) \
+     extern reg_t hwacha_##name(processor_t*, insn_t, reg_t); \
+@@ -31,6 +44,11 @@ vf_loop:
+   #include "opcodes_hwacha_ut.h"
+   #undef DECLARE_INSN
+ 
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream(); matched && tf)
++    fprintf(tf, "H: WT pc=%016" PRIx64 " inst=%016" PRIx64 " next=%016" PRIx64 " vl=%u act=%s\n",
++            trace_pc, ut_insn.bits(), VF_PC, (unsigned)VL, trace_mask.c_str());
++#endif
+   if (!matched) {
+ #ifdef RISCV_ENABLE_HCOMMITLOG
+     fprintf(stderr,"H: ILL VF INST\n");
+diff --git a/hwacha/insns_ut/vamoadd_d.h b/hwacha/insns_ut/vamoadd_d.h
+index 2e5535a..87b994f 100644
+--- a/hwacha/insns_ut/vamoadd_d.h
++++ b/hwacha/insns_ut/vamoadd_d.h
+@@ -1,5 +1,8 @@
+ require_rv64;
+ if(VPRED){
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: rmw %016lx ut=%u\n", (unsigned long)RS1, (unsigned)UTIDX);
++#endif
+   reg_t v = MMU.load_uint64(RS1);
+   MMU.store_uint64(RS1, RS2 + v);
+   WRITE_RD(v);
+diff --git a/hwacha/insns_ut/vamoadd_w.h b/hwacha/insns_ut/vamoadd_w.h
+index add8967..7f83113 100644
+--- a/hwacha/insns_ut/vamoadd_w.h
++++ b/hwacha/insns_ut/vamoadd_w.h
+@@ -1,4 +1,7 @@
+ if(VPRED){
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: rmw %016lx ut=%u\n", (unsigned long)RS1, (unsigned)UTIDX);
++#endif
+ reg_t v = MMU.load_int32(RS1);
+ MMU.store_uint32(RS1, RS2 + v);
+ WRITE_RD(v);
+diff --git a/hwacha/insns_ut/vamoand_d.h b/hwacha/insns_ut/vamoand_d.h
+index 4c84b30..48f61ae 100644
+--- a/hwacha/insns_ut/vamoand_d.h
++++ b/hwacha/insns_ut/vamoand_d.h
+@@ -1,5 +1,8 @@
+ require_rv64;
+ if(VPRED){
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: rmw %016lx ut=%u\n", (unsigned long)RS1, (unsigned)UTIDX);
++#endif
+ reg_t v = MMU.load_uint64(RS1);
+ MMU.store_uint64(RS1, RS2 & v);
+ WRITE_RD(v);
+diff --git a/hwacha/insns_ut/vamoand_w.h b/hwacha/insns_ut/vamoand_w.h
+index 07ee3b3..25e9e23 100644
+--- a/hwacha/insns_ut/vamoand_w.h
++++ b/hwacha/insns_ut/vamoand_w.h
+@@ -1,4 +1,7 @@
+ if(VPRED){
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: rmw %016lx ut=%u\n", (unsigned long)RS1, (unsigned)UTIDX);
++#endif
+ reg_t v = MMU.load_int32(RS1);
+ MMU.store_uint32(RS1, RS2 & v);
+ WRITE_RD(v);
+diff --git a/hwacha/insns_ut/vamomax_d.h b/hwacha/insns_ut/vamomax_d.h
+index 35385f7..1ec6c36 100644
+--- a/hwacha/insns_ut/vamomax_d.h
++++ b/hwacha/insns_ut/vamomax_d.h
+@@ -1,5 +1,8 @@
+ require_rv64;
+ if(VPRED){
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: rmw %016lx ut=%u\n", (unsigned long)RS1, (unsigned)UTIDX);
++#endif
+ sreg_t v = MMU.load_int64(RS1);
+ MMU.store_uint64(RS1, std::max(sreg_t(RS2),v));
+ WRITE_RD(v);
+diff --git a/hwacha/insns_ut/vamomax_w.h b/hwacha/insns_ut/vamomax_w.h
+index 31a3652..1dc9447 100644
+--- a/hwacha/insns_ut/vamomax_w.h
++++ b/hwacha/insns_ut/vamomax_w.h
+@@ -1,4 +1,7 @@
+ if(VPRED){
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: rmw %016lx ut=%u\n", (unsigned long)RS1, (unsigned)UTIDX);
++#endif
+ int32_t v = MMU.load_int32(RS1);
+ MMU.store_uint32(RS1, std::max(int32_t(RS2),v));
+ WRITE_RD(v);
+diff --git a/hwacha/insns_ut/vamomaxu_d.h b/hwacha/insns_ut/vamomaxu_d.h
+index 03c716b..d031af5 100644
+--- a/hwacha/insns_ut/vamomaxu_d.h
++++ b/hwacha/insns_ut/vamomaxu_d.h
+@@ -1,5 +1,8 @@
+ require_rv64;
+ if(VPRED){
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: rmw %016lx ut=%u\n", (unsigned long)RS1, (unsigned)UTIDX);
++#endif
+ reg_t v = MMU.load_uint64(RS1);
+ MMU.store_uint64(RS1, std::max(RS2,v));
+ WRITE_RD(v);
+diff --git a/hwacha/insns_ut/vamomaxu_w.h b/hwacha/insns_ut/vamomaxu_w.h
+index 91d3464..bb1929d 100644
+--- a/hwacha/insns_ut/vamomaxu_w.h
++++ b/hwacha/insns_ut/vamomaxu_w.h
+@@ -1,4 +1,7 @@
+ if(VPRED){
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: rmw %016lx ut=%u\n", (unsigned long)RS1, (unsigned)UTIDX);
++#endif
+ uint32_t v = MMU.load_int32(RS1);
+ MMU.store_uint32(RS1, std::max(uint32_t(RS2),v));
+ WRITE_RD((int32_t)v);
+diff --git a/hwacha/insns_ut/vamomin_d.h b/hwacha/insns_ut/vamomin_d.h
+index d098339..36f4d14 100644
+--- a/hwacha/insns_ut/vamomin_d.h
++++ b/hwacha/insns_ut/vamomin_d.h
+@@ -1,5 +1,8 @@
+ require_rv64;
+ if(VPRED){
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: rmw %016lx ut=%u\n", (unsigned long)RS1, (unsigned)UTIDX);
++#endif
+ sreg_t v = MMU.load_int64(RS1);
+ MMU.store_uint64(RS1, std::min(sreg_t(RS2),v));
+ WRITE_RD(v);
+diff --git a/hwacha/insns_ut/vamomin_w.h b/hwacha/insns_ut/vamomin_w.h
+index 5eeb562..f455aa0 100644
+--- a/hwacha/insns_ut/vamomin_w.h
++++ b/hwacha/insns_ut/vamomin_w.h
+@@ -1,4 +1,7 @@
+ if(VPRED){
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: rmw %016lx ut=%u\n", (unsigned long)RS1, (unsigned)UTIDX);
++#endif
+ int32_t v = MMU.load_int32(RS1);
+ MMU.store_uint32(RS1, std::min(int32_t(RS2),v));
+ WRITE_RD(v);
+diff --git a/hwacha/insns_ut/vamominu_d.h b/hwacha/insns_ut/vamominu_d.h
+index 30df534..5fdd77c 100644
+--- a/hwacha/insns_ut/vamominu_d.h
++++ b/hwacha/insns_ut/vamominu_d.h
+@@ -1,5 +1,8 @@
+ require_rv64;
+ if(VPRED){
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: rmw %016lx ut=%u\n", (unsigned long)RS1, (unsigned)UTIDX);
++#endif
+ reg_t v = MMU.load_uint64(RS1);
+ MMU.store_uint64(RS1, std::min(RS2,v));
+ WRITE_RD(v);
+diff --git a/hwacha/insns_ut/vamominu_w.h b/hwacha/insns_ut/vamominu_w.h
+index e2693b4..2662caa 100644
+--- a/hwacha/insns_ut/vamominu_w.h
++++ b/hwacha/insns_ut/vamominu_w.h
+@@ -1,4 +1,7 @@
+ if(VPRED){
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: rmw %016lx ut=%u\n", (unsigned long)RS1, (unsigned)UTIDX);
++#endif
+ uint32_t v = MMU.load_int32(RS1);
+ MMU.store_uint32(RS1, std::min(uint32_t(RS2),v));
+ WRITE_RD((int32_t)v);
+diff --git a/hwacha/insns_ut/vamoor_d.h b/hwacha/insns_ut/vamoor_d.h
+index 1ba858f..fd8ff2f 100644
+--- a/hwacha/insns_ut/vamoor_d.h
++++ b/hwacha/insns_ut/vamoor_d.h
+@@ -1,5 +1,8 @@
+ require_rv64;
+ if(VPRED){
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: rmw %016lx ut=%u\n", (unsigned long)RS1, (unsigned)UTIDX);
++#endif
+ reg_t v = MMU.load_uint64(RS1);
+ MMU.store_uint64(RS1, RS2 | v);
+ WRITE_RD(v);
+diff --git a/hwacha/insns_ut/vamoor_w.h b/hwacha/insns_ut/vamoor_w.h
+index daa9d8f..29cab37 100644
+--- a/hwacha/insns_ut/vamoor_w.h
++++ b/hwacha/insns_ut/vamoor_w.h
+@@ -1,4 +1,7 @@
+ if(VPRED){
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: rmw %016lx ut=%u\n", (unsigned long)RS1, (unsigned)UTIDX);
++#endif
+ reg_t v = MMU.load_int32(RS1);
+ MMU.store_uint32(RS1, RS2 | v);
+ WRITE_RD(v);
+diff --git a/hwacha/insns_ut/vamoswap_d.h b/hwacha/insns_ut/vamoswap_d.h
+index 922a89e..484d0a6 100644
+--- a/hwacha/insns_ut/vamoswap_d.h
++++ b/hwacha/insns_ut/vamoswap_d.h
+@@ -1,5 +1,8 @@
+ require_rv64;
+ if(VPRED){
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: rmw %016lx ut=%u\n", (unsigned long)RS1, (unsigned)UTIDX);
++#endif
+ reg_t v = MMU.load_uint64(RS1);
+ MMU.store_uint64(RS1, RS2);
+ WRITE_RD(v);
+diff --git a/hwacha/insns_ut/vamoswap_w.h b/hwacha/insns_ut/vamoswap_w.h
+index b1aea67..075b6a4 100644
+--- a/hwacha/insns_ut/vamoswap_w.h
++++ b/hwacha/insns_ut/vamoswap_w.h
+@@ -1,4 +1,7 @@
+ if(VPRED){
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: rmw %016lx ut=%u\n", (unsigned long)RS1, (unsigned)UTIDX);
++#endif
+ reg_t v = MMU.load_int32(RS1);
+ MMU.store_uint32(RS1, RS2);
+ WRITE_RD(v);
+diff --git a/hwacha/insns_ut/vamoxor_d.h b/hwacha/insns_ut/vamoxor_d.h
+index f542374..4cb5286 100644
+--- a/hwacha/insns_ut/vamoxor_d.h
++++ b/hwacha/insns_ut/vamoxor_d.h
+@@ -1,5 +1,8 @@
+ require_rv64;
+ if(VPRED){
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: rmw %016lx ut=%u\n", (unsigned long)RS1, (unsigned)UTIDX);
++#endif
+ reg_t v = MMU.load_uint64(RS1);
+ MMU.store_uint64(RS1, RS2 ^ v);
+ WRITE_RD(v);
+diff --git a/hwacha/insns_ut/vamoxor_w.h b/hwacha/insns_ut/vamoxor_w.h
+index 5ad6df4..6ee1c74 100644
+--- a/hwacha/insns_ut/vamoxor_w.h
++++ b/hwacha/insns_ut/vamoxor_w.h
+@@ -1,4 +1,7 @@
+ if(VPRED){
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: rmw %016lx ut=%u\n", (unsigned long)RS1, (unsigned)UTIDX);
++#endif
+ reg_t v = MMU.load_int32(RS1);
+ MMU.store_uint32(RS1, RS2 ^ v);
+ WRITE_RD(v);
+diff --git a/hwacha/insns_ut/vlsegxb.h b/hwacha/insns_ut/vlsegxb.h
+index 4561eea..4536b25 100644
+--- a/hwacha/insns_ut/vlsegxb.h
++++ b/hwacha/insns_ut/vlsegxb.h
+@@ -1,4 +1,7 @@
+ if(VPRED) {
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: read from %016lx ut=%u\n", (unsigned long)(SRS1 + RS2), (unsigned)UTIDX);
++#endif
+   for (uint32_t j=0; j<INSN_VSEG; j++){
+     UT_WRITE_XPR(UTIDX, INSN_VRD+j, MMU.load_int8(SRS1 + RS2));
+   }
+diff --git a/hwacha/insns_ut/vlsegxbu.h b/hwacha/insns_ut/vlsegxbu.h
+index 172598b..9f1ed61 100644
+--- a/hwacha/insns_ut/vlsegxbu.h
++++ b/hwacha/insns_ut/vlsegxbu.h
+@@ -1,4 +1,7 @@
+ if(VPRED) {
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: read from %016lx ut=%u\n", (unsigned long)(SRS1 + RS2), (unsigned)UTIDX);
++#endif
+   for (uint32_t j=0; j<INSN_VSEG; j++){
+     UT_WRITE_XPR(UTIDX, INSN_VRD+j, MMU.load_uint8(SRS1 + RS2));
+   }
+diff --git a/hwacha/insns_ut/vlsegxd.h b/hwacha/insns_ut/vlsegxd.h
+index 5e6d960..f215e3a 100644
+--- a/hwacha/insns_ut/vlsegxd.h
++++ b/hwacha/insns_ut/vlsegxd.h
+@@ -1,5 +1,8 @@
+ require_rv64;
+ if(VPRED) {
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: read from %016lx ut=%u\n", (unsigned long)(SRS1 + RS2), (unsigned)UTIDX);
++#endif
+   for (uint32_t j=0; j<INSN_VSEG; j++){
+     UT_WRITE_XPR(UTIDX, INSN_VRD+j, MMU.load_int64(SRS1 + RS2));
+   }
+diff --git a/hwacha/insns_ut/vlsegxh.h b/hwacha/insns_ut/vlsegxh.h
+index a3abe32..6d582f1 100644
+--- a/hwacha/insns_ut/vlsegxh.h
++++ b/hwacha/insns_ut/vlsegxh.h
+@@ -1,4 +1,7 @@
+ if(VPRED) {
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: read from %016lx ut=%u\n", (unsigned long)(SRS1 + RS2), (unsigned)UTIDX);
++#endif
+   for (uint32_t j=0; j<INSN_VSEG; j++){
+     UT_WRITE_XPR(UTIDX, INSN_VRD+j, MMU.load_int16(SRS1 + RS2));
+   }
+diff --git a/hwacha/insns_ut/vlsegxhu.h b/hwacha/insns_ut/vlsegxhu.h
+index 1fd5b25..748f8e0 100644
+--- a/hwacha/insns_ut/vlsegxhu.h
++++ b/hwacha/insns_ut/vlsegxhu.h
+@@ -1,4 +1,7 @@
+ if(VPRED) {
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: read from %016lx ut=%u\n", (unsigned long)(SRS1 + RS2), (unsigned)UTIDX);
++#endif
+   for (uint32_t j=0; j<INSN_VSEG; j++){
+     UT_WRITE_XPR(UTIDX, INSN_VRD+j, MMU.load_uint16(SRS1 + RS2));
+   }
+diff --git a/hwacha/insns_ut/vlsegxw.h b/hwacha/insns_ut/vlsegxw.h
+index 839367d..97e6dad 100644
+--- a/hwacha/insns_ut/vlsegxw.h
++++ b/hwacha/insns_ut/vlsegxw.h
+@@ -1,4 +1,7 @@
+ if(VPRED) {
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: read from %016lx ut=%u\n", (unsigned long)(SRS1 + RS2), (unsigned)UTIDX);
++#endif
+   for (uint32_t j=0; j<INSN_VSEG; j++){
+     UT_WRITE_XPR(UTIDX, INSN_VRD+j, MMU.load_int32(SRS1 + RS2));
+   }
+diff --git a/hwacha/insns_ut/vlsegxwu.h b/hwacha/insns_ut/vlsegxwu.h
+index 3691f02..efb94af 100644
+--- a/hwacha/insns_ut/vlsegxwu.h
++++ b/hwacha/insns_ut/vlsegxwu.h
+@@ -1,4 +1,7 @@
+ if(VPRED) {
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: read from %016lx ut=%u\n", (unsigned long)(SRS1 + RS2), (unsigned)UTIDX);
++#endif
+   for (uint32_t j=0; j<INSN_VSEG; j++){
+     UT_WRITE_XPR(UTIDX, INSN_VRD+j, MMU.load_uint32(SRS1 + RS2));
+   }
+diff --git a/hwacha/insns_ut/vssegxb.h b/hwacha/insns_ut/vssegxb.h
+index 6e46fa6..692c742 100644
+--- a/hwacha/insns_ut/vssegxb.h
++++ b/hwacha/insns_ut/vssegxb.h
+@@ -1,4 +1,7 @@
+ if(VPRED) {
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: write %016lx ut=%u\n", (unsigned long)(SRS1 + RS2), (unsigned)UTIDX);
++#endif
+   for (uint32_t j=0; j<INSN_VSEG; j++){
+     MMU.store_uint8(SRS1 + RS2, UT_READ_XPR(UTIDX,INSN_VRD+j));
+   }
+diff --git a/hwacha/insns_ut/vssegxd.h b/hwacha/insns_ut/vssegxd.h
+index 8150240..f4076d6 100644
+--- a/hwacha/insns_ut/vssegxd.h
++++ b/hwacha/insns_ut/vssegxd.h
+@@ -1,5 +1,8 @@
+ require_rv64;
+ if(VPRED) {
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: write %016lx ut=%u\n", (unsigned long)(SRS1 + RS2), (unsigned)UTIDX);
++#endif
+   for (uint32_t j=0; j<INSN_VSEG; j++){
+     MMU.store_uint64(SRS1 + RS2, UT_READ_XPR(UTIDX,INSN_VRD+j));
+   }
+diff --git a/hwacha/insns_ut/vssegxh.h b/hwacha/insns_ut/vssegxh.h
+index 01cc0af..7e657a4 100644
+--- a/hwacha/insns_ut/vssegxh.h
++++ b/hwacha/insns_ut/vssegxh.h
+@@ -1,4 +1,7 @@
+ if(VPRED) {
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: write %016lx ut=%u\n", (unsigned long)(SRS1 + RS2), (unsigned)UTIDX);
++#endif
+   for (uint32_t j=0; j<INSN_VSEG; j++){
+     MMU.store_uint16(SRS1 + RS2, UT_READ_XPR(UTIDX,INSN_VRD+j));
+   }
+diff --git a/hwacha/insns_ut/vssegxw.h b/hwacha/insns_ut/vssegxw.h
+index ade0be1..7bda979 100644
+--- a/hwacha/insns_ut/vssegxw.h
++++ b/hwacha/insns_ut/vssegxw.h
+@@ -1,4 +1,7 @@
+ if(VPRED) {
++#ifdef RISCV_ENABLE_HCOMMITLOG
++  if (FILE *tf = hwacha_trace_stream()) fprintf(tf, "HMEM: write %016lx ut=%u\n", (unsigned long)(SRS1 + RS2), (unsigned)UTIDX);
++#endif
+   for (uint32_t j=0; j<INSN_VSEG; j++){
+     MMU.store_uint32(SRS1 + RS2, UT_READ_XPR(UTIDX,INSN_VRD+j));
+   }

@@ -1,0 +1,42 @@
+diff --git a/src/main/scala/tile/RocketTile.scala b/src/main/scala/tile/RocketTile.scala
+index 9d4c460d6..e425d4238 100644
+--- a/src/main/scala/tile/RocketTile.scala
++++ b/src/main/scala/tile/RocketTile.scala
+@@ -165,8 +165,13 @@ class RocketTileModuleImp(outer: RocketTile) extends BaseTileModuleImp(outer)
+   dcachePorts += core.io.dmem // TODO outer.dcachePorts += () => module.core.io.dmem ??
+   fpuOpt foreach { fpu =>
+     core.io.fpu :<>= fpu.io.waiveAs[FPUCoreIO](_.cp_req, _.cp_resp)
+-    fpu.io.cp_req := DontCare
+-    fpu.io.cp_resp := DontCare
++    // HasLazyRoCCModule (a trait, initialised before this body) already connected cp_req/cp_resp
++    // to the RoCC FPU arbiter when a RoCC uses the FPU; an unconditional DontCare here would be the
++    // last connection and silently drop every coprocessor FPU request (Hwacha scalar FP ops hung).
++    if (!outer.roccs.exists(_.usesFPU)) {
++      fpu.io.cp_req := DontCare
++      fpu.io.cp_resp := DontCare
++    }
+   }
+   if (fpuOpt.isEmpty) {
+     core.io.fpu := DontCare
+@@ -178,10 +183,17 @@ class RocketTileModuleImp(outer: RocketTile) extends BaseTileModuleImp(outer)
+     cmdRouter.get.io.in <> core.io.rocc.cmd
+     outer.roccs.foreach{ lm =>
+       lm.module.io.exception := core.io.rocc.exception
+-      lm.module.io.fpu_req.ready := DontCare
+-      lm.module.io.fpu_resp.valid := DontCare
+-      lm.module.io.fpu_resp.bits.data := DontCare
+-      lm.module.io.fpu_resp.bits.exc := DontCare
++      // Tie off the FPU port only for RoCCs that do NOT use the FPU. For an FPU-using RoCC (Hwacha)
++      // HasLazyRoCCModule already connected fpu_req/fpu_resp to the shared-FPU arbiter earlier; these
++      // DontCare assignments run later in the module body and, by last-connect-wins, would silently
++      // override that connection (fpu_req.ready stuck at 0, fpu_resp.valid never asserted), hanging
++      // every Hwacha scalar FP op. This is the real cause behind the "vs-destination FP hangs" bug.
++      if (!lm.usesFPU) {
++        lm.module.io.fpu_req.ready := DontCare
++        lm.module.io.fpu_resp.valid := DontCare
++        lm.module.io.fpu_resp.bits.data := DontCare
++        lm.module.io.fpu_resp.bits.exc := DontCare
++      }
+     }
+     core.io.rocc.resp <> respArb.get.io.out
+     core.io.rocc.busy <> (cmdRouter.get.io.busy || outer.roccs.map(_.module.io.busy).reduce(_ || _))

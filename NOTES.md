@@ -780,3 +780,32 @@ RTL 结果（GPT-2 16 token，2026-09-14）：
 全部 PASS。softmax（行长 1024、每 lane 8 元素）归约树比每行一个 lane 快 37%；layernorm（行长 64）和 attention（行长 16）
 仍是固定开销主导，树每步一次 vf 发射，6 步或 4 步的代价超过 64 或 16 元素的串行循环。行短时的正确写法仍是
 "lane 内串行，最后一步跨 lane"；再往下压只能把小 vl 的树在一个 vf 里展开。
+
+## RTL bug 深挖：标量浮点挂死的真正根因（2026-09-14）
+之前记的"vs 目的浮点走共享 FPU、在此配置下没接通"只对了一半。用 +verbose 在 Hwacha 的 RoCC 边界、tile 的 FPU 仲裁器、
+Rocket FPU 三处加握手打印后定位到两个独立的 bug：
+1. `hwacha/scalar-decode.scala`：FPU 译码表的 typeTagIn/typeTagOut 两列还是旧接口的"single 位"（Y=单精度）,
+   而现在 Rocket 的 FPU 用类型索引（S=0, D=1, minFLen=32）。每条单精度标量运算都被当成双精度,反之亦然。
+   修复：把这两列单独引出为 fpu_single_in/out,再 `typeTag := Mux(single, 0, 1)`。
+2. `rocket-chip/tile/RocketTile.scala`：协处理器连接循环无条件对每个 RoCC 赋 `fpu_req.ready := DontCare`、
+   `fpu_resp.valid/bits := DontCare`。这段在模块体里、晚于 HasLazyRoCCModule 把 Hwacha 的 FPU 端口连到共享 FPU
+   仲裁器,后连接覆盖前连接,于是 Hwacha 侧永远 `fpu_req.ready=0`、永远收不到响应。**这才是标量浮点挂死的真凶。**
+   边界打印铁证:仲裁器 in_req ready=1、FPU 算出结果、仲裁器收到响应,但 Hwacha 侧 fpu_req.ready=0、无响应。
+   修复:那四行 DontCare 用 `if (!lm.usesFPU)` 包起来,只给不用 FPU 的 RoCC 做端口收尾。
+另外:稀疏字节 store 的"VMU 死锁"复现不出来。TileLink + VMU 跟踪显示 VMU 无卡住请求;当前编译器生成的稀疏字节 store
+探针在新旧仿真器上都通过。之前的现象很可能是 consensual 跳转链接寄存器被覆盖的编译器 bug(做归约时已修)所致,
+需在 bfs 上进一步确认后即可去掉 `--no-subword-rmw` 绕过。
+这两处 FPU 修复独立于编译器:编译器仍默认把 FP 留在向量寄存器(needsFPU),修好后 `--scalar-fp` 生成的代码才可用于 RTL。
+
+## 收尾三件事（2026-09-14）
+1. **稀疏字节 store 绕过不能去掉——是真的 RTL bug。** bfs 用当前编译器（已含 LinkVS 修复）以 `--no-subword-rmw` 重编后,
+   在修复 FPU 的仿真器上仍挂死(标量参考打印后卡住,3M 周期超时)。MRT 信用跟踪定位:掩码字节 store 的某些 beat(整组 lane 被
+   掩掉、跨 8 元素条带边界)预留了存储信用却不归还,`pending.store` 卡在 scount=496/512 永不清零,后续 fence/vf 结束永远等待。
+   共泄漏 16 个信用(2 组 × 8)。这是 VMU/sequencer 存储信用记账 bug,不是编译器问题(简单的单 lane-0 探针触发不了,bfs 才触发)。
+   修它要改 vmu-pred/vmu-memif 的 sret 逻辑,是另一个多小时的活。`--no-subword-rmw` 绕过保留。
+2. **FPU 修复独立验证:** sfp 三个 kernel(单精度乘加、整数转浮点、双精度)在修复后仿真器上全 PASS;spec、red 无回归
+   (spec 三个 5000 元素 kernel 需要约 2-3M 周期,之前用 500k/1.5M 上限误判为挂,8M 上限下 ALL PASS)。
+   两处 FPU 修复导出到 `patches/chipyard-hwacha-rtl-fixes.patch`(scalar-decode 类型标签)和 `patches/chipyard-rocketchip-fpu-fix.patch`
+   (RocketTile FPU 端口 DontCare 守卫)。补丁里还含 plusarg 门控的 TileLink/VMU/MRT 跟踪(默认关闭,用于性能模型和信用泄漏调试)。
+3. **多线程仿真器速度:** VERILATOR_THREADS=8 + SIM_OPT_CXXFLAGS=-O2,实测 **约 14000 周期/秒**,对比原单线程 -O1 的 2700,
+   快 5.2 倍。GPT-2 那种约 3100 万周期的运行从 6 小时降到约 40 分钟。构建脚本 `scripts/build-sim.sh`。

@@ -62,6 +62,55 @@ index f89f8d3..d536c96 100644
    tlb.io.sfence.valid := false.B
  
    req.ready := Bool(true)
+diff --git a/src/main/scala/mrt.scala b/src/main/scala/mrt.scala
+index c4ee410..c9fc0ee 100644
+--- a/src/main/scala/mrt.scala
++++ b/src/main/scala/mrt.scala
+@@ -45,6 +45,14 @@ class MemTracker(nlreq: Int, nsreq: Int)(implicit p: Parameters) extends HwachaM
+ 
+   io.pending.load := !lcnt.io.full
+   io.pending.store := !scnt.io.full
++  // credit accounting trace (+verbose): a mismatch between reserved and returned elements hangs the fence
++  when (io.sreq.reserve) { printf("MRT sreq cnt=%d scount=%d\n", io.sreq.cnt, scnt.io.count) }
++  when (io.sret.update && io.sret.cnt =/= UInt(0)) { printf("MRT sret cnt=%d scount=%d\n", io.sret.cnt, scnt.io.count) }
++  when (io.lreq.reserve) { printf("MRT lreq cnt=%d lcount=%d\n", io.lreq.cnt, lcnt.io.count) }
++  when (io.lret.update && io.lret.cnt =/= UInt(0)) { printf("MRT lret cnt=%d lcount=%d\n", io.lret.cnt, lcnt.io.count) }
++  val mrt_tick = Reg(init = UInt(0, 14))
++  mrt_tick := mrt_tick + UInt(1)
++  when (mrt_tick === UInt(0) && io.pending.all) { printf("MRT pending: scount=%d/%d lcount=%d/%d\n", scnt.io.count, UInt(nsreq), lcnt.io.count, UInt(nlreq)) }
+   io.pending.all := io.pending.load || io.pending.store
+ 
+   addr.io.enq := io.areq
+diff --git a/src/main/scala/scalar-decode.scala b/src/main/scala/scalar-decode.scala
+index ee7463b..6da1d20 100644
+--- a/src/main/scala/scalar-decode.scala
++++ b/src/main/scala/scalar-decode.scala
+@@ -62,6 +62,8 @@ class IntCtrlSigs(implicit p: Parameters) extends HwachaBundle()(p) {
+   val vrpu_fn = Bits(width = FR_X.getWidth)
+   val vrfu_val = Bool()
+   val fpu_fn = new freechips.rocketchip.tile.FPUCtrlSigs
++  val fpu_single_in = Bool()    // raw decode-table columns (legacy "single" bit), see decode()
++  val fpu_single_out = Bool()
+ 
+   val vp = UInt(width = bPRegs)
+   val vs1 = UInt(width = bRegs)
+@@ -95,9 +97,15 @@ class IntCtrlSigs(implicit p: Parameters) extends HwachaBundle()(p) {
+         vrpu_val,
+         vrfu_val,
+         fpu_fn.ldst, fpu_fn.wen, fpu_fn.ren1, fpu_fn.ren2, fpu_fn.ren3, fpu_fn.swap12,
+-          fpu_fn.swap23, fpu_fn.typeTagIn, fpu_fn.typeTagOut, fpu_fn.fromint, fpu_fn.toint,
++          fpu_fn.swap23, fpu_single_in, fpu_single_out, fpu_fn.fromint, fpu_fn.toint,
+           fpu_fn.fastpipe, fpu_fn.fma, fpu_fn.div, fpu_fn.sqrt, fpu_fn.wflags)
+     sigs zip decoder map {case(s,d) => s := d}
++    // The FPU decode table above still uses the legacy "single" bit (Y = single, N = double) in the
++    // typeTagIn/typeTagOut columns. Rocket's FPU now indexes its float types (S = 0, D = 1 with the
++    // default minFLen = 32), so the bit must be inverted or every scalar FP op is routed to the
++    // wrong unit. Half precision never reaches Rocket (converted to single locally).
++    fpu_fn.typeTagIn := Mux(fpu_single_in, UInt(0), UInt(1))
++    fpu_fn.typeTagOut := Mux(fpu_single_out, UInt(0), UInt(1))
+     vd_type := reg_type(vd_t, vd_dyn, inst(OPC_VD))
+     vs1_type := reg_type(vs1_t, vs1_dyn, inst(OPC_VS1))
+     vs2_type := reg_type(vs2_t, vs2_dyn, inst(OPC_VS2))
 diff --git a/src/main/scala/smu.scala b/src/main/scala/smu.scala
 index 9921c10..b618640 100644
 --- a/src/main/scala/smu.scala
@@ -76,6 +125,22 @@ index 9921c10..b618640 100644
    tlb.status := req.status
    io.irq <> tbox.io.irq
  
+diff --git a/src/main/scala/util.scala b/src/main/scala/util.scala
+index e41d19d..1a35b05 100644
+--- a/src/main/scala/util.scala
++++ b/src/main/scala/util.scala
+@@ -179,9 +179,11 @@ class LookAheadCounter(reset_cnt: Int, max_cnt: Int, resetSignal: Bool = null)(i
+     val inc = new CounterUpdateIO(sz).flip
+     val dec = new CounterLookAheadIO().flip
+     val full = Bool(OUTPUT)
++    val count = UInt(OUTPUT, sz)
+   }
+ 
+   val count = Reg(init = UInt(reset_cnt, sz))
++  io.count := count
+   io.dec.available := (count >= io.dec.cnt)
+ 
+   val add = (io.inc.cnt & Fill(sz, io.inc.update))
 diff --git a/src/main/scala/vfu-rpred.scala b/src/main/scala/vfu-rpred.scala
 index f70e839..fafc73a 100644
 --- a/src/main/scala/vfu-rpred.scala
@@ -112,3 +177,157 @@ index f70e839..fafc73a 100644
  
    io.result.bits.cond := cond
  }
+diff --git a/src/main/scala/vmu-memif.scala b/src/main/scala/vmu-memif.scala
+index 71e7222..0345403 100644
+--- a/src/main/scala/vmu-memif.scala
++++ b/src/main/scala/vmu-memif.scala
+@@ -58,6 +58,16 @@ class MBox(implicit p: Parameters) extends VMUModule()(p) {
+ 
+   abox.ready := fire(abox.valid)
+   sbox.ready := fire(sbox_valid, write)
++  // +hwacha_vmu_trace=1: trace the store/load request path (debugging the masked sub-word store deadlock)
++  val trace = freechips.rocketchip.util.PlusArg("hwacha_vmu_trace", 0, "trace the Hwacha VMU memory path") =/= UInt(0)
++  when (trace && fire(null)) {
++    printf("VMU MBOX cmd=%x addr=%x mask=%x pred=%d ecnt=%d last=%d vsdq=%d epad=%d\n", abox.bits.fn.cmd, abox.bits.addr, abox.bits.meta.mask, pred, abox.bits.meta.ecnt.decode(), abox.bits.meta.last, abox.bits.meta.vsdq, abox.bits.meta.epad)
++  }
++  val mbox_stall = Reg(init = UInt(0, 16))
++  mbox_stall := Mux(abox.valid && !fire(null), mbox_stall + UInt(1), UInt(0))
++  when (trace && mbox_stall === UInt(3000)) {
++    printf("VMU MBOX STALL write=%d sbox.valid=%d vmt_ready=%d req_ready=%d pred=%d addr=%x mask=%x last=%d vsdq=%d\n", write, sbox.valid, vmt_ready, req_ready, pred, abox.bits.addr, abox.bits.meta.mask, abox.bits.meta.last, abox.bits.meta.vsdq)
++  }
+   vmt.io.w.valid := fire(vmt_ready, pred)
+   req.valid := fire(req_ready, pred)
+ 
+@@ -154,6 +164,21 @@ class VMUTileLink(edge: TLEdgeOut)(implicit p: Parameters) extends VMUModule()(p
+   val resp_en = edge.hasData(grant.bits) || resp.bits.store
+   grant.ready := !resp_en || resp.ready
+ 
++  // +hwacha_tl_trace=1: 打印 Hwacha VMU 的 TileLink A/D 通道握手（用于性能模型校准）
++  val tl_trace = freechips.rocketchip.util.PlusArg("hwacha_tl_trace", 0, "trace the Hwacha VMU TileLink A/D channels") =/= UInt(0)
++  val tl_cyc = Reg(init = UInt(0, 64))
++  tl_cyc := tl_cyc + UInt(1)
++  val tl_a_wait = Reg(init = UInt(0, 16))
++  tl_a_wait := Mux(acquire.valid && !acquire.ready, tl_a_wait + UInt(1), UInt(0))
++  val tl_d_wait = Reg(init = UInt(0, 16))
++  tl_d_wait := Mux(grant.valid && !grant.ready, tl_d_wait + UInt(1), UInt(0))
++  when (tl_trace && acquire.valid && acquire.ready) {
++    printf("HTL A cyc=%d op=%d addr=%x src=%d wait=%d\n", tl_cyc, acquire.bits.opcode, acquire.bits.address, acquire.bits.source, tl_a_wait)
++  }
++  when (tl_trace && grant.valid && grant.ready) {
++    printf("HTL D cyc=%d op=%d src=%d wait=%d\n", tl_cyc, grant.bits.opcode, grant.bits.source, tl_d_wait)
++  }
++
+   resp.valid := grant.valid && resp_en
+   resp.bits.tag := grant.bits.source(bVMUTag-1,0)
+   resp.bits.data := grant.bits.data
+diff --git a/src/main/scala/vmu-pred.scala b/src/main/scala/vmu-pred.scala
+index 1b06a48..dda1086 100644
+--- a/src/main/scala/vmu-pred.scala
++++ b/src/main/scala/vmu-pred.scala
+@@ -255,6 +255,10 @@ class PBox1(implicit p: Parameters) extends VMUModule()(p) {
+ 
+   val ingress_deq = (index_end || meta.last) && !surplus
+   val ingress_valid = surplus || io.ingress.valid
++  val trace = freechips.rocketchip.util.PlusArg("hwacha_vmu_trace", 0) =/= UInt(0)
++  when (trace && io.sample.fire) {
++    printf("VMU PBOX1 last=%d vsdq=%d surplus=%d truncate=%d data=%x eoff=%d vlen=%d index=%d\n", meta.last, io.sample.bits.vsdq, surplus, truncate, mask_data, meta.eoff, op.vlen, index)
++  }
+ 
+   private def fire(exclude: Bool, include: Bool*) = {
+     val rvs = Seq(ingress_valid, io.sample.ready)
+diff --git a/src/main/scala/vmu-sdata.scala b/src/main/scala/vmu-sdata.scala
+index 90721ec..e8baf92 100644
+--- a/src/main/scala/vmu-sdata.scala
++++ b/src/main/scala/vmu-sdata.scala
+@@ -98,4 +98,13 @@ class SBox(implicit p: Parameters) extends VMUModule()(p) {
+     index := Mux(op.mode.unit || meta.last, UInt(0), index_next)
+     lead := meta.last
+   }
++  val trace = freechips.rocketchip.util.PlusArg("hwacha_vmu_trace", 0) =/= UInt(0)
++  when (trace && fire(null)) {
++    printf("VMU SBOX index=%d offset=%d unit=%d mt_b=%d truncate=%d vsdq_deq=%d deq_valid=%d lead=%d last=%d ecnt=%d meta_vsdq=%d\n", index, offset, op.mode.unit, op.mt.b, truncate, vsdq_deq, vsdq.io.deq.valid, lead, meta.last, meta.ecnt.decode(), meta.vsdq)
++  }
++  val sbox_stall = Reg(init = UInt(0, 16))
++  sbox_stall := Mux(io.ctrl.valid && io.mem.ready && !vsdq_valid, sbox_stall + UInt(1), UInt(0))
++  when (trace && sbox_stall === UInt(3000)) {
++    printf("VMU SBOX STALL waiting for store data: index=%d offset=%d unit=%d mt_b=%d truncate=%d lead=%d last=%d ecnt=%d meta_vsdq=%d\n", index, offset, op.mode.unit, op.mt.b, truncate, lead, meta.last, meta.ecnt.decode(), meta.vsdq)
++  }
+ }
+diff --git a/src/main/scala/vmu.scala b/src/main/scala/vmu.scala
+index c3e7512..ea99ee2 100644
+--- a/src/main/scala/vmu.scala
++++ b/src/main/scala/vmu.scala
+@@ -68,6 +68,7 @@ class VMUDecodedOp(implicit p: Parameters) extends VMUOp()(p) with VMUMetaIndex
+   val mt = new DecodedMemType
+ 
+   val first = Bool()
++  val last = Bool()    // IBoxML：本 op 的最后一个子操作（aret 依据）
+ }
+ 
+ object VMUDecodedOp extends HwachaConstants {
+@@ -88,6 +89,7 @@ object VMUDecodedOp extends HwachaConstants {
+ 
+     dec.eidx := UInt(0)
+     dec.first := Bool(true)
++    dec.last := Bool(true)
+     dec
+   }
+ }
+@@ -200,12 +202,10 @@ class IBoxML(implicit p: Parameters) extends VMUModule()(p) {
+   val ecnt = Mux(vlen_end, op.vlen(bfLStrip-1, 0), ecnt_max)
+ 
+ 
+-  val qcntr = Reg(init = 0.U((log2Up(nVMUIQ + 2)).W))
+-  val qcnts = Wire(Vec(io.issue.size, UInt(width = log2Up(nVMUIQ + 1))))
+-  val aret_pending = Reg(init = Bool(false))
++  // aret：原实现用 qcntr 计数 abox2 队列里本 op 剩余的子操作，索引访存每拍入队一个子操作时计数溢出
++  // （assert "qcntr too large"）。改为给每个子操作打 last 标记，abox2 取走带 last 的子操作时发 aret。
+   val enq = io.span(io.issue.zipWithIndex.map { case (deq, i) =>
+     val q = Module(new Queue(new VMUDecodedOp, nVMUIQ))
+-    qcnts(i) := q.io.count
+     q.suggestName("qInst")
+     deq <> q.io.deq
+     q.io.enq
+@@ -215,18 +215,13 @@ class IBoxML(implicit p: Parameters) extends VMUModule()(p) {
+   enq.bits.base := op.base
+   enq.bits.eidx := op.eidx
+   enq.bits.first := op.first
++  enq.bits.last := vlen_end
+   enq.bits.status := op.status
+ 
+   io.op.ready := Bool(false)
+-  io.aret := Bool(false)
++  io.aret := io.issue(3).fire && io.issue(3).bits.last
+   enq.valid := Bool(false)
+ 
+-  when(io.issue(3).fire) {
+-    qcntr := Mux(qcntr === 0.U, 0.U, (qcntr.zext - 1.S).asUInt)
+-    io.aret := qcntr === 1.U || aret_pending
+-    aret_pending := Bool(false)
+-  }
+-
+   val s_idle :: s_busy :: s_setup :: Nil = Enum(UInt(), 3)
+   val state = Reg(init = s_idle)
+ 
+@@ -245,7 +240,7 @@ class IBoxML(implicit p: Parameters) extends VMUModule()(p) {
+ 
+     is (s_busy) {
+       io.agu.in.valid := !indexed
+-      enq.valid := !aret_pending && (indexed || io.agu.out.valid)
++      enq.valid := indexed || io.agu.out.valid
+ 
+       when (enq.fire) {
+         when (!indexed) {
+@@ -257,12 +252,6 @@ class IBoxML(implicit p: Parameters) extends VMUModule()(p) {
+         when (vlen_end) {
+           state := s_idle
+           io.op.ready := Bool(true)
+-          // Last queue is abox2 deepest stage
+-          // +1+1 because we are enqing this cycle and need to wait for the next op to be eaten by abox2
+-          qcntr := qcnts(3) + 1.U + Mux(io.issue(3).fire, 0.U, 1.U)
+-          // aret after next issue3.fire
+-          aret_pending := qcntr =/= 0.U
+-          assert(qcntr <= UInt(1), "IBox: qcntr too large. aret broken")
+         }
+       }
+     }
