@@ -29,3 +29,6 @@ hwacha-cc/test/*/*.gpu.ll
 hwacha-cc/test/diffusion/ckpt.bin
 hwacha-cc/test/diffusion/*.log
 hwacha-cc/test/diffusion/diffusion_x86
+hwacha-cc/test/mnist/*.bin
+hwacha-cc/test/mnist/*.log
+hwacha-cc/test/mnist/x86_*

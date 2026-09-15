@@ -1458,7 +1458,18 @@ bool WTGen::emitInst(Instruction &I, unsigned Pos) {
     Value *Src = Cast->getOperand(0);
     Type *ST = Src->getType();
     switch (Cast->getOpcode()) {
-    case Instruction::Trunc: case Instruction::PtrToInt: case Instruction::IntToPtr:
+    case Instruction::Trunc:
+      if (T->isIntegerTy(1)) {   // integer -> predicate: the low bit, i.e. (x & 1) != 0
+        std::string D = dest(I), S = R(Src);
+        Reg Tmp = alloc(isNarrow(Src) ? RC::VW : RC::VV);
+        emit("", "vand", {Tmp.str(), S, R(ConstantInt::get(Type::getInt64Ty(F.getContext()), 1))});
+        emit("", "vcmpeq", {D, Tmp.str(), "vs0"});
+        emit("", "vpop", {D, D, D, D, "0x55"});   // not
+        (Tmp.Class == RC::VV ? VVUsed : VWUsed)[Tmp.Idx] = false;
+        return true;
+      }
+      [[fallthrough]];
+    case Instruction::PtrToInt: case Instruction::IntToPtr:
     case Instruction::BitCast:
       // registers hold sign-extended 64-bit values; these are all no-ops
       RegOf[&I] = regOfValue(Src); Alias.insert(&I);

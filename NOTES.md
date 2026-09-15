@@ -1026,6 +1026,49 @@ per-iteration 的流基址都要 vs）。改成 tap 也做控制线程循环，�
 
 **Spike 结果**：前 2 步预测噪声与标量参考最大差 4e-6（参考最大值 4.6）；200 步跑完
 （约 45 分钟），最终 16×16 图与 x86 参考**逐像素完全一致**（`results/spike200.log` vs
-`results/x86_200.log`）。每步前向 20.42M Spike 周期；标量参考同一步是 1.5G 周期量级（单个
-64→16 的 3×3 卷积层标量 42.9M vs Hwacha 0.27M，157×，Spike 计数）。RTL 的一步和卷积层
-基准结果见下。
+`results/x86_200.log`）。每步前向 20.42M Spike 周期。
+
+**RTL 结果**（`results/diffusion_rtl.out`、`results/diffusion_bench_rtl.out`）：一步 U-Net 前向
+74.06M 周期（150.7M MAC → 2.0 MAC/cycle）；单个 3×3 卷积层 64→16（2.36M MAC）：标量 Rocket
+60.2M 周期，Hwacha 0.94M 周期，**64×**（2.5 MAC/cycle）。整步的标量参考没在 RTL 上跑
+（按层基准推算约 3.8G 周期，75 小时）。200 步采样在 RTL 上是 14.8G 周期。
+
+## 三个 MNIST 扩散模型（2026-09-16）
+
+bot66/MNISTDiffusion、TeaPearce/Conditional_Diffusion_MNIST、aestuans/mnist-diffusion 三个仓库，
+一套 kernel（`test/mnist/mnist.cl`）、一个宿主（`mnist_main.c`，`-DMODEL_*` 选模型）。
+
+| 模型 | 结构 | 参数 | 每步 MAC | 步数 | 权重来源 |
+|---|---|---|---|---|---|
+| bot66 | ShuffleNet-v2 风格 U-Net：深度可分离 3×3 卷积 + 1×1 卷积 + BN + SiLU，channel shuffle，双线性上采样，`nn.Embedding` 时间嵌入 + MLP | 1.08M | 119M | 1000（余弦 schedule，clip x0 采样器） | 本机 GPU 训练 30 epoch（默认 100） |
+| teapearce | ContextUnet n_feat 128（diffusion.c 的同族放大版）：3×3 卷积 + BN + GELU，MaxPool，AvgPool(7)，ConvTranspose 7×7 和 2×2，GroupNorm | 6.59M | 1373M（引导 ×2） | 400 | 仓库自带 pretrained_model.zip |
+| aestuans | ResNet U-Net：3×3 卷积（stride 2 下采样）+ BN + ReLU，1×1 shortcut，ConvTranspose 2×2，时间/条件嵌入 MLP 后按通道广播拼接 | 0.71M | 174M | 500 | 本机 GPU 训练 15 epoch |
+
+**新算子**（相对 diffusion.c）：stride-2 的 3×3 / 1×1 卷积（lane = 半尺寸平面的输出位置，tap 是
+gather）；深度可分离 3×3（lane = 位置，控制线程循环通道，9 个移位流 + 9 条 vfmadd，每通道一条
+vsw）；eval 模式 BatchNorm 折成每通道仿射（scale/shift 在 host 预先算好，和 SiLU/GELU/ReLU 一个
+kernel）；带 gamma/beta 的 GroupNorm；双线性 ×2 上采样（align_corners=False 的权重 0.25/0.75，
+边缘 clamp）；channel shuffle；嵌入按通道广播成平面；GELU 用 erf 的 A-S 7.1.26 近似（PyTorch 的
+`nn.GELU()` 默认是 erf 版，不是 tanh 版）。激活函数选择写成三个都算再 select：写成 switch 会被
+clang 变成 `switch` 终结符，hwacha-cc 不支持。
+
+**验证链**：`export.py` 把三个模型导成平坦 fp32 .bin，并对固定的 (x, t, c) 导出 PyTorch 的 eps。
+每个二进制先跑一次前向和 PyTorch 比（三个模型都在 2e-6 以内，标量参考和 Hwacha 都是），再采样
+时前 CHECK_STEPS 步 Hwacha vs 标量比对，x86 版（`-DX86`）用同样的 LCG 出参考图。
+
+**踩的坑**：
+
+- bot66 的 encoder 把 `conv0` 的输出既当 shortcut 又送进 in-place 的 time MLP，我第一版
+  shortcut 拿到的是 MLP 之后的值——逐级比对到 dec1 才发现。调试打印用的 fmtf 环形缓冲只有
+  4 个槽，一行打 8 个数就自己覆盖自己，先被这个误导了一轮。
+- TeaPearce 的 `context_mask` 翻转写成 `c * (-(1 - mask))`，所以有条件时送进网络的是
+  **负的** one-hot；照抄才能和 PyTorch 对上。
+- aestuans 的默认采样路径用的是 `torch.rand_like`（均匀噪声），输出漂到 [1.25, 2.9] 一片糊，
+  仓库自己出 gif 的 `same_rand` 路径才是高斯噪声；C 里按高斯做。
+- bot66 训练时导出过一次中间 checkpoint，和最终的对不上，白查了一阵。
+- 新的 codegen 缺口：`trunc iN to i1`（clang 把 `(c & 1) ? a : b` 变成 trunc + select）之前被
+  当成 no-op 别名，谓词寄存器里放了个 vv，汇编器报 "Invalid vector predicate register"。现在
+  降成 `vand 1` + `vcmpeq` + 取反。
+- 深度可分离卷积不加 `--assume-noalias` 时，通道循环里的 9 个一致加载（权重）因为可能和
+  `y` 的 store 别名而进不了控制线程，整个循环留在 vf 块里用 vlxw gather，慢一个数量级；
+  Makefile 里默认加上。
