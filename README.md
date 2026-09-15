@@ -24,6 +24,7 @@ Only first-party work is tracked. Large upstream trees and build products are **
 | `hwacha-cc/test/llama` | llama2.c stories260K inference (model + tokenizer embedded, vectorized `expf`) |
 | `hwacha-cc/test/gpt2` | GPT-2 forward from llm.c on a tiny random model, incl. `work_group_reduce` variants |
 | `hwacha-cc/test/gemm` | 256³ sgemm vs Berkeley `vec-sgemm-naive`/`opt`; `hwacha-cc/test/berkeley` holds their RTL logs |
+| `hwacha-cc/test/diffusion` | diffusion.c (hku): 16×16 sprite DDPM with a ContextUnet (conv3x3, transposed conv, batch/group norm, GELU), 200 sampling steps, scalar reference in the same binary |
 | `hwacha-cc/mlir` | `hwacha-mlir`, the MLIR front end: linalg/scf.parallel → gpu (collapse, outline), `gpu.launch_func` → host calls, embedded transform scripts; emits kernel + host LLVM IR |
 | `hwacha-cc/test/mlir` | MLIR entry tests: `gpu.func` with CUDA-style and grid-stride indexing, `linalg.generic`/`linalg.matmul` auto-outlined, workgroup memory + barrier, math incl. `exp`, register-blocked matmul via a transform script |
 | `hwacha-cc/test/rtl-run.sh` | run one or more binaries on the RTL sim (adds `+loadmem`), log to a file |
@@ -193,6 +194,7 @@ minutes to hours.
 | Rodinia | `cd ../apps && make spike` → 6× `PASS` | `./run-rtl-seq.sh results/x.out nn.riscv kmeans.riscv pgain.riscv pathfinder.riscv bfs.riscv` (~1 h) |
 | llama2.c | `cd ../llama && make llama.riscv && spike --isa=rv64gc --extension=hwacha llama.riscv` → 40 tokens match x86, `llama PASS` | `make llama_rtl.riscv && ../rtl-run.sh results/x.out llama_rtl.riscv` (4 tokens, ~1.5 h) |
 | GPT-2 fwd | `cd ../gpt2 && make gpt2.riscv && spike --isa=rv64gc --extension=hwacha gpt2.riscv` → `gpt2 PASS` (both lane-per-row and reduction variants) | `../rtl-run.sh results/x.out gpt2.riscv` (~3 h, scalar ref dominates) |
+| diffusion.c | `cd ../diffusion && make spike` (fetches the upstream repo for `ckpt.bin`; 200 steps, first 2 checked against the scalar forward, ~45 min) → `diffusion PASS` + the sprite as hex RGB; `make diffusion_x86 && ./diffusion_x86` gives the x86 reference image | `make diffusion_rtl.riscv && ../rtl-run.sh results/x.out diffusion_rtl.riscv` (one step); `make diffusion_bench.riscv` for the scalar-vs-Hwacha conv layer |
 | MLIR entry | `cd ../mlir && make run` → 7× `ok`, `ALL KERNELS PASSED` (needs `hwacha-mlir`, i.e. the conda `mlir` package) | `../rtl-run.sh results/x.out mlir.riscv` (~10 min) |
 | sgemm 256³ | `cd ../gemm && make gemm.riscv && spike --isa=rv64gc --extension=hwacha gemm.riscv` | `make gemm_rtl.riscv && ../rtl-run.sh results/x.out gemm_rtl.riscv` (~2.5 h) |
 | Berkeley asm | — | `cd esp-tests/benchmarks && make RISCV_PREFIX=<esp-tools>/bin/riscv64-unknown-elf- vec-sgemm-opt.riscv`, run with `rtl-run.sh` |

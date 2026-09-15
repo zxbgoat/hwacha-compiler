@@ -1,0 +1,2 @@
+==> /home/tesla/hwacha-compiler/hwacha-cc/test/diffusion/diffusion_rtl.riscv start 21:10:41
+diffusion.c ContextUnet 16x16 n_feature 64, class 0, 1 of 200 steps, checking 0

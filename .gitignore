@@ -26,3 +26,6 @@ hwacha-cc/test/berkeley/*.riscv
 .bloop/
 hwacha-cc/test/mlir/*.ll.*.mlir
 hwacha-cc/test/*/*.gpu.ll
+hwacha-cc/test/diffusion/ckpt.bin
+hwacha-cc/test/diffusion/*.log
+hwacha-cc/test/diffusion/diffusion_x86

@@ -1,0 +1,33 @@
+diffusion.c ContextUnet 16x16 n_feature 64, class 0, 200 of 200 steps, checking 2
+step 0 (t=200): max |eps - ref| = 0.000004, max |ref| = 4.642802, ok, 20419199 cycles
+step 1 (t=199): max |eps - ref| = 0.000004, max |ref| = 4.227809, ok, 20419199 cycles
+step 20 (t=180): 20419199 cycles
+step 40 (t=160): 20419199 cycles
+step 60 (t=140): 20419199 cycles
+step 80 (t=120): 20419199 cycles
+step 100 (t=100): 20419199 cycles
+step 120 (t=80): 20419199 cycles
+step 140 (t=60): 20419199 cycles
+step 160 (t=40): 20419199 cycles
+step 180 (t=20): 20419199 cycles
+step 199 (t=1): 20419199 cycles
+forward cycles: total 4083839800, per step 20419199
+image 16x16:
+d4d5e0 efe3c9 dbaad4 e9c8c9 947285 907b79 a48eb8 ab4b6b 90354f f77182 994c88 e7c8e7 e4a9ff d8b7d2 e4a2c0 eaddba
+dfc9c4 b19aa0 a79d8b a3958a 77345d cb878b c76874 d94e8a ee6a8e d94b8a d35f74 782b56 d2fcec c898c4 e9becc ccb3bb
+e9c3bc b66db8 9b9094 98998e bf79a1 c9846d c46783 b44a86 e46079 e63c9e ea27a6 c93396 f451b2 672353 e69acc f1c2d3
+e1c0c7 b580a4 a17a9c 865b41 9f6c77 9b4644 c55b71 c85e6c f14782 981958 e43972 ed3f88 d96491 6a3347 bea8af c5c5d2
+eb96cf d3c0cb 8d6068 8a2e84 653247 bf7149 c35c5d f17063 f65343 d65d7a b60094 ce0569 953b52 e57293 ecc0b7 d5debe
+eed8df c7b9bf 9f6bc5 6e2134 454649 d79771 000b00 d55344 c18d6d 4f3f36 d0aa78 a5004e 932659 c66a74 d3c7dd dbb0cd
+e2cdda dfc3c0 d2aadd 949a97 6e5b6a 954d4b 3a2835 cb8796 e69293 1c0f3a ce8e77 d82349 bb2669 f3a6bc decbee cedbd4
+e5a0da ddd3ce e895c6 c0caaf bfb5ea 2c2e50 9d4154 b2635b de986f b96291 6e355d e5329c f35dd6 dfb89f efb5b4 d5d7d0
+e4b3c6 e4b5c3 c486a6 e2b3da 7f276a 55256f 642644 7b4b61 7d4445 5c3e54 7e52c0 870d7e 8b3a87 e6a0a4 c0dbaf edffd0
+e0b5af b1bda8 823650 342d3c 534071 793b70 504d75 4b1151 1d097c 5c4763 894b95 6f3367 713977 d3b1c1 bce4ba d5cdf6
+eabfcb cbabc8 7f5a72 8c4e8a 95768a 5a4e5c 91645d 6b4782 9b3288 897984 946597 6a299a bd3e65 b16280 ebbac8 ecc1cc
+e0c4cf bea6b9 74236f f2a59e a96f84 552548 a25a79 725475 483155 640730 55080b b98760 df46af a11652 d3abbf dad0a7
+dbb9cc bfa1ce d7b9cc ac5360 8d2a3a 744466 433055 b5ad77 d4ac79 d2c07d deb285 b27c7e aa0f30 ffa8d5 c0cac9 e4b8d8
+f1d1b9 deb3e9 d0b0cd e7a6db b88f8d e0bad0 e3bdcd cf9faf c7aab0 c5ce89 ceb488 753f1e df75b0 c0a3be e5c2b5 f3c3ac
+e1c6d2 d8bdbe d1b9f0 d6c4d3 848a8e b86d9d b59c93 7d4050 796a7b d58383 c89937 b73232 e8bfcd f0b8d1 d6beb5 f4c6b9
+e3bbc3 e4cabc d8d8c8 c59ac3 d9dfe6 5f0b40 4c221d d7b8cb dfbae4 545639 763448 eae4f9 e4c0c7 d9abce e0bdde d6eaca
+diffusion PASS
+EXIT=0

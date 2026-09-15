@@ -984,3 +984,48 @@ launch 开销本来就不大（16 次共约 2k 周期）。剩下的瓶颈是每
 vl = 64：1024 个 vf 块各约 68 周期，基本就是控制线程发射 + vf 启动的固定开销。要再往上只能
 增大每个 vf 块的工作量：j 方向用更长的向量（矩阵更大）、或者把 k 也分块展开（一个 vf 块做
 多个 k）——后者对 hwacha-cc 是控制线程循环的 unroll，是下一步可以做的事。
+## diffusion.c：扩散模型采样（2026-09-15 深夜）
+
+hku/diffusion.c 是一个 llama2.c 风格的纯 C 扩散模型推理引擎：16×16 精灵图、5 类条件、
+ContextUnet（n_feature = 64，1.48M 参数，5.9 MB fp32，仓库自带 ckpt.bin），DDPM 采样 200 步，
+每步一次 U-Net 前向 = 150.7M MAC。算子集：3×3 卷积、1×1 shortcut 卷积、转置卷积（k=s=2 和
+k=s=4）、BatchNorm（对单张图按通道算统计量）、GroupNorm(8)、GELU、ReLU、MaxPool、AvgPool、
+两层 MLP 的时间/条件嵌入、逐通道仿射。和 llama/GPT-2 一样：算子换成 OpenCL kernel，主程序、权重
+加载、采样循环留在 C（`test/diffusion`）。
+
+**布局是全部设计**：所有激活都放在零填充的平面 `[C][Hp*Wp]`（Hp = H+2）里，缓冲区前后各留
+2·Wp+8 个 float 的 guard。3×3 卷积于是不用做任何边界判断：lane = 填充后的输出位置，
+控制线程循环 ic × 9 个 tap，每个 tap 是一条单位步长的移位流（`xs[(t/3-1)*Wp + t%3-1]`），
+一次加载喂 8 条 `vfmadd`（8 个输出通道一组，8 个累加器常驻 vv，8 个权重经 vmcs 进 vs）：
+
+```
+conv3x3_wt_r0_b1:            # 每个 (ic, tap) 迭代
+    vlw vv16, va0
+    vfmadd.s vv8,  vs26, vv16, vv8
+    ... ×8
+```
+
+边界位置算出来是垃圾，但紧跟在每个卷积后面的 BN/GN + 激活 kernel 只在内部区域算并把边界写 0，
+所以下一层看到的填充永远是 0。代价是多算 324/256 = 1.27 倍的元素。转置卷积 k=s=2 反过来：
+lane = 输入像素，4 个输出通道 × 4 个 tap 共 16 个累加器，最后 scatter 到两倍大的平面；k=s=4 的
+up0 输入是 1×1，就是一个 gemv。归一化的统计量：lane = 通道，控制线程循环内部像素（跨 lane
+是步长为 plane 的流），host 把通道和并成组；apply kernel 逐元素，用整数除法算出通道/行/列做
+内部掩码。GELU 用 `exp` 写（tanh z = 1 - 2/(1+e^{2z})），靠编译器新的 expf 展开。
+
+**寄存器的坑**：第一版把 9 个 tap 全展开 + 8 个输出通道，每个 ic 迭代要 72 个权重标量，
+`out of Hwacha registers of class vs`（vs 只有 64 个）；4 个通道 36 个权重也不够（参数、常量、
+per-iteration 的流基址都要 vs）。改成 tap 也做控制线程循环，每次迭代只需 8 个权重。
+
+**裸机的坑**：环境的 printf 不支持 `%g`，把 float 参数当指针解引用，trap 成 `tohost=1337`；
+定义一个 weak 的 `handle_trap` 打出 cause/epc 才定位到 vprintfmt。libm 还缺 `__errno`。
+
+**验证**：同一二进制里带原版 diffusion.c 的标量前向（照抄，malloc 换成 bump arena），前 2 步
+逐元素比对预测噪声；rand() 换成 LCG，x86 版（`-DX86`，只跑标量）和 Hwacha 版抽同样的噪声，
+200 步之后的图可以直接比。RTL 上标量整步要 1.5G 周期（30 小时），所以 RTL 的加速比用
+`-DLAYER_BENCH`：同一个 3×3 卷积层（64→16 通道）标量 vs Hwacha。
+
+**Spike 结果**：前 2 步预测噪声与标量参考最大差 4e-6（参考最大值 4.6）；200 步跑完
+（约 45 分钟），最终 16×16 图与 x86 参考**逐像素完全一致**（`results/spike200.log` vs
+`results/x86_200.log`）。每步前向 20.42M Spike 周期；标量参考同一步是 1.5G 周期量级（单个
+64→16 的 3×3 卷积层标量 42.9M vs Hwacha 0.27M，157×，Spike 计数）。RTL 的一步和卷积层
+基准结果见下。
