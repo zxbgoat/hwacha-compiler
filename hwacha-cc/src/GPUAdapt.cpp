@@ -131,7 +131,12 @@ bool adaptFunction(Function &F, bool Block1, raw_ostream &Err) {
       else if (Reg == "ntid")  R = !X ? B.getInt32(1) : Block1 ? B.getInt32(1) : builtinCall(M, B, "_Z14get_local_sizej");
       else if (Reg == "ctaid") R = !X ? B.getInt32(0) : Block1 ? builtinCall(M, B, "_Z13get_global_idj") : builtinCall(M, B, "_Z12get_group_idj");
       else if (Reg == "nctaid" && !X) R = B.getInt32(1);
-      else { Err << "hwacha-cc: unsupported NVVM special register " << N << " (grid size is not available to the kernel)\n"; return false; }
+      else if (Reg == "nctaid") {   // grid size: the lowered gpu.launch_func stores it in hwacha_grid_size
+        Type *I64 = Type::getInt64Ty(C);
+        GlobalVariable *GS = M.getGlobalVariable("hwacha_grid_size", true);
+        if (!GS) { GS = new GlobalVariable(M, I64, false, GlobalValue::ExternalLinkage, nullptr, "hwacha_grid_size"); GS->setAlignment(Align(8)); }
+        R = B.CreateTrunc(B.CreateLoad(I64, GS), B.getInt32Ty());
+      } else { Err << "hwacha-cc: unsupported NVVM special register " << N << "\n"; return false; }
     } else if (N.starts_with("llvm.nvvm.barrier")) {
       FunctionType *FT = FunctionType::get(Type::getVoidTy(C), {Type::getInt32Ty(C)}, false);
       Function *Bar = cast<Function>(M.getOrInsertFunction("_Z7barrierj", FT).getCallee());
@@ -200,6 +205,10 @@ void foldGlobalId(Function &F) {
   }
 }
 
+void runO2(Module &M);
+} // namespace
+void hwacha::optimizeModule(Module &M) { runO2(M); }
+namespace {
 void runO2(Module &M) {
   PipelineTuningOptions PTO;
   PTO.LoopVectorization = false; PTO.SLPVectorization = false; PTO.LoopUnrolling = false;

@@ -1,5 +1,6 @@
+// workgroup memory + gpu.barrier: p[g] = p[first element of the block] (block size 256)
 module attributes {gpu.container_module} {
-  gpu.module @k {
+  gpu.module @kernels {
     gpu.func @wg(%p: memref<4096xf32>) workgroup(%s: memref<256xf32, #gpu.address_space<workgroup>>) kernel {
       %tid = gpu.thread_id x
       %bid = gpu.block_id x
@@ -14,5 +15,12 @@ module attributes {gpu.container_module} {
       memref.store %w, %p[%g] : memref<4096xf32>
       gpu.return
     }
+  }
+  func.func @run_wg(%p: memref<4096xf32>) {
+    %c1 = arith.constant 1 : index
+    %c16 = arith.constant 16 : index
+    %c256 = arith.constant 256 : index
+    gpu.launch_func @kernels::@wg blocks in (%c16, %c1, %c1) threads in (%c256, %c1, %c1) args(%p : memref<4096xf32>)
+    return
   }
 }

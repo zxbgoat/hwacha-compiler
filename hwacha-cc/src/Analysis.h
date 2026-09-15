@@ -25,6 +25,12 @@ namespace hwacha {
 bool isKernel(const llvm::Function &F);
 // GPU-dialect entry (MLIR convert-gpu-to-nvvm + mlir-translate output): rewrite NVVM conventions into the
 // OpenCL ones above and run the -O2 pipeline. Adapted is set when the module contained ptx kernels.
+// Inline expf calls (expf / llvm.exp.f32 / _Z3expf) as vector arithmetic; run before analysis.
+void expandExpf(llvm::Function &F);
+// Contract fmul+fadd/fsub into fmuladd (-ffp-contract=fast); changes rounding.
+void contractFMA(llvm::Function &F);
+// Run the clang-equivalent -O2 pipeline (no vectorization / unrolling) on a module.
+void optimizeModule(llvm::Module &M);
 bool adaptGPUModule(llvm::Module &M, bool ForceBlock1, bool NoOpt, llvm::raw_ostream &Err, bool &Adapted);
 // Work-item id calls: get_global_id(0) / get_local_id(0). Both are divergence sources.
 bool isWorkItemId(const llvm::Value *V);

@@ -1538,9 +1538,10 @@ static Value *cloneUniform(Value *V, ValueToValueMapTy &VMap, IRBuilder<> &B, ra
     // __local buffers: one static buffer of the same shape in the control-thread module.
     // Work-groups run one after another, so a single buffer per kernel is enough.
     Module &CT = *B.GetInsertBlock()->getModule();
+    // A declaration (e.g. hwacha_grid_size, set by the host launch) becomes a weak zero definition.
     GlobalVariable *C = CT.getGlobalVariable(GV->getName(), true);
     if (!C) {
-      C = new GlobalVariable(CT, GV->getValueType(), false, GlobalValue::InternalLinkage,
+      C = new GlobalVariable(CT, GV->getValueType(), false, GV->isDeclaration() ? GlobalValue::WeakAnyLinkage : GlobalValue::InternalLinkage,
                              Constant::getNullValue(GV->getValueType()), GV->getName());
       C->setAlignment(GV->getAlign().value_or(Align(8)));
     }

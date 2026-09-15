@@ -885,3 +885,71 @@ pattern 便宜得多。
 hwacha-cc 的 kernel 内不支持 libm 调用（llama 那条路是自己写的 `hw_expf`），要么在 MLIR 层
 `math-polynomial-approximation`，要么以后给 hwacha-cc 加一个向量 expf 的内建；多维 grid 只能
 靠 collapse；`test-scf-parallel-loop-collapsing` 是个 test pass，正式做要自己写 collapse。
+
+## MLIR 入口收尾：hwacha-mlir、launch_func、expf、分块 matmul（2026-09-15）
+
+上一节留下的四件事全做了，顺带把 Python/shell 的胶水换成了一个正规的 C++ 前端。
+
+**hwacha-mlir**（`hwacha-cc/mlir/hwacha-mlir.cpp`，链接 conda 包里的 libMLIR，CMake 找到 MLIR 就编）。
+输入 gpu dialect 或 linalg/scf.parallel，输出 kernel 的 LLVM IR（给 hwacha-cc）和宿主的 LLVM IR
+（`hwacha-cc --host` 接收，跑同样的 -O2，Linker 链进控制线程 module，一起过 llc）。流程：
+
+1. 内嵌的 transform 脚本（`transform.with_named_sequence` 的嵌套 module）先跑 `transform-interpreter`。
+2. 没有 `gpu.module` 时：`convert-linalg-to-parallel-loops` → `fold-memref-alias-ops`（tiling 产生的
+   subview 折回下标，不然 bare-ptr 约定不接受带动态 offset 的 layout）→ 嵌套的 scf.parallel 改成
+   scf.for（自己写的 `nestedParallelToFor`）→ 最外层 parallel 用 `collapseParallelLoops` 压成一维
+   （替掉了之前的 test pass）→ mapping 设成 block_x → `convert-parallel-loops-to-gpu` →
+   把 launch 里用到的常量克隆进 launch（`sinkConstants`）→ 常量次数 ≤ 8 的 scf.for 全展开
+   （`loopUnrollFull`）→ `gpu-kernel-outlining`。
+3. `lower-affine`、`convert-scf-to-cf`；kernel 侧 clone 一份跑 `gpu.module(convert-gpu-to-nvvm)`，
+   把 gpu.module 里的东西提到顶层再 `translateModuleToLLVMIR`。
+4. 宿主侧：先把 gpu.func 的函数体掏空（只留 gpu.return，让 launch_func 的符号检查通过，又不让
+   workgroup memref 之类进宿主转换），`finalize-memref-to-llvm`、`convert-func-to-llvm`、arith/cf/
+   index/math → 自己的 `lowerLaunches`：n = grid×block 六个维度之积；`hwacha_group_size` =
+   block 大小（block 为 1 时存 0，让硬件自选 vl）；`hwacha_grid_size` = block 数；memref 操作数看穿
+   `unrealized_conversion_cast` 拿到 LLVM 描述符，bare 约定取 aligned 指针，desc 约定展开五元组；
+   `llvm.call @<kernel>_ct(n, args...)`；删掉 gpu.module，`reconcile-unrealized-casts`，翻译。
+
+踩的坑：`parsePassPipeline` 的字符串不能再写 `builtin.module(...)` 外壳（PassManager 已经锚在
+module 上，再套一层就是去找嵌套的 module，什么都不跑）；必须 `registerAllExtensions`，不然
+`convert-gpu-to-nvvm` 收集不到 arith/cf/index 的 ConvertToLLVM 接口，只转 gpu 算子；两个 llc 输出
+直接拼接会撞 `.Lpcrel_hi0` 之类的局部标号，所以改成 IR 级链接。
+
+**hwacha-cc 这边新增**：`--host`；`nctaid.x` → 读 `hwacha_grid_size`（kernel 里的声明在控制线程
+module 里变成 weak 定义，`cloneUniform` 对声明型全局变量改用 WeakAny 而不是 Internal，否则链接
+时宿主引用不到）；`expandExpf`：`expf / llvm.exp.f32 / _Z3expf / __nv_expf` 在分析前展开成
+hw_expf 同款的直线向量算术（所以 OpenCL 里现在也可以直接写 `exp`）；`--assume-noalias`：所有指针
+kernel 参数加 noalias；`--fp-contract`：单用途 fmul + fadd/fsub → fmuladd → `vfmadd`。
+
+**分块 matmul**（`test/mlir/mmt.mlir`）：linalg.matmul + transform 脚本
+`generalize → tile_using_for [4,0,0] → interchange [1,2,0]`，得到
+`scf.for i0 step 4 { parallel(j) { for k { parallel(i' in 4) {...} } } }`：i0 留在宿主（16 次
+launch），j 是 lane，k 是控制线程循环，i' 展开。配合 `--assume-noalias` LICM 把
+`c[i0+i', j]` 提升成 4 个循环 phi，生成的 vf 代码正是手写版的形态：
+
+```
+matmul_blk_kernel_wt_r0_b0:      # 每个 k 迭代
+    vlw vv8, va4                 # b[k, j] 单位步长
+    vfmadd.s vv4, vs2, vv8, vv4  # a[i0+i', k] 四个标量经 vmcs
+    vfmadd.s vv5, vv8, vs7, vv5
+    ...
+```
+
+常量必须 sink 进 launch：外提默认把 lb/step 当 kernel 参数传，四个 c 地址的差就成了
+`step*64`，BasicAA 证不出不重叠，LICM 不提升。
+
+**测试**：`test/mlir` 七个 kernel，宿主全部由 MLIR 生成（C 只准备数据、校验、计时）：
+saxpy(gpu，16×256 launch)、saxpy(linalg，desc 约定)、grid-stride（`gpu.grid_dim`，4×64 个工作项
+处理 4096 元素）、workgroup、math+exp、matmul(linalg)、matmul(tiled)。Spike 和 RTL 全过。
+
+RTL 上 64³ matmul 的周期数（`results/mlir_rtl.out`）：
+
+| 版本 | 周期 | MAC/cycle |
+|---|---|---|
+| linalg.matmul 直接降低（一维 collapse，每个 lane 一个输出，c 每个 k 迭代读写） | 650540 | 0.40 |
+| 同一个 linalg.matmul + transform 脚本（4 行分块，寄存器累加，vfmadd） | 71654 | 3.66 |
+
+9.1×。3.66 MAC/cycle 已经和手写 OpenCL 的 gemm（3.2）、Berkeley 手写汇编 `vec-sgemm-opt`（3.9，
+256³）在一个量级；剩下的差距是每次 launch 的固定开销（16 次 launch，每次 vsetcfg/fence）和
+k 循环里每个 vf 块只有 5 条指令、vl 只有 64。把 i0 也放进 kernel（tile_using_forall 后 mapping 成
+sequential）或者 j 方向再分块都可以再收一点，但形态已经对了。

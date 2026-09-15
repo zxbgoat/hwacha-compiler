@@ -115,6 +115,63 @@ static void widenIdArithmetic(Function &F) {
   }
 }
 
+// expf(x) as straight-line vector arithmetic (same algorithm as test/llama/hwacha_math.h hw_expf):
+// x = k*ln2 + r with k = round(x*log2e) via the 1.5*2^23 magic add, degree-6 polynomial in r,
+// scale by 2^k by adding k to the exponent field. Applies to expf / llvm.exp.f32 / _Z3expf / __nv_expf.
+static bool isExpfCall(const CallInst *CI) {
+  const Function *Callee = CI->getCalledFunction();
+  if (!Callee || CI->arg_size() != 1 || !CI->getType()->isFloatTy() || !CI->getArgOperand(0)->getType()->isFloatTy()) return false;
+  StringRef N = Callee->getName();
+  return N == "expf" || N == "llvm.exp.f32" || N == "_Z3expf" || N == "__nv_expf";
+}
+void hwacha::expandExpf(Function &F) {
+  SmallVector<CallInst *, 8> Calls;
+  for (Instruction &I : instructions(F)) if (auto *CI = dyn_cast<CallInst>(&I)) if (isExpfCall(CI)) Calls.push_back(CI);
+  for (CallInst *CI : Calls) {
+    IRBuilder<> B(CI);
+    Type *FT = B.getFloatTy(), *IT = B.getInt32Ty();
+    auto C = [&](double v) { return ConstantFP::get(FT, v); };
+    Value *X = CI->getArgOperand(0);
+    X = B.CreateMinNum(B.CreateMaxNum(X, C(-87.0)), C(88.0));
+    Value *T = B.CreateFAdd(B.CreateFMul(X, C(1.44269504088896341)), C(12582912.0));
+    Value *K = B.CreateSub(B.CreateBitCast(T, IT), B.getInt32(0x4B400000));
+    Value *KF = B.CreateFSub(T, C(12582912.0));
+    Value *R = B.CreateFSub(X, B.CreateFMul(KF, C(0.693145751953125)));
+    R = B.CreateFSub(R, B.CreateFMul(KF, C(1.428606765330187e-06)));
+    Value *P = C(1.9875691500E-4);
+    for (double c : {1.3981999507E-3, 8.3334519073E-3, 4.1665795894E-2, 1.6666665459E-1, 5.0000001201E-1})
+      P = B.CreateFAdd(B.CreateFMul(P, R), C(c));
+    P = B.CreateFAdd(B.CreateFAdd(B.CreateFMul(P, B.CreateFMul(R, R)), R), C(1.0));
+    Value *Res = B.CreateBitCast(B.CreateAdd(B.CreateBitCast(P, IT), B.CreateShl(K, 23)), FT);
+    CI->replaceAllUsesWith(Res);
+    CI->eraseFromParent();
+  }
+}
+
+// fadd(fmul(a, b), c) with a single-use product -> llvm.fmuladd (Hwacha's vfmadd), like -ffp-contract=fast.
+void hwacha::contractFMA(Function &F) {
+  SmallVector<BinaryOperator *, 16> Adds;
+  for (Instruction &I : instructions(F))
+    if (auto *BO = dyn_cast<BinaryOperator>(&I); BO && (BO->getOpcode() == Instruction::FAdd || BO->getOpcode() == Instruction::FSub) && BO->getType()->isFloatingPointTy())
+      Adds.push_back(BO);
+  for (BinaryOperator *BO : Adds) {
+    bool Sub = BO->getOpcode() == Instruction::FSub;
+    Value *A = BO->getOperand(0), *B = BO->getOperand(1);
+    auto mul = [](Value *V) -> BinaryOperator * { auto *M = dyn_cast<BinaryOperator>(V); return M && M->getOpcode() == Instruction::FMul && M->hasOneUse() ? M : nullptr; };
+    IRBuilder<> Bld(BO);
+    Value *R = nullptr;
+    if (BinaryOperator *M = mul(A)) {          // a*b + c  |  a*b - c
+      Value *C = Sub ? Bld.CreateFNeg(B) : B;
+      R = Bld.CreateIntrinsic(BO->getType(), Intrinsic::fmuladd, {M->getOperand(0), M->getOperand(1), C});
+    } else if (BinaryOperator *M = mul(B)) {   // c + a*b  |  c - a*b
+      Value *X = Sub ? Bld.CreateFNeg(M->getOperand(0)) : M->getOperand(0);
+      R = Bld.CreateIntrinsic(BO->getType(), Intrinsic::fmuladd, {X, M->getOperand(1), A});
+    } else continue;
+    BO->replaceAllUsesWith(R);
+    BO->eraseFromParent();
+  }
+}
+
 static void annotateIdRange(Function &F) {
   LLVMContext &C = F.getContext();
   for (Instruction &I : instructions(F))

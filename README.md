@@ -24,8 +24,8 @@ Only first-party work is tracked. Large upstream trees and build products are **
 | `hwacha-cc/test/llama` | llama2.c stories260K inference (model + tokenizer embedded, vectorized `expf`) |
 | `hwacha-cc/test/gpt2` | GPT-2 forward from llm.c on a tiny random model, incl. `work_group_reduce` variants |
 | `hwacha-cc/test/gemm` | 256³ sgemm vs Berkeley `vec-sgemm-naive`/`opt`; `hwacha-cc/test/berkeley` holds their RTL logs |
-| `hwacha-cc/test/mlir` | MLIR gpu-dialect entry: hand-written `gpu.func`, `linalg.generic`/`linalg.matmul` auto-outlined, workgroup memory + barrier, math ops |
-| `hwacha-cc/tools` | `mlir-to-ll.sh` (MLIR → LLVM IR of the kernels via mlir-opt/mlir-translate), `mlir-extract-kernels.py` |
+| `hwacha-cc/mlir` | `hwacha-mlir`, the MLIR front end: linalg/scf.parallel → gpu (collapse, outline), `gpu.launch_func` → host calls, embedded transform scripts; emits kernel + host LLVM IR |
+| `hwacha-cc/test/mlir` | MLIR entry tests: `gpu.func` with CUDA-style and grid-stride indexing, `linalg.generic`/`linalg.matmul` auto-outlined, workgroup memory + barrier, math incl. `exp`, register-blocked matmul via a transform script |
 | `hwacha-cc/test/rtl-run.sh` | run one or more binaries on the RTL sim (adds `+loadmem`), log to a file |
 | `scripts/build-sim.sh` | build the Chipyard Verilator sim of `HwachaRocketConfig` (threads/opt configurable) |
 | `patches/` | local fixes to the upstream trees — see the table under "Patches" below |
@@ -52,7 +52,7 @@ and a build tree next to this README. Install once:
 - **LLVM 23 + clang** for the OpenCL front end and `llc`:
   `conda install -c conda-forge llvmdev=23 clangdev=23 cmake=3.27`  (CMake must be 3.x, not 4)
 - **git**, a host C++ toolchain, and `dtc`/`makeinfo` (`conda install -c conda-forge dtc texinfo`).
-- optional, for the MLIR entry: `conda install -c conda-forge mlir=23.1.1` (same version as llvmdev; provides `mlir-opt`, `mlir-translate`).
+- optional, for the MLIR entry: `conda install -c conda-forge mlir=23.1.1` (same version as llvmdev; headers + `libMLIR`, so CMake also builds `hwacha-mlir`).
 
 ## Layout after cloning
 
@@ -131,7 +131,7 @@ $SIM +permissive +max-cycles=4000000000 +loadmem=$PWD/prog.riscv +permissive-off
 ```bash
 cd ~/hwacha-compiler
 source env.sh
-cmake -S hwacha-cc -B hwacha-cc/build -DLLVM_DIR=$HOME/miniforge3/lib/cmake/llvm
+cmake -S hwacha-cc -B hwacha-cc/build -DLLVM_DIR=$HOME/miniforge3/lib/cmake/llvm -DMLIR_DIR=$HOME/miniforge3/lib/cmake/mlir
 cmake --build hwacha-cc/build -j
 hwacha-cc/build/hwacha-cc --help
 ```
@@ -156,22 +156,29 @@ Useful flags: `--analyze`, `--kstats`, `--keep`, `--verbose`; ablations `--no-ct
 
 ### MLIR entry (gpu dialect)
 
-`hwacha-cc` also accepts the LLVM IR that MLIR's `convert-gpu-to-nvvm` + `mlir-translate` produce
-(auto-detected by the `ptx_kernel` calling convention): NVVM special registers become the OpenCL id
-builtins, `nvvm.barrier` becomes `barrier`, workgroup (`addrspace(3)`) globals become `__local`
-buffers, `__nv_*` math becomes LLVM intrinsics, then the usual `-O2` pipeline runs. A kernel whose
-block size is 1 (what `gpu-map-parallel-loops` produces for 1-D loops, or `--gpu-block1`) maps
-`block_id x` to the work-item id. `tools/mlir-to-ll.sh` runs the MLIR side:
+`hwacha-mlir` (built when CMake finds MLIR) takes MLIR at the gpu-dialect level (`gpu.func` +
+`gpu.launch_func`) or above it (`linalg` / `scf.parallel` over memrefs) and emits two LLVM IR files:
+the kernels, which `hwacha-cc` compiles like OpenCL kernels, and the host, in which every
+`gpu.launch_func` became `<kernel>_ct(n, args...)` (plus stores of the block size to
+`hwacha_group_size` and of the grid size to `hwacha_grid_size`). `hwacha-cc --host` optimizes the
+host IR, links it with the control threads and compiles both with `llc`:
 
 ```bash
-hwacha-cc/tools/mlir-to-ll.sh k.mlir k.ll      # gpu.func input; or linalg/scf.parallel input (auto-outlined)
-COLLAPSE=0,1 hwacha-cc/tools/mlir-to-ll.sh mm.mlir mm.ll   # collapse a 2-D parallel loop to the 1-D grid
-MEMREF_CONV=desc hwacha-cc/tools/mlir-to-ll.sh k.mlir k.ll # memref descriptors instead of bare pointers (dynamic shapes)
-hwacha-cc/build/hwacha-cc k.ll -o k.s
+hwacha-cc/build/hwacha-mlir k.mlir -o k.ll --host k.host.ll      # --memref desc for dynamic shapes
+hwacha-cc/build/hwacha-cc k.ll --host k.host.ll -o k.s           # --assume-noalias --fp-contract for blocked kernels
 ```
 
-The host still calls `<kernel>_ct(n, args...)` directly (`gpu.launch_func` is not lowered);
-`hwacha-cc/test/mlir/mlir_main.c` shows the argument layout for both memref conventions.
+What the front end does on the way: an embedded transform script (a nested module with
+`transform.with_named_sequence`, e.g. tiling + interchange of a `linalg.matmul`) runs first; linalg
+becomes parallel loops, nested parallel loops become sequential, the outermost loop is collapsed to
+1-D and mapped one work-item per iteration; constants are sunk into the launch and small
+constant-trip-count loops are unrolled before outlining; then `convert-gpu-to-nvvm`. On the
+hwacha-cc side the NVVM form is auto-detected (`ptx_kernel`): special registers become the OpenCL id
+builtins (`ctaid*ntid+tid` is folded to `get_global_id`, `nctaid` reads `hwacha_grid_size`, a
+block size of 1 maps `block_id` to the work-item), `nvvm.barrier` becomes `barrier`, workgroup
+(`addrspace(3)`) globals become `__local` buffers, `__nv_*` math becomes intrinsics and `expf` is
+expanded into vector arithmetic. `hwacha-cc/test/mlir/mlir_main.c` shows how C calls the MLIR host
+functions under both memref conventions.
 
 ## Reproduce the tests
 
@@ -186,7 +193,7 @@ minutes to hours.
 | Rodinia | `cd ../apps && make spike` → 6× `PASS` | `./run-rtl-seq.sh results/x.out nn.riscv kmeans.riscv pgain.riscv pathfinder.riscv bfs.riscv` (~1 h) |
 | llama2.c | `cd ../llama && make llama.riscv && spike --isa=rv64gc --extension=hwacha llama.riscv` → 40 tokens match x86, `llama PASS` | `make llama_rtl.riscv && ../rtl-run.sh results/x.out llama_rtl.riscv` (4 tokens, ~1.5 h) |
 | GPT-2 fwd | `cd ../gpt2 && make gpt2.riscv && spike --isa=rv64gc --extension=hwacha gpt2.riscv` → `gpt2 PASS` (both lane-per-row and reduction variants) | `../rtl-run.sh results/x.out gpt2.riscv` (~3 h, scalar ref dominates) |
-| MLIR entry | `cd ../mlir && make run` → 5× `ok`, `ALL KERNELS PASSED` (needs the conda `mlir` package) | `../rtl-run.sh results/x.out mlir.riscv` |
+| MLIR entry | `cd ../mlir && make run` → 7× `ok`, `ALL KERNELS PASSED` (needs `hwacha-mlir`, i.e. the conda `mlir` package) | `../rtl-run.sh results/x.out mlir.riscv` (~10 min) |
 | sgemm 256³ | `cd ../gemm && make gemm.riscv && spike --isa=rv64gc --extension=hwacha gemm.riscv` | `make gemm_rtl.riscv && ../rtl-run.sh results/x.out gemm_rtl.riscv` (~2.5 h) |
 | Berkeley asm | — | `cd esp-tests/benchmarks && make RISCV_PREFIX=<esp-tools>/bin/riscv64-unknown-elf- vec-sgemm-opt.riscv`, run with `rtl-run.sh` |
 
@@ -212,6 +219,7 @@ can build `*_rtl` variants that skip it.
 | llama2.c stories260K, per token | 2.88M | 235k | 12.3× |
 | GPT-2 forward, tiny, 16 tokens | 31244913 | 1627888 | 19.2× |
 | sgemm 256³ | (hand naive 13918519, opt 4262080) | 5211891 | 2.7× naive, 0.82× opt |
+| matmul 64³ from `linalg.matmul` via `hwacha-mlir` | (plain lowering 650540) | 71654 with the tiling transform script (3.66 MAC/cycle) | 9.1× |
 
 Unit-stride streams and control-thread loops get within 10–25% of hand-written code on streaming
 kernels; the gemm gap is register blocking. NOTES.md has the ablations and per-kernel breakdowns.
