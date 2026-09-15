@@ -1,0 +1,312 @@
+<title>hwacha-cc 工作原理</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #F5F6F3;
+    --bg-2: #EBEEE9;
+    --ink: #1B1F1D;
+    --muted: #5E6762;
+    --rule: #CFD5CF;
+    --ct: #B0561F;        /* 控制线程：赭 */
+    --ct-soft: #F4E3D6;
+    --wt: #1F6E8C;        /* 工作线程 / 向量：靛 */
+    --wt-soft: #D8E8EE;
+    --code-bg: #ECEFEA;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151817; --bg-2: #1D2220; --ink: #E4E7E2; --muted: #9AA39D; --rule: #333A36;
+      --ct: #E3924F; --ct-soft: #3A2A1E; --wt: #63B4D1; --wt-soft: #1B3540; --code-bg: #1D2220;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #151817; --bg-2: #1D2220; --ink: #E4E7E2; --muted: #9AA39D; --rule: #333A36;
+    --ct: #E3924F; --ct-soft: #3A2A1E; --wt: #63B4D1; --wt-soft: #1B3540; --code-bg: #1D2220;
+    color-scheme: dark;
+  }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 16px; line-height: 1.8;
+    padding-inline: 20px; padding-block: 0 80px;
+  }
+  .page { max-width: 880px; margin: 0 auto; }
+  header { padding-block: 56px 28px; border-bottom: 1px solid var(--rule); margin-bottom: 40px; }
+  .eyebrow { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-family: "Noto Serif SC", "Songti SC", "SimSun", serif; font-weight: 700; font-size: 40px; line-height: 1.2; margin: 10px 0 14px; text-wrap: balance; }
+  .lede { font-size: 18px; max-width: 34em; color: var(--ink); margin: 0; }
+  .lede b { font-weight: 700; }
+  h2 { font-family: "Noto Serif SC", "Songti SC", serif; font-weight: 600; font-size: 26px; margin: 56px 0 14px; line-height: 1.3; text-wrap: balance; }
+  h3 { font-size: 17px; font-weight: 700; margin: 30px 0 8px; }
+  p { max-width: 40em; margin: 0 0 16px; }
+  ul { max-width: 40em; padding-left: 1.3em; margin: 0 0 16px; }
+  li { margin-bottom: 6px; }
+  code, pre { font-family: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace; }
+  code { font-size: .88em; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; }
+  pre { background: var(--code-bg); border-left: 3px solid var(--rule); padding: 14px 18px; overflow-x: auto; font-size: 13px; line-height: 1.6; margin: 0 0 20px; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  pre .ct { color: var(--ct); }
+  pre .wt { color: var(--wt); }
+  pre .cm { color: var(--muted); }
+  .tag { display: inline-block; font-family: "JetBrains Mono", monospace; font-size: 12px; padding: 1px 8px; border-radius: 3px; vertical-align: 1px; }
+  .tag.ct { background: var(--ct-soft); color: var(--ct); }
+  .tag.wt { background: var(--wt-soft); color: var(--wt); }
+  figure { margin: 24px 0 28px; }
+  figure svg { max-width: 100%; height: auto; display: block; color: var(--ink); font-family: "Noto Sans SC", system-ui, sans-serif; }
+  figcaption { font-size: 14px; color: var(--muted); margin-top: 10px; max-width: 46em; line-height: 1.6; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; margin: 0 0 24px; }
+  .tablewrap { overflow-x: auto; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-weight: 700; color: var(--muted); font-size: 13px; letter-spacing: .04em; }
+  td:first-child { white-space: nowrap; }
+  td code { white-space: nowrap; }
+  .num { font-variant-numeric: tabular-nums; text-align: right; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 0 0 20px; }
+  .two > div { border-top: 3px solid var(--rule); padding-top: 10px; }
+  .two > div.ct { border-color: var(--ct); }
+  .two > div.wt { border-color: var(--wt); }
+  .two h3 { margin-top: 0; }
+  .two p { font-size: 15px; }
+  @media (max-width: 640px) { .two { grid-template-columns: 1fr; } h1 { font-size: 30px; } }
+  footer { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--muted); }
+</style>
+
+<div class="page">
+<header>
+  <div class="eyebrow">hwacha-compiler · 2026-09-15 · 对应提交 fee8b6c</div>
+  <h1>hwacha-cc 工作原理</h1>
+  <p class="lede">把一个 SPMD kernel 拆成两段代码：工作项之间<b>不一致</b>的部分变成 Hwacha 的向量取指块，在 <span class="tag wt">工作线程</span> 上以谓词执行；工作项之间<b>一致</b>的部分留在标量 <span class="tag ct">控制线程</span> 上，负责配置、循环和发射。其余一切都是为这个划分服务的。</p>
+</header>
+
+<h2>一、从源码到汇编的路径</h2>
+<p>编译器真正的输入是 LLVM IR，只要 IR 里的 kernel 满足一套约定：函数带 <code>!kernel_arg_addr_space</code> 元数据；工作项编号通过 <code>get_global_id(0)</code>、<code>get_local_id(0)</code>、<code>get_group_id(0)</code>、<code>get_local_size(0)</code> 这几个调用取得；同步是 <code>barrier</code>；跨 lane 归约是 <code>work_group_reduce_*</code>。两个前端都把输入整理成这个形式。</p>
+
+<figure>
+<svg viewBox="0 0 860 400" role="img" aria-label="hwacha-cc 的编译流水线：OpenCL 和 MLIR 两个前端汇合成约定形式的 LLVM IR，经预处理和分析后，代码生成把 kernel 拆成工作线程汇编和控制线程 IR，后者经 llc 编译，两者拼成一个汇编文件交给 binutils">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g font-size="12" fill="currentColor">
+    <!-- inputs -->
+    <rect x="20" y="30" width="150" height="54" rx="3" fill="none" stroke="currentColor"/>
+    <text x="95" y="52" text-anchor="middle" font-weight="700">OpenCL C (.cl)</text>
+    <text x="95" y="70" text-anchor="middle" fill="var(--muted)">clang -x cl, riscv64, -O2</text>
+    <rect x="20" y="126" width="150" height="54" rx="3" fill="none" stroke="currentColor"/>
+    <text x="95" y="148" text-anchor="middle" font-weight="700">MLIR (.mlir)</text>
+    <text x="95" y="166" text-anchor="middle" fill="var(--muted)">gpu / linalg / scf.parallel</text>
+    <rect x="20" y="222" width="150" height="54" rx="3" fill="none" stroke="currentColor" stroke-dasharray="4 3"/>
+    <text x="95" y="244" text-anchor="middle" font-weight="700">hwacha-mlir</text>
+    <text x="95" y="262" text-anchor="middle" fill="var(--muted)">外提 · launch → _ct 调用</text>
+    <line x1="95" y1="180" x2="95" y2="222" stroke="currentColor" marker-end="url(#ah)"/>
+
+    <!-- IR hub -->
+    <rect x="240" y="104" width="160" height="98" rx="3" fill="var(--bg-2)" stroke="currentColor"/>
+    <text x="320" y="128" text-anchor="middle" font-weight="700">LLVM IR</text>
+    <text x="320" y="147" text-anchor="middle" fill="var(--muted)">id 调用 · barrier</text>
+    <text x="320" y="164" text-anchor="middle" fill="var(--muted)">reduce · kernel 元数据</text>
+    <text x="320" y="186" text-anchor="middle" fill="var(--muted)">GPUAdapt: NVVM → 同上</text>
+    <line x1="170" y1="57" x2="240" y2="120" stroke="currentColor" marker-end="url(#ah)"/>
+    <text x="212" y="78" text-anchor="middle" fill="var(--muted)">.ll</text>
+    <line x1="170" y1="249" x2="240" y2="186" stroke="currentColor" marker-end="url(#ah)"/>
+    <text x="212" y="235" text-anchor="middle" fill="var(--muted)">kernel .ll</text>
+
+    <!-- prepass + analysis -->
+    <rect x="450" y="104" width="170" height="98" rx="3" fill="none" stroke="currentColor"/>
+    <text x="535" y="128" text-anchor="middle" font-weight="700">预处理 · 分析</text>
+    <text x="535" y="147" text-anchor="middle" fill="var(--muted)">expf 展开 · id 加宽</text>
+    <text x="535" y="164" text-anchor="middle" fill="var(--muted)">UniformityInfo</text>
+    <text x="535" y="181" text-anchor="middle" fill="var(--muted)">SCEV 地址分类</text>
+    <line x1="400" y1="153" x2="450" y2="153" stroke="currentColor" marker-end="url(#ah)"/>
+
+    <!-- codegen split -->
+    <rect x="670" y="30" width="170" height="60" rx="3" fill="var(--wt-soft)" stroke="var(--wt)"/>
+    <text x="755" y="54" text-anchor="middle" font-weight="700" fill="var(--wt)">工作线程</text>
+    <text x="755" y="73" text-anchor="middle" fill="var(--wt)">vf 块，直接输出汇编</text>
+    <rect x="670" y="216" width="170" height="60" rx="3" fill="var(--ct-soft)" stroke="var(--ct)"/>
+    <text x="755" y="240" text-anchor="middle" font-weight="700" fill="var(--ct)">控制线程</text>
+    <text x="755" y="259" text-anchor="middle" fill="var(--ct)">&lt;kernel&gt;_ct，LLVM IR → llc</text>
+    <line x1="620" y1="130" x2="670" y2="66" stroke="var(--wt)" marker-end="url(#ah)"/>
+    <text x="655" y="88" text-anchor="end" fill="var(--wt)">不一致的指令</text>
+    <line x1="620" y1="176" x2="670" y2="240" stroke="var(--ct)" marker-end="url(#ah)"/>
+    <text x="655" y="222" text-anchor="end" fill="var(--ct)">一致的指令 · 循环</text>
+
+    <!-- host from MLIR -->
+    <line x1="95" y1="276" x2="95" y2="330" stroke="currentColor" marker-end="url(#ah)"/>
+    <rect x="20" y="330" width="150" height="44" rx="3" fill="none" stroke="currentColor" stroke-dasharray="4 3"/>
+    <text x="95" y="357" text-anchor="middle" fill="var(--muted)">宿主 .ll（--host）</text>
+    <path d="M170 352 L 640 352 L 640 300 L 700 300 L 700 276" fill="none" stroke="var(--ct)" marker-end="url(#ah)"/>
+    <text x="405" y="346" text-anchor="middle" fill="var(--muted)">-O2 后 Linker 链进控制线程模块</text>
+
+    <!-- output -->
+    <rect x="690" y="330" width="150" height="44" rx="3" fill="var(--bg-2)" stroke="currentColor"/>
+    <text x="765" y="357" text-anchor="middle" font-weight="700">.s → binutils</text>
+    <line x1="810" y1="90" x2="810" y2="330" stroke="var(--wt)" marker-end="url(#ah)"/>
+    <line x1="780" y1="276" x2="780" y2="330" stroke="var(--ct)" marker-end="url(#ah)"/>
+    <text x="833" y="200" text-anchor="end" fill="var(--wt)" transform="rotate(-90 833 200)">汇编文本</text>
+  </g>
+</svg>
+<figcaption>图 1 · 两个前端汇合成同一种约定的 LLVM IR；分析之后代码生成按一致性把指令分到两个线程，工作线程直接输出汇编，控制线程走 llc，最后拼成一个 .s 交给 esp 工具链的 binutils。</figcaption>
+</figure>
+
+<h3>OpenCL 前端</h3>
+<p>clang 以 <code>-x cl -cl-std=CL1.2</code> 编译，目标设为 riscv64，关掉向量化和展开，得到 -O2 形态的 IR。在这个目标上 <code>__local</code> 数组就是普通的内部全局变量，编译器不需要特殊的地址空间处理。</p>
+
+<h3>MLIR 前端</h3>
+<p><code>hwacha-mlir</code> 链接 libMLIR，接收 gpu dialect 或 linalg 级别的输入。linalg 先变成并行循环；嵌套的并行循环改成顺序循环；最外层压成一维并映射为"每个 block 一个工作项"；用到的常量 sink 进 launch，次数不超过 8 的小循环展开，然后外提成 <code>gpu.func</code>。kernel 侧走 <code>convert-gpu-to-nvvm</code> 翻成 LLVM IR；宿主侧把 <code>gpu.launch_func</code> 降低成对 <code>&lt;kernel&gt;_ct</code> 的调用，并把 block 大小和 block 数写进 <code>hwacha_group_size</code>、<code>hwacha_grid_size</code>。内嵌的 transform 脚本（tiling、interchange）在这一切之前执行。</p>
+<p>hwacha-cc 看到 <code>ptx_kernel</code> 调用约定就知道 IR 来自这条路：NVVM 特殊寄存器变成 id 调用，<code>ctaid*ntid+tid</code> 折叠成 <code>get_global_id</code>（否则地址会被归成 gather），block 大小为 1 的 kernel 把 block 编号当工作项编号，<code>nvvm.barrier</code>、addrspace(3) 全局变量、<code>__nv_*</code> 数学函数各归各位，最后再跑一遍与 clang 等价的 -O2。</p>
+
+<h3>汇合之后的预处理</h3>
+<p><code>expf</code>（以及 <code>llvm.exp.f32</code>、OpenCL 的 <code>exp</code>）展开成直线向量算术：范围规约、六次多项式、把整数指数加进浮点的指数域。可选的 <code>--fp-contract</code> 把单用途的 fmul 加 fadd 融合成 fmuladd。然后 InstCombine、EarlyCSE、SimplifyCFG、LoopSimplify、LCSSA 把 IR 整理成分析期望的规范形态。</p>
+
+<h2>二、分析：谁是一致的，地址长什么样</h2>
+<p><code>KernelAnalysis</code> 回答两个问题，代码生成的每个决定都建立在这两个答案上。</p>
+
+<h3>一致性</h3>
+<p>直接用 LLVM 的 UniformityInfo，配一个只回答"分歧从哪来"的最小 TTI：id 调用永不一致，归约调用的结果永远一致，其余靠数据流和控制依赖推导。分析之前先做 <code>widenIdArithmetic</code>，把 32 位的 id 算术链重建成 64 位，否则 sext 和 trunc 会遮住地址模式。分析结果决定每条指令去哪里执行：一致的值可以在控制线程算好，通过 <code>vmcs</code> 送进标量向量寄存器 vs；不一致的值只能在 vf 块里用向量寄存器 vv 算。</p>
+
+<h3>地址分类</h3>
+<p>每个 load 和 store 的地址用 ScalarEvolution 表示成关于全局 id 的表达式，分成四类。分类同时记录流的基址是否随某个循环推进，这是控制线程区域能把流"逐次迭代重新指向"的依据。</p>
+<div class="tablewrap"><table>
+<tr><th>类别</th><th>地址形式</th><th>生成的访存</th><th>基址来源</th></tr>
+<tr><td>单位步长流</td><td>base + 4·id</td><td><code>vlw / vsw vvX, vaN</code></td><td>控制线程 <code>vmca</code></td></tr>
+<tr><td>带步长的流</td><td>base + s·id</td><td><code>vlstw / vsstw vvX, vaN, vaM</code></td><td><code>vmca</code>，步长也进 va</td></tr>
+<tr><td>gather / scatter</td><td>其他一切</td><td><code>vlxw / vsxw vvX, vsB, vvIdx</code></td><td>每 lane 的偏移向量</td></tr>
+<tr><td>一致地址</td><td>不依赖 id</td><td><code>vlsw vsX, vsA</code></td><td>所有 lane 读同一个字</td></tr>
+</table></div>
+
+<h2>三、代码生成：两个线程怎么配合</h2>
+
+<div class="two">
+  <div class="ct"><h3><span class="tag ct">控制线程</span> &lt;kernel&gt;_ct(n, args…)</h3>
+  <p>每个 kernel 生成一个 C 可调用的函数：<code>vsetcfg</code> 配置寄存器数量，按 stripmine 循环用 <code>vsetvl</code> 把 n 个工作项切成一段段，每段用 <code>vmcs</code> 传标量输入、<code>vmca</code> 传流的基址、<code>vf</code> 启动工作线程块，最后 <code>fence</code> 再返回。这部分以 LLVM IR 生成，交给 llc。</p></div>
+  <div class="wt"><h3><span class="tag wt">工作线程</span> &lt;kernel&gt;_wt 与 _wt_r*_b*</h3>
+  <p>vf 块内没有分支可用，kernel 的控制流被展平成谓词执行；向量寄存器在 vf 块之间保持不变，所以一个 kernel 可以拆成多个 vf 块由控制线程按顺序发射。这部分直接输出汇编文本。</p></div>
+</div>
+
+<h3>分歧控制流</h3>
+<p>每个基本块有一个活跃掩码 vp；条件分支产生子掩码，汇合点用 <code>vpop</code> 做谓词逻辑合并，phi 变成沿边执行的带谓词移动。分歧循环靠"活跃集合"迭代直到没有 lane 活跃，退出 lane 的值在出口边捕获。唯一的整块跳转是共识跳转 <code>vcjal</code>，代价约 50 周期，所以只用于至少两条指令的块的跳过，且不在循环头使用。硬件的谓词逻辑指令不受掩码影响，因此条件谓词移动做成三输入 mux。下面是 MLIR 写的 saxpy 生成的 vf 块，边界判断变成了掩码 vp2：</p>
+<pre><code><span class="wt">saxpy_wt:</span>
+    vpset vp0
+    veidx vv0
+    vadd vv0, vv0, vs63          <span class="cm"># 全局 id = 元素号 + 本段起点</span>
+    vcmpltu vp1, vv0, vs62       <span class="cm"># gid &lt; n</span>
+    vpop vp2, vp0, vp1, vp1, 0x80
+    vpop vp3, vp0, vp1, vp1, 0x02
+    @!vp2 vcjal 0, vs1, .Lsaxpy_skip0   <span class="cm"># 没有 lane 进入时整块跳过</span>
+    @vp2 vlw vv1, va0            <span class="cm"># x[gid]，单位步长流</span>
+    @vp2 vlw vv2, va1            <span class="cm"># y[gid]</span>
+    @vp2 vfmul.s vv3, vs57, vv1
+    @vp2 vfadd.s vv3, vv3, vv2
+    @vp2 vsw vv3, va1
+.Lsaxpy_skip0:
+    vstop</code></pre>
+
+<h3>控制线程区域</h3>
+<p>这是性能的来源。控制流一致的循环嵌套整体搬到控制线程上跑：循环的比较和跳转是标量指令，循环体的每个 kernel 基本块变成一个独立的 vf 块，每次迭代由控制线程发射。因为向量寄存器在 vf 块之间保持不变，循环携带的值可以常驻 vv 寄存器：phi coalescing 把 latch 上的新值直接算进 phi 的寄存器，内层循环出口的 LCSSA phi 也别名到同一个寄存器。每次迭代要变的标量经 <code>vmcs</code> 传入，随循环推进的流每次迭代重新 <code>vmca</code>。循环里的一致加载能不能在控制线程上做，由 BasicAA 加 TBAA 判断，有潜在别名时插 fence。</p>
+
+<figure>
+<svg viewBox="0 0 860 330" role="img" aria-label="分块 matmul 的 k 循环在两个线程上的时间线：控制线程每次迭代用 vmcs 传 4 个 a 元素、vmca 指向 b 的一行、发射 vf 块 b1；工作线程的 b1 块只做一次单位步长加载和 4 条 vfmadd，累加器 vv0 到 vv3 在整个循环期间常驻寄存器，循环结束后 b2 块写回 C">
+  <defs>
+    <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g font-size="12" fill="currentColor">
+    <!-- lane labels -->
+    <text x="20" y="62" font-weight="700" fill="var(--ct)">控制线程</text>
+    <text x="20" y="80" fill="var(--muted)">标量循环 k = 0..63</text>
+    <text x="20" y="212" font-weight="700" fill="var(--wt)">工作线程</text>
+    <text x="20" y="230" fill="var(--muted)">vf 块，vl = 64 个 lane</text>
+    <line x1="150" y1="90" x2="840" y2="90" stroke="var(--ct)" stroke-width="1.5"/>
+    <line x1="150" y1="240" x2="840" y2="240" stroke="var(--wt)" stroke-width="1.5"/>
+
+    <!-- ct: loop entry -->
+    <rect x="150" y="30" width="120" height="44" rx="3" fill="var(--ct-soft)" stroke="var(--ct)"/>
+    <text x="210" y="49" text-anchor="middle" fill="var(--ct)" font-family="JetBrains Mono, monospace">vmca va0..3</text>
+    <text x="210" y="65" text-anchor="middle" fill="var(--ct)" font-family="JetBrains Mono, monospace">vf b0</text>
+    <!-- ct: iteration k -->
+    <rect x="300" y="18" width="190" height="56" rx="3" fill="var(--ct-soft)" stroke="var(--ct)"/>
+    <text x="395" y="36" text-anchor="middle" fill="var(--ct)" font-family="JetBrains Mono, monospace">vmcs vs6..9 ← a[i0+i', k]</text>
+    <text x="395" y="52" text-anchor="middle" fill="var(--ct)" font-family="JetBrains Mono, monospace">vmca va4 ← &amp;b[k, 0]</text>
+    <text x="395" y="68" text-anchor="middle" fill="var(--ct)" font-family="JetBrains Mono, monospace">vf b1 ; k++ ; bne</text>
+    <!-- repeat arrow -->
+    <path d="M490 46 C 530 46, 530 10, 395 10 C 300 10, 300 30, 300 30" fill="none" stroke="var(--ct)" stroke-dasharray="4 3" marker-end="url(#ah2)"/>
+    <text x="520" y="14" fill="var(--muted)">×64</text>
+    <!-- ct: exit -->
+    <rect x="560" y="30" width="120" height="44" rx="3" fill="var(--ct-soft)" stroke="var(--ct)"/>
+    <text x="620" y="49" text-anchor="middle" fill="var(--ct)" font-family="JetBrains Mono, monospace">vmca va5..8</text>
+    <text x="620" y="65" text-anchor="middle" fill="var(--ct)" font-family="JetBrains Mono, monospace">vf b2</text>
+    <rect x="720" y="30" width="100" height="44" rx="3" fill="none" stroke="var(--ct)"/>
+    <text x="770" y="57" text-anchor="middle" fill="var(--ct)" font-family="JetBrains Mono, monospace">fence</text>
+    <line x1="270" y1="52" x2="300" y2="52" stroke="var(--ct)" marker-end="url(#ah2)"/>
+    <line x1="490" y1="60" x2="560" y2="60" stroke="var(--ct)" marker-end="url(#ah2)"/>
+    <text x="525" y="76" text-anchor="middle" fill="var(--muted)">k = 64</text>
+    <line x1="680" y1="52" x2="720" y2="52" stroke="var(--ct)" marker-end="url(#ah2)"/>
+
+    <!-- vf dispatch arrows -->
+    <line x1="210" y1="74" x2="210" y2="180" stroke="currentColor" marker-end="url(#ah2)"/>
+    <text x="216" y="130" fill="var(--muted)">vf</text>
+    <line x1="395" y1="74" x2="395" y2="180" stroke="currentColor" marker-end="url(#ah2)"/>
+    <text x="401" y="130" fill="var(--muted)">vf</text>
+    <line x1="620" y1="74" x2="620" y2="180" stroke="currentColor" marker-end="url(#ah2)"/>
+    <text x="626" y="130" fill="var(--muted)">vf</text>
+
+    <!-- wt blocks -->
+    <rect x="150" y="180" width="120" height="100" rx="3" fill="var(--wt-soft)" stroke="var(--wt)"/>
+    <text x="210" y="200" text-anchor="middle" font-weight="700" fill="var(--wt)">b0</text>
+    <text x="210" y="220" text-anchor="middle" fill="var(--wt)" font-family="JetBrains Mono, monospace">vlw vv0..3, va0..3</text>
+    <text x="210" y="240" text-anchor="middle" fill="var(--muted)">载入 c 的 4 行</text>
+    <rect x="300" y="180" width="190" height="100" rx="3" fill="var(--wt-soft)" stroke="var(--wt)"/>
+    <text x="395" y="200" text-anchor="middle" font-weight="700" fill="var(--wt)">b1</text>
+    <text x="395" y="220" text-anchor="middle" fill="var(--wt)" font-family="JetBrains Mono, monospace">vlw vv8, va4</text>
+    <text x="395" y="238" text-anchor="middle" fill="var(--wt)" font-family="JetBrains Mono, monospace">vfmadd.s vv0, vs6, vv8, vv0</text>
+    <text x="395" y="256" text-anchor="middle" fill="var(--wt)" font-family="JetBrains Mono, monospace">… vv1 vv2 vv3 同理</text>
+    <text x="395" y="274" text-anchor="middle" fill="var(--muted)">5 条指令，无访存 c</text>
+    <rect x="560" y="180" width="120" height="100" rx="3" fill="var(--wt-soft)" stroke="var(--wt)"/>
+    <text x="620" y="200" text-anchor="middle" font-weight="700" fill="var(--wt)">b2</text>
+    <text x="620" y="220" text-anchor="middle" fill="var(--wt)" font-family="JetBrains Mono, monospace">vsw vv0..3, va5..8</text>
+    <text x="620" y="240" text-anchor="middle" fill="var(--muted)">写回 c 的 4 行</text>
+
+    <!-- persistent registers -->
+    <line x1="150" y1="300" x2="680" y2="300" stroke="var(--wt)" stroke-width="3"/>
+    <text x="415" y="320" text-anchor="middle" fill="var(--wt)">vv0..vv3：4 个累加器在 b0 到 b2 之间常驻向量寄存器，控制线程不碰它们</text>
+  </g>
+</svg>
+<figcaption>图 2 · 分块 matmul 的 k 循环。循环本身在控制线程上跑，每次迭代只发射一个 5 条指令的 vf 块；累加器跨 vf 块留在寄存器里，这是控制线程区域和 phi coalescing 共同的效果。</figcaption>
+</figure>
+
+<h3>工作组、本地内存与归约</h3>
+<p><code>hwacha_group_size</code> 非零时向量长度被限制为工作组大小，于是一个工作组恰好是一段 stripmine。<code>__local</code> 数组变成控制线程模块里的一个静态缓冲（工作组依次执行，一份就够），barrier 退化成一条 <code>vfence</code>。硬件唯一的跨 lane 原语是 <code>vfirst</code>，所以 <code>work_group_reduce_*</code> 走内存：各 lane 把值写进 scratch 缓冲，然后一个对数深度的树在向量寄存器里做，每层是一次跨半区的加载加运算，最后 <code>vfence</code> 后由 <code>vlsw</code> 读回一致的结果。</p>
+
+<h3>寄存器与输出</h3>
+<p>vv、vs、vp 以及配置成 32 位的 vw 寄存器各自线性分配，按最后使用点释放；标量输入寄存器先于临时寄存器分配以免冲突，链接寄存器在 kernel 开头就保留。控制线程的 LLVM IR 交给 llc 编译成 riscv64 汇编，与工作线程的汇编文本拼成一个 .s；MLIR 路径的宿主 IR 在 llc 之前链接进同一个模块，所以 <code>hwacha_group_size</code>、<code>hwacha_grid_size</code> 这类全局在同一个目标文件里定义。旧版 binutils 不认识的 <code>.attribute</code> 指示和 <code>fmv.x.w</code> 拼写在输出时被过滤或改写。</p>
+
+<h2>四、它跑得怎么样</h2>
+<p>正确性在 Spike 上验证，周期数在 Chipyard 的 Verilator RTL 上测（HwachaRocketConfig，8 线程 -O2 仿真器）。下面是几个有代表性的数字，完整表格在 README 和 NOTES 里。</p>
+<div class="tablewrap"><table>
+<tr><th>程序</th><th class="num">标量 Rocket</th><th class="num">hwacha-cc</th><th class="num">加速</th></tr>
+<tr><td>saxpy N=4096</td><td class="num">55 851</td><td class="num">3 776（手写 3 938）</td><td class="num">14.8×</td></tr>
+<tr><td>kmeans 1024×8×5</td><td class="num">1 269 172</td><td class="num">96 719</td><td class="num">13.1×</td></tr>
+<tr><td>llama2.c stories260K，每 token</td><td class="num">2.88M</td><td class="num">235k</td><td class="num">12.3×</td></tr>
+<tr><td>GPT-2 前向，16 token</td><td class="num">31 244 913</td><td class="num">1 627 888</td><td class="num">19.2×</td></tr>
+<tr><td>matmul 64³，linalg 直接降低 → transform 分块</td><td class="num">649 988</td><td class="num">69 450（3.77 MAC/cycle）</td><td class="num">9.4×</td></tr>
+</table></div>
+
+<h2>五、可调项</h2>
+<div class="tablewrap"><table>
+<tr><th>选项</th><th>作用</th></tr>
+<tr><td><code>--analyze</code> / <code>--kstats</code></td><td>只打印分析结果 / 每个 kernel 的指令统计</td></tr>
+<tr><td><code>--keep</code> / <code>--verbose</code></td><td>保留中间 IR 与汇编 / 打印区域选择等诊断</td></tr>
+<tr><td><code>--no-ct-loops</code> <code>--no-skip</code> <code>--no-coalesce</code> <code>--no-v32</code></td><td>消融：关掉控制线程区域、块跳过、phi coalescing、32 位向量寄存器</td></tr>
+<tr><td><code>--scalar-fp</code></td><td>允许一致的浮点运算留在 vs 寄存器（需要 FPU 补丁后的 RTL）</td></tr>
+<tr><td><code>--subword-rmw</code></td><td>子字存储改成读改写，给未打 store-credit 补丁的 RTL 用</td></tr>
+<tr><td><code>--host</code> <code>--assume-noalias</code> <code>--fp-contract</code> <code>--gpu-block1</code></td><td>MLIR 路径：链接宿主 IR、指针参数视为 restrict、乘加融合、强制 block 大小为 1 的映射</td></tr>
+</table></div>
+
+<footer>源码：<code>hwacha-cc/src/{Analysis,CodeGen,GPUAdapt,main}.cpp</code>，<code>hwacha-cc/mlir/hwacha-mlir.cpp</code>。设计决策与踩坑记录在仓库的 NOTES.md。</footer>
+</div>
