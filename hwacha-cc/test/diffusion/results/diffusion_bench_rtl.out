@@ -1,1 +1,4 @@
 ==> /home/tesla/hwacha-compiler/hwacha-cc/test/diffusion/diffusion_bench.riscv start 21:12:22
+conv3x3 16x16 64->16 (2359296 MAC): scalar 60223017 cycles, hwacha 937997 cycles, 64.20x; max diff 0.000002 of 7.576266, PASS
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> /home/tesla/hwacha-compiler/hwacha-cc/test/diffusion/diffusion_bench.riscv end 00:39:46 rc=0
