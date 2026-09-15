@@ -219,7 +219,7 @@ can build `*_rtl` variants that skip it.
 | llama2.c stories260K, per token | 2.88M | 235k | 12.3× |
 | GPT-2 forward, tiny, 16 tokens | 31244913 | 1627888 | 19.2× |
 | sgemm 256³ | (hand naive 13918519, opt 4262080) | 5211891 | 2.7× naive, 0.82× opt |
-| matmul 64³ from `linalg.matmul` via `hwacha-mlir` | (plain lowering 650540) | 71654 with the tiling transform script (3.66 MAC/cycle) | 9.1× |
+| matmul 64³ from `linalg.matmul` via `hwacha-mlir` | (plain lowering 649988) | 69450 with the tiling transform script, one launch (3.77 MAC/cycle) | 9.4× |
 
 Unit-stride streams and control-thread loops get within 10–25% of hand-written code on streaming
 kernels; the gemm gap is register blocking. NOTES.md has the ablations and per-kernel breakdowns.

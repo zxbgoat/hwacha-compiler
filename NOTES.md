@@ -953,3 +953,34 @@ RTL 上 64³ matmul 的周期数（`results/mlir_rtl.out`）：
 256³）在一个量级；剩下的差距是每次 launch 的固定开销（16 次 launch，每次 vsetcfg/fence）和
 k 循环里每个 vf 块只有 5 条指令、vl 只有 64。把 i0 也放进 kernel（tile_using_forall 后 mapping 成
 sequential）或者 j 方向再分块都可以再收一点，但形态已经对了。
+
+## 分块 matmul 的外层循环进 kernel（2026-09-15 晚）
+
+上一节的 16 次 launch 改成一次。做法全在 transform 脚本里：先 `tile_using_forall [0,1,0]` 把 j
+切成 forall（并行语义，之后 `scf-forall-to-parallel` 变成最外层 scf.parallel，即 lane 维），再在
+里面 `tile_using_for [4,0,0]` 按 4 行分块，最后 `interchange [2,0,1]` 让 k 在 i'、j' 外面：
+
+```
+scf.parallel (j) { scf.for i0 step 4 { scf.for k { scf.parallel (i', j'=1) {...} } } }
+```
+
+hwacha-mlir 的流水线前面加了 `scf-forall-to-parallel`；其余（嵌套 parallel → for、常量 sink、小循环
+展开、外提）不变。kernel 里 i0 和 k 成了两层控制线程循环区域，n = 64（一个 lane 一列）。
+
+顺手修了一个 codegen 低效：内层循环退出到外层循环体的 LCSSA phi 之前按"普通 phi"处理，每个 k
+迭代把 4 个累加器拷贝到另 4 个寄存器（`vaddw vvX, vv0, vs0`），k 块 9 条指令里有 4 条是拷贝。
+`emitCTBlock` 现在对"离开区域内某个内层循环"的边也走别名路径（`InnerExit`），累加器寄存器直接
+给出口 phi 用。k 块只剩 `vlw` + 4 条 `vfmadd`。回归、gemm、llama 在 Spike 上都仍然通过。
+
+RTL 上 64³ matmul：
+
+| 版本 | 周期 | MAC/cycle |
+|---|---|---|
+| linalg 直接降低 | 649988 | 0.40 |
+| 分块，16 次 launch（上一节） | 71654 | 3.66 |
+| 分块，一次 launch，i0 在 kernel 里 | 69450 | 3.77 |
+
+launch 开销本来就不大（16 次共约 2k 周期）。剩下的瓶颈是每个 k 迭代一个 vf 块只有 5 条指令、
+vl = 64：1024 个 vf 块各约 68 周期，基本就是控制线程发射 + vf 启动的固定开销。要再往上只能
+增大每个 vf 块的工作量：j 方向用更长的向量（矩阵更大）、或者把 k 也分块展开（一个 vf 块做
+多个 k）——后者对 hwacha-cc 是控制线程循环的 unroll，是下一步可以做的事。

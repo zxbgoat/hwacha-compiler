@@ -245,7 +245,7 @@ int main(int argc, char **argv) {
     for (Operation &op : llvm::make_early_inc_range(*m.getBody())) if (op.hasAttr("transform.with_named_sequence")) op.erase();
   }
   if (!hasGpuModule(m)) {
-    if (!runPipeline(m, "convert-linalg-to-parallel-loops,func.func(fold-memref-alias-ops)")) return 1;   // subviews from tiling folded into the accesses (bare pointers need identity layouts)
+    if (!runPipeline(m, "scf-forall-to-parallel,convert-linalg-to-parallel-loops,func.func(fold-memref-alias-ops)")) return 1;   // subviews from tiling folded into the accesses (bare pointers need identity layouts)
     if (!nestedParallelToFor(m)) return 1;
     if (!NoCollapse) collapseParallel(m);
     mapParallel(m);

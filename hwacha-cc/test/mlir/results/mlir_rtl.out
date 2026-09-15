@@ -1,4 +1,4 @@
-==> /home/tesla/hwacha-compiler/hwacha-cc/test/mlir/mlir.riscv start 09:36:58
+==> /home/tesla/hwacha-compiler/hwacha-cc/test/mlir/mlir.riscv start 19:48:39
 saxpy(gpu)     ok
 saxpy(linalg)  ok
 grid-stride    ok
@@ -6,7 +6,7 @@ workgroup      ok
 math+exp       ok
 matmul(linalg) ok
 matmul(tiled)  ok
-matmul 64^3 cycles: linalg 650540, tiled 71654
+matmul 64^3 cycles: linalg 649988, tiled 69450
 ALL KERNELS PASSED
 - /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
-==> /home/tesla/hwacha-compiler/hwacha-cc/test/mlir/mlir.riscv end 10:00:42 rc=0
+==> /home/tesla/hwacha-compiler/hwacha-cc/test/mlir/mlir.riscv end 20:11:18 rc=0

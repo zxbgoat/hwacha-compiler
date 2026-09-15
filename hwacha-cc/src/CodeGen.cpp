@@ -984,12 +984,14 @@ bool WTGen::emitCTBlock(BasicBlock *BB, unsigned &Pos, CTLoop &C) {
   std::vector<Move> Moves;
   for (BasicBlock *S : successors(BB)) {
     bool IsExit = !L->contains(S);
+    Loop *BL = LI->getLoopFor(BB);
+    bool InnerExit = !IsExit && BL && BL != L && !BL->contains(S);   // leaving an inner loop of the region
     for (PHINode &Phi : S->phis()) {
       int In = Phi.getBasicBlockIndex(BB);
       if (In < 0 || !Needed.count(&Phi)) continue;
       if (!IsExit && ctSkip(&Phi)) continue;                    // uniform: the control thread's phi
       Value *V = Phi.getIncomingValue(In);
-      if (IsExit && !RegOf.count(&Phi)) {
+      if ((IsExit || InnerExit) && !RegOf.count(&Phi)) {
         // the loop's LCSSA phi of a value coalesced into a header phi register: alias it, no copy
         // per iteration (the header phi is dead after the loop; keep its register until the exit
         // phi's own last use)
