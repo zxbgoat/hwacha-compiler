@@ -4,7 +4,10 @@
 // Pipeline: [linalg -> parallel loops -> collapse to 1-D -> map -> gpu -> outline] -> lower-affine ->
 // scf-to-cf -> {kernel: convert-gpu-to-nvvm; host: *-to-llvm, launch_func -> call <kernel>_ct}.
 #include "mlir/Conversion/Passes.h"
+#include "mlir/Dialect/ControlFlow/IR/ControlFlowOps.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/Dialect/Linalg/IR/Linalg.h"
+#include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/GPU/IR/GPUDialect.h"
 #include "mlir/Dialect/GPU/Transforms/ParallelLoopMapper.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
@@ -136,6 +139,23 @@ static void unrollSmall(ModuleOp m) {
   }
 }
 
+// gpu-kernel-outlining names every kernel <func>_kernel inside a gpu.module of a unique name
+// (<func>_kernel, <func>_kernel_0, ...): once the modules are flattened the functions would collide,
+// so every kernel takes its module's name (and the launches follow).
+static void uniqueKernelNames(ModuleOp m) {
+  m.walk([&](gpu::GPUModuleOp gm) {
+    for (auto f : gm.getOps<gpu::GPUFuncOp>()) {
+      if (f.getName() == gm.getName()) continue;
+      StringRef old = f.getName();
+      m.walk([&](gpu::LaunchFuncOp l) {
+        if (l.getKernelModuleName() == gm.getNameAttr() && l.getKernelName().getValue() == old)
+          l.setKernelAttr(SymbolRefAttr::get(gm.getNameAttr(), {FlatSymbolRefAttr::get(gm.getNameAttr())}));
+      });
+      f.setName(gm.getName());
+    }
+  });
+}
+
 static Value lookThrough(Value v) {
   while (auto c = v.getDefiningOp<UnrealizedConversionCastOp>()) { if (c.getInputs().size() != 1) break; v = c.getInputs()[0]; }
   return v;
@@ -237,6 +257,14 @@ int main(int argc, char **argv) {
   ModuleOp m = *mod;
   std::string bareOpt = MemRefConv == "bare" ? "{use-bare-ptr-memref-call-conv=1}" : "";
 
+  // bufferized torch-mlir output: memref.copy would lower to a runtime call (memrefCopy) -> make it a
+  // linalg.copy kernel; cf.assert (shape checks) would lower to puts/abort -> drop it
+  {
+    SmallVector<memref::CopyOp> copies; m.walk([&](memref::CopyOp c) { copies.push_back(c); });
+    for (memref::CopyOp c : copies) { OpBuilder b(c); linalg::CopyOp::create(b, c.getLoc(), c.getSource(), c.getTarget()); c.erase(); }
+    SmallVector<cf::AssertOp> asserts; m.walk([&](cf::AssertOp a) { asserts.push_back(a); });
+    for (cf::AssertOp a : asserts) a.erase();
+  }
   // an embedded transform script (nested module with transform.with_named_sequence) is applied first
   bool hasTransform = false;
   for (Operation &op : *m.getBody()) if (op.hasAttr("transform.with_named_sequence")) hasTransform = true;
@@ -253,6 +281,7 @@ int main(int argc, char **argv) {
     sinkConstants(m);
     unrollSmall(m);   // before outlining: the loop bounds are still constants here
     if (!runPipeline(m, "gpu-kernel-outlining")) return 1;
+    uniqueKernelNames(m);
   } else unrollSmall(m);
   if (!runPipeline(m, "lower-affine,convert-scf-to-cf")) return 1;
 
@@ -283,7 +312,7 @@ int main(int argc, char **argv) {
       OpBuilder rb(&entry, entry.end());
       gpu::ReturnOp::create(rb, f.getLoc());
     });
-    if (!runPipeline(m, "convert-math-to-llvm,finalize-memref-to-llvm,convert-func-to-llvm" + bareOpt +
+    if (!runPipeline(m, "func.func(fold-memref-alias-ops,expand-strided-metadata),convert-math-to-llvm,finalize-memref-to-llvm,convert-func-to-llvm" + bareOpt +
                         ",convert-index-to-llvm,convert-arith-to-llvm,convert-cf-to-llvm")) return 1;
     if (!lowerLaunches(m)) return 1;
     for (Operation &op : llvm::make_early_inc_range(*m.getBody())) if (isa<gpu::GPUModuleOp>(op)) op.erase();

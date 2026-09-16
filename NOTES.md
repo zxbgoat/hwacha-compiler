@@ -1084,4 +1084,51 @@ clang 变成 `switch` 终结符，hwacha-cc 不支持。
 三个模型的 Hwacha 前向与 PyTorch 差 ≤ 1e-5，与标量参考差 ≤ 1e-5；几百步采样后的图和 x86
 逐像素一致——和 diffusion.c 一样，说明 vfmadd / 展开的 expf / A-S erf 在 Spike 上和 x86 的
 libm 走到了同一个 8 bit 量化结果。RTL 一步：aestuans 87.2M 周期（174M MAC，2.0 MAC/cycle）；
-bot66 / teapearce 见 `results/mnist_rtl.out`。
+bot66 184.6M 周期（119M MAC，深度可分离卷积每次加载只喂 1 条乘加，0.65 MAC/cycle）；teapearce 见
+`results/mnist_rtl.out`。
+
+
+## 接入 PyTorch：路线 A，torch-mlir（2026-09-16）
+
+```
+nn.Module ─torch.export─▶ FX ─torch-mlir─▶ linalg on tensors ─one-shot-bufferize─▶ linalg on memrefs
+          ─hwacha-mlir─▶ kernel.ll + host.ll ─hwacha-cc --host─▶ .s
+```
+
+**环境**：`pip download torch-mlir --pre -f https://github.com/llvm/torch-mlir-release/releases/expanded_assets/dev-wheels`
+拿到 nightly wheel（20260916.878），`python -m venv /tmp/tmenv --system-site-packages` 里
+`--no-deps` 安装，直接和本机的 torch 2.9.1 配合，不用重装 torch。
+
+**导出**（`test/torch/export_aestuans.py`）：`fx.export_and_import(m, x, t, c, output_type='linalg-on-tensors')`。
+aestuans 的 `c_embed[cmask == 1, :] = 0` 是布尔索引赋值，导出成 `tm_tensor.scatter` 和
+`tensor<?x16>` 的动态形状，用一个包装模块把掩码写成乘法就没了。同一脚本顺便算一个 (x, t, c) 的
+PyTorch eps 当参考。
+
+**bufferize**（Makefile 里的 `BUFFERIZE` 流水线）：`linalg-generalize-named-ops`，
+`one-shot-bufferize{bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map}`，
+`buffer-deallocation-simplification`，`convert-bufferization-to-memref`。出来的是 185 个
+`linalg.generic`、12 个 `linalg.map`、99 个 `memref.global`（权重成了 `dense_resource` 常量）、58
+个 `memref.alloc`、36 个 `memref.copy`（tensor.pad / concat 的产物）、17 个 `cf.assert`。
+
+**hwacha-mlir 为此补的**：
+
+- `gpu-kernel-outlining` 给每个 kernel 起的名字都是 `<func>_kernel`，只是各在自己的 gpu.module
+  （`unet_kernel`、`unet_kernel_0`……）里；我把 gpu.module 摊平后 197 个同名函数撞在一起，翻译时
+  段错误。现在每个 kernel 改名为它所在 module 的名字，launch 跟着改。
+- `memref.copy` 在 `finalize-memref-to-llvm` 里会变成运行时函数 `memrefCopy` 的调用，裸机没有：
+  改写成 `linalg.copy`，成为一个普通的拷贝 kernel。
+- `cf.assert`（形状检查）会变成 `puts` + abort：直接删。
+- host 侧多了 `fold-memref-alias-ops, expand-strided-metadata`，不然 `memref.subview` 剩到最后。
+- hwacha-cc 的 `cloneUniform` 复制全局变量到控制线程 module 时只复制类型、初值填零（那是给
+  `__local` 缓冲用的）；权重被外提沉进 kernel 后走的也是这条路，会变成全零。现在带初值的常量
+  原样复制。
+- `memref.alloc` 变成 `malloc`：宿主 C 里给一个 bump 分配器，每次前向清零；`free` 空操作。
+
+**结果**：`test/torch/aestuans.riscv` 一次前向和 PyTorch 差 1e-6（Spike），180 个 kernel，
+arena 4.8 MB。RTL 见 `results/torch_rtl.out`。
+
+**性能形态**：`convert-linalg-to-parallel-loops` 把每个 op 的并行维压成一维后，lane 的
+(n, c, h, w) 要用 `vdivu/vremu` 从平面下标算回来，所有访存都是 gather（`vlxw`），卷积是每个输出
+位置一个 lane、控制线程循环 ic 和 tap、每次一条 gather 喂一条乘加——和手写 kernel 的"9 条移位流
+喂 8 条 vfmadd"差一个数量级。要补的是卷积的专门 pattern（零填充平面 + 移位流），或者在 linalg 层
+用 transform 脚本 tile 出通道块，属于下一步。
