@@ -1,2 +1,134 @@
 ==> /home/tesla/hwacha-compiler/hwacha-cc/test/mnist/aestuans_rtl.riscv start 05:27:34
 aestuans: PyTorch check at t=0.600000, class 3
+  forward vs PyTorch: max |diff| = 0.000001, max |ref| = 3.689213, ok
+sampling 1 of 500 steps, class 7, guidance w=0.000000, checking 0
+step 0 (t=499): 87226684 cycles
+forward cycles: total 87226684, per step 87226684
+image 28x28 (hex, 0.000000..1.000000 -> 00..ff):
+00000065000000166f140089ffc6008195004c00c60000000000cba9
+006dff00e40000ffb200ff0000ae0000ffff310000000003e7006600
+00750000d300880900c800ff0000ff00addeff77ffff0000007200f8
+00000001ff00f06900bf18ce320000917d5d0000006600ff21ffb500
+9694000000a400006b00ff000b00ff0b00ff502aff00b70000000000
+00ff003200228100f80000ff06ff39dc0000fb00ffcaffff0000ff00
+00ffff0000000000ff0000000000440010ff000000ff0a0000ea0000
+ff004c69004200fb007c4800005a00ffff23509df6001d1900ff00c1
+415f0098000000d75d00005cba0000ff00ad00000045000000ffb9d5
+ffff00d10000610000ff9ae92200ffe0005aff99590000b3000023ff
+d5000000e1ff00000000ff000029c800000000ff201f0000007eff00
+ff00a5cf000b09ff9400ff006100e2ff000000c7d477a50000712cff
+00db00f500000000767800000000ff8100470000cf86ff000b000000
+003a0000910000009e0019a5ff320001460000ff00002c00003a00ff
+0a00008300ff00002eb00000ffafffff00821700030081ff00ff21ff
+5300fffdff00000017ffffe63600a203bd7dff00007900f9000000ff
+0000b600000028ffff000000000000ff00d70000000000479d000000
+df0083ff000000e2ff00ff007700ffa2ffff009200000000ff0000bb
+000000003300ff004193a308ffff86006f0000ad00a5000000000000
+517300ff00ffa1f9ff8d0000b20096ff00ff7fab9965000000009300
+c90046b2004005000000000fbbcf66d3ffff00165bffb5ff00000000
+0000ff0046000000ee0043ff3f7f93420000006b000000ff0000ffff
+ff000000ff00ffc6004f000000ff1c00ff4dad5d0000000000e900ff
+00ff9ff600000013bee61c09ff780000000000a1ff7eff081b4f5200
+ff00c13e740000ff0022cc0000010000cb0063fec6635116650098f3
+0ef94d005c00001000ff00bf5500af801cd600ffff0000000000ff7e
+8e100000000000000000000000ff000032ff009fff6ccde300000000
+ff0000000c1300009800ffbb000006000000ff823aff00ff40682500
+   .    .  +## ++ . #     #+
+ .# #  ## #  +  ##      # . 
+ +  # +  # #  # +##+##   + #
+    # #. # #   ++.   . # ## 
+++   +  . #   #  #. # #     
+ #    + #  # #.#  # ####  # 
+ ##     #     .  #   #   #  
+# .. . # +.  . ## .+#    # #
+.. +   #.  .#  # +   .   ###
+## #  .  #+#  ## .#+.  #   #
+#   ##    #   #    #     +# 
+# +#   #+ # . ##   ##++  . #
+ # #    ++    #+ .  #+#     
+ .  +   +  +#   .  #     . #
+   + #   +  #+## +    +# # #
+. ###    ###. + #+#  + #   #
+  #    ##      # #     .+   
+# +#   ## # + #+## +    #  #
+    . # .++ ##+ .  + +      
+.+ # #+##+  + +# #+++.    + 
+# .# .      ##.###  .###    
+  # .   # .#.++.   .   #  ##
+#   # ## .   #  #.+.     # #
+ #+#    ##  #+     +#+#  .. 
+# #.+  #  #     # .##.. . +#
+ #. .    # #. ++ # ##     #+
++            #   # +#.##    
+#       + ##      #+.# #..  
+aestuans PASS
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> /home/tesla/hwacha-compiler/hwacha-cc/test/mnist/aestuans_rtl.riscv end 11:31:18 rc=0
+==> /home/tesla/hwacha-compiler/hwacha-cc/test/mnist/bot66_rtl.riscv start 11:31:18
+bot66: PyTorch check at t=900
+  forward vs PyTorch: max |diff| = 0.000001, max |ref| = 3.261572, ok
+sampling 1 of 1000 steps (cosine schedule, clipped x0), checking 0
+step 0 (t=999): 184605715 cycles
+forward cycles: total 184605715, per step 184605715
+image 28x28 (hex, 0.000000..1.000000 -> 00..ff):
+ff4bf3ffdd7c0922570048003fff22472033ff760eff0affff122aff
+d07640a9d579990d346a6400777b1800f700e6ff57a8007d4a262f22
+76004d00666899b5f74b006cad4300fe00ffff9b3c67004c5e003664
+006effffddc3ffff0353837b4c4c968dcecd00129a00155ff7980df9
+ffffcf9c00ff35c1ff42ffbf00f0c700a1ff89d0007f9dff1c427657
+477e2f00adf30f003d358986569b00300063ff5bffffff2324855846
+6efcefa3ff000010c943008eb89eb700aca0ffffffffff7effff2b0f
+84cdc7e7471a835400ffe29a35001bb8c600a4ec4449f5ed7e707484
+ffff6000f70087e42c00000338f6af0000ff006b00e07b00c0ff55ff
+fae4bd4aff3c5db5005200566aff5dc9ffc23b3727ff006f2a00ff3a
+90f5001700ffb6a208ff2c5465a07dff4e00fcf2d60800d8b1d000f4
+935216ffffb830ff00006217c900b400ff4900ff1a00ff59866046ff
+12ff82f8ff0076008f00ff9a63abffff49ff8c86b100ff93e0002800
+a80100d1ff6f00d3f04884ff56fe983ae40000d2858b5900fff9ac43
+e60000793e1313a65a000000e4ff003994d3008b9dbdda311b8b2dc1
+387e8364a8006700ffff48ff6700ba22ebcfffff7b698f46eb9eba62
+8898c9ea4ecb1e36ff00d96a02707f7bc1deb9828e2f3a13aead926a
+5eff00fe0029e090fd36dabb9b90ffff633400ff00d1b649ff0000e9
+0000efe1b5d58d8785cc427c68ff71358667bcfcb7355328de120076
+000030d000f46d2f73ff9d2e9dd776ff37b4bbeeff5df2ad00ffffb9
+75007c00bf400067001a001effcebe54c26a977888ffabff7000ec84
+0e7f248259ff00e80000f8ff54ea1677ff0ca2ffc89f37ffc6848d00
+0037577deca73600ffecf4000cb559b8ff456200ff009bf0004d0000
+1c1aff68009b96415e4e93b9b4620044ffff107e8c37afffbe995f00
+aaff865abb48ffffff2d4a2a3e00ecbf03b8bb131527f3f422369300
+c593ff93b1317dff02b900ff8e8fa17c45ff4f1478009bff98f8e9ff
+99fa64d4e9ba2e3a3d91fff400c844003900954fff7100350000ff00
+5900e9ffc9ff0000ffb0ffc0fff470900312a5ff00a5521401fe0074
+#.###+  . . .# . .#+ # ##  #
+#+.+#++ ... ++  # ##.+ +.   
++ . ..+##. .+. # ##+.. .. ..
+ .###### .++..++##  +  .#+ #
+###+ #.##.## ## +#+# ++# .+.
+.+  +#  ..++.+   .#.###  +..
+.##+#   #. +#+# ++#####+##  
++###. +. ##+.  ## +#..##+.++
+##. # +#    .#+  # . #+ ##.#
+###.#..# . ..#.###.. # .  #.
++#   ##+ # ..++#. ###  #+# #
++. ### #  . # # #. #  #.+..#
+ #+## + + #+.+##.#+++ #+#   
++  ##. ##.+#.#+.#  #++. ##+.
+#  +.  +.   ## .+# ++##  + #
+.++.+ . ##.#. # ####+.+.#+#.
+++##.# .# #. .++###++ . +++.
+.# #  #+#.##++##.. # ##.#  #
+  ####+++#.+.#..+.###.. #  +
+   # #. +#+ +#+#.####.#+ ###
++ + #. .    ###.#.+++#+#. #+
+ + +.# #  ##.# +# +##+.##++ 
+ ..+#+. ###  #.##.. # +# .  
+  #. ++...+##. .## ++.+##+. 
++#+.#.### . . ## ##   ## .+ 
+#+#++ +# # #++++.#. + +#+###
++#.### ..+## #. . +.#. .  # 
+. ####  #+####.+  +# +.  # +
+bot66 PASS
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> /home/tesla/hwacha-compiler/hwacha-cc/test/mnist/bot66_rtl.riscv end 21:47:13 rc=0
+==> /home/tesla/hwacha-compiler/hwacha-cc/test/mnist/teapearce_rtl.riscv start 21:47:13
+teapearce: PyTorch check at t=0.750000, class 7

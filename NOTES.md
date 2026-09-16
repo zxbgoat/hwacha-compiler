@@ -1072,3 +1072,16 @@ clang 变成 `switch` 终结符，hwacha-cc 不支持。
 - 深度可分离卷积不加 `--assume-noalias` 时，通道循环里的 9 个一致加载（权重）因为可能和
   `y` 的 store 别名而进不了控制线程，整个循环留在 vf 块里用 vlxw gather，慢一个数量级；
   Makefile 里默认加上。
+
+**结果**（Spike 完整采样，x86 参考用同一 LCG；`test/mnist/results/`）：
+
+| 模型 | 步数 × 前向 | Spike 周期/步 | 最终 28×28 图 vs x86 |
+|---|---|---|---|
+| bot66 | 1000 × 1 | 10.98M | 784/784 像素一致（一个 "7"） |
+| teapearce | 400 × 2（w = 2.0 引导） | 264.97M | 784/784 像素一致（"7"） |
+| aestuans | 500 × 1 | 36.39M | 784/784 像素一致（"7"） |
+
+三个模型的 Hwacha 前向与 PyTorch 差 ≤ 1e-5，与标量参考差 ≤ 1e-5；几百步采样后的图和 x86
+逐像素一致——和 diffusion.c 一样，说明 vfmadd / 展开的 expf / A-S erf 在 Spike 上和 x86 的
+libm 走到了同一个 8 bit 量化结果。RTL 一步：aestuans 87.2M 周期（174M MAC，2.0 MAC/cycle）；
+bot66 / teapearce 见 `results/mnist_rtl.out`。
