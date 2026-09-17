@@ -10,7 +10,8 @@ CFLAGS  := -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -f
            -fno-tree-loop-distribute-patterns -fno-math-errno -march=rv64gcxhwacha -mabi=lp64d -I$(COMMON) -I$(ROOT)/esp-tests/env
 LDFLAGS := -static -nostdlib -nostartfiles -lm -lgcc -T $(COMMON)/test.ld
 SPIKE   := spike --isa=rv64gc --extension=hwacha
-BUFFERIZE := builtin.module(func.func(linalg-generalize-named-ops),one-shot-bufferize{bufferize-function-boundaries=1 function-boundary-type-conversion=identity-layout-map},func.func(buffer-deallocation-simplification),convert-bufferization-to-memref,canonicalize,cse)
+HWMLIRFLAGS ?=
+BUFFERIZE := builtin.module(one-shot-bufferize{bufferize-function-boundaries=1 function-boundary-type-conversion=identity-layout-map},func.func(buffer-deallocation-simplification),convert-bufferization-to-memref,canonicalize,cse)
 
 all: aestuans.riscv
 
@@ -18,12 +19,16 @@ aestuans.mlir aestuans_check.bin: export_aestuans.py
 	$(PYTHON) export_aestuans.py /tmp/mnist-diffusion aestuans.mlir aestuans_check.bin
 %_memref.mlir: %.mlir
 	$(MLIROPT) $< --pass-pipeline='$(BUFFERIZE)' -o $@
+hwlib.ll: hwlib.cl
+	$(HOME)/miniforge3/bin/clang -x cl -cl-std=CL1.2 -Xclang -finclude-default-header --target=riscv64-unknown-elf -march=rv64gc -O2 -fno-vectorize -fno-slp-vectorize -fno-unroll-loops -emit-llvm -S $< -o $@
+hwlib.s: hwlib.ll $(HWCC)
+	$(HWCC) $< --assume-noalias -o $@
 %.ll %.host.ll: %_memref.mlir $(HWMLIR)
-	$(HWMLIR) $< -o $*.ll --host $*.host.ll
+	$(HWMLIR) $< -o $*.ll --host $*.host.ll $(HWMLIRFLAGS)
 %.s: %.ll %.host.ll $(HWCC)
 	$(HWCC) $< --host $*.host.ll --assume-noalias -o $@
-%.riscv: torch_main.c %.s %_check.bin $(COMMON)/crt.S $(COMMON)/syscalls.c
-	$(CC) $(CFLAGS) -DCHECK_FILE='"$*_check.bin"' -o $@ torch_main.c $*.s $(COMMON)/crt.S $(COMMON)/syscalls.c $(LDFLAGS)
+%.riscv: torch_main.c %.s hwlib.s %_check.bin $(COMMON)/crt.S $(COMMON)/syscalls.c
+	$(CC) $(CFLAGS) -DCHECK_FILE='"$*_check.bin"' -o $@ torch_main.c $*.s hwlib.s $(COMMON)/crt.S $(COMMON)/syscalls.c $(LDFLAGS)
 %.spike: %.riscv
 	$(SPIKE) $<
 clean:

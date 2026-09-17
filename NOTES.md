@@ -1132,3 +1132,27 @@ arena 4.8 MB。RTL 见 `results/torch_rtl.out`。
 位置一个 lane、控制线程循环 ic 和 tap、每次一条 gather 喂一条乘加——和手写 kernel 的"9 条移位流
 喂 8 条 vfmadd"差一个数量级。要补的是卷积的专门 pattern（零填充平面 + 移位流），或者在 linalg 层
 用 transform 脚本 tile 出通道块，属于下一步。
+## 路线 A 的性能 pattern（2026-09-17）
+
+三个改动都在 `hwacha-mlir` 里，默认开启（`--collapse-all` 回到旧映射，`--no-conv-lib` 关掉卷积库）：
+
+1. **lane 取最内维**（`laneInnermost`）：多维 `scf.parallel` 不再全部压成一维，而是最内维做 lane，
+   其余维变成 kernel 里的控制线程循环。合法性来自 scf.parallel 的每一维都是并行的。之前压成一维
+   后要用 `vdivu/vremu` 从平面下标算回 (n, c, h, w)，LLVM 折不回 `p`，所有访存都成了 gather。
+2. **generic 的维度折叠**（`collapseGenerics`）：对每个 `linalg.generic`，用
+   `linalg::collapseOpIterationDims` 折叠所有操作数都保持连续的最长尾部并行维组：全部恒等映射的
+   逐元素 op 折成一维；带按通道广播操作数（BN 的 scale/shift `tensor<64x1x1>`）的折成 (n, c, hw)，
+   hw 做 lane，c 是控制线程循环，地址 `base + c*HW + p` 是单位步长，scale[c] 是 vmcs。只处理
+   恒等 layout 的操作数（pad/concat 产生的 strided subview 跳过）。
+3. **卷积走库**（`lowerConvs`）：`linalg.conv_2d_nchw_fchw`（N=1，3×3 stride 1/2 且输入是零填充过
+   的，或 1×1 stride 1）改写成对 `test/torch/hwlib.cl` 里手写 kernel 的 `llvm.call`：torch-mlir 的
+   `tensor.pad` bufferize 出来正好是 (H+2)×(W+2) 的缓冲，就是 mnist.cl 的填充平面布局；3×3 kernel
+   写到带 guard 的 scratch 平面，`unpad` 拷回稠密输出；1×1 直接在稠密缓冲上算。输出缓冲必须
+   已被清零（torch-mlir 先 `linalg.fill 0`，bufferize 后常常是从共享的零缓冲 `memref.copy` 过来，
+   中间还可能有对零缓冲的读），找到那个写者后删掉。指针用 `memref.extract_aligned_pointer_as_index`
+   → `llvm.inttoptr` 拿。aestuans 20 个卷积里 15 个走库（剩下 2 个 1×1 stride 2、2 个 2×2 转置卷积、
+   1 个输出初始化没认出来，走通用路径）。
+
+结果：aestuans 的 torch-mlir 版仍和 PyTorch 差 1e-6；汇编里 gather（vlxw）从几乎全部降到 27 条，
+单位步长流 377 条；kernel 219 个（多出来的是每个卷积的零偏置 fill）。test/mlir 的 7 个用例在新的默认
+映射下全部通过。RTL 一步的周期数（新旧对比）见 `test/torch/results/`。
