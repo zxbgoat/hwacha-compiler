@@ -226,6 +226,7 @@ can build `*_rtl` variants that skip it.
 | GPT-2 forward, tiny, 16 tokens | 31244913 | 1627888 | 19.2× |
 | sgemm 256³ | (hand naive 13918519, opt 4262080) | 5211891 | 2.7× naive, 0.82× opt |
 | diffusion.c ContextUnet, one denoising step (150.7M MAC) | (conv3x3 layer 64→16: scalar 60.2M) | 74.06M (conv layer 0.94M) | 64× on the conv layer |
+| aestuans UNet forward from PyTorch via torch-mlir (174M MAC) | (hand-written kernels 87.2M) | 152.5M | 0.57× of hand-written |
 | matmul 64³ from `linalg.matmul` via `hwacha-mlir` | (plain lowering 649988) | 69450 with the tiling transform script, one launch (3.77 MAC/cycle) | 9.4× |
 
 Unit-stride streams and control-thread loops get within 10–25% of hand-written code on streaming

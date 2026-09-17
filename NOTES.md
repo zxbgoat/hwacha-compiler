@@ -1155,4 +1155,11 @@ arena 4.8 MB。RTL 见 `results/torch_rtl.out`。
 
 结果：aestuans 的 torch-mlir 版仍和 PyTorch 差 1e-6；汇编里 gather（vlxw）从几乎全部降到 27 条，
 单位步长流 377 条；kernel 219 个（多出来的是每个卷积的零偏置 fill）。test/mlir 的 7 个用例在新的默认
-映射下全部通过。RTL 一步的周期数（新旧对比）见 `test/torch/results/`。
+映射下全部通过。
+
+RTL 一步前向（`test/torch/results/torch_rtl_v2.out`）：**152.5M 周期**，手写 kernel 版（test/mnist）
+是 87.2M，差 1.75×。没有 pattern 的旧版跑了 15 小时还没出数（`torch_rtl.out`）。剩下的差距来自：
+5 个没走库的卷积（2 个 2×2 转置卷积、2 个 1×1 stride 2）还是 gather 形态；每个卷积多一次 `unpad`
+拷贝和 `tensor.pad` 的 fill + 拷贝（拷贝目标是 strided subview，折不了维，lane 只有一行 28 个）；
+BN 等逐元素 op 各自一个 kernel、c 维做控制线程循环时每次迭代 vl 只有 784。要再收窄要么在 linalg
+层做 pad-conv-BN-ReLU 的融合，要么把填充布局传播到整张图上（就是手写版做的事）。

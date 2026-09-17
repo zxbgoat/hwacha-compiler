@@ -1,2 +1,6 @@
 ==> /tmp/aestuans_v2.riscv start 08:48:20
 torch-mlir unet: t=0.600000 class 3
+forward vs PyTorch: max |diff| = 0.000001, max |ref| = 3.703922, ok; 152549591 cycles, arena 6112 KB
+torch PASS
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+==> /tmp/aestuans_v2.riscv end 15:37:46 rc=0
