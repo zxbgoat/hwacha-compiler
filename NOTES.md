@@ -1216,3 +1216,30 @@ opset 低于 13 的（model zoo 的老文件）先 `onnx.version_converter` 升�
 
 **仍未解决**：`--fuse-generics`（把逐元素 generic 尾部并行维折进 lane 拿更大 vl）对非连续操作数
 仍会 delinearize，默认关闭。
+
+## torchvision 分类网络（2026-09-18）
+
+torch-mlir 能把 torchvision 的全部 80 个分类模型导入并降到 linalg（算子覆盖完整）。为跑通它们，
+给 conv-lib 又补了几类库 kernel（`test/torch/hwlib.cl`，在 hwacha-mlir 里识别对应 linalg 算子）：
+
+- **一般 KxK 稠密卷积**（`convKxK`，之前只有 3×3/1×1）
+- **深度可分离卷积**（`dwconvKxK` / `dwconvKxK_s2`，对应 `linalg.depthwise_conv_2d_nchw_chw`）——
+  mobilenet / mnasnet / shufflenet / efficientnet 的主力算子
+- **max pool**（`poolmax`，任意 KxK/stride）
+- **空间求和归约**（`chansum`，对应全局/自适应平均池化的 `linalg.generic` reduction：
+  `1xCxHxW → 1xCx1x1`，body `out += in`）——每个分类器末尾和 SE 块都有
+- **maximum / minimum 内建**（MaxPool 的 `llvm.maximum.f32`）
+
+用小输入（32×32，现代网络自适应池化接受任意尺寸）导出、和 PyTorch 逐类比对（`export_tv.py`、
+`tv_main.c`、`make <model>_tv.riscv`）。
+
+**跑通**：`squeezenet1_1`（1.2M 参数，只用稠密 1×1/3×3 卷积 + ReLU + maxpool）端到端在 Spike 上
+跑通，argmax 和 PyTorch 一致（`tv PASS`）。
+
+**仍挡住的**（都是 codegen 的 scaling 限制，不是缺算子）：depthwise / SE / 宽逐元素的模型
+（mobilenet_v2/v3、mnasnet、shufflenet、efficientnet）在某些 kernel 上仍超过 **32 个地址寄存器
+（va）** 的流数上限，汇编器报 "Invalid vector address register"；resnet18 则在 7×7 卷积的 pad 填充
+kernel（深三层控制线程循环）上耗尽 vs 寄存器。这两类都需要 hwacha-cc 侧的改动——流数超限时溢出
+到 gather（gather 用 vs 基址而非 va），以及深嵌套控制线程区域的寄存器分配——属于后续工作。
+权重以 `.word` 文本内联进汇编也让大模型的 .s 很大（mobilenet_v2 达 213MB），改成 `.incbin` 二进制
+可以缓解，也是后续。

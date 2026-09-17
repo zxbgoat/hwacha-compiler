@@ -43,3 +43,16 @@ aestuans.onnx: aestuans_onnx.py
 clean:
 	rm -f *.ll *.s *.riscv *_memref.mlir *_onnx.mlir *.torch.mlir
 .PRECIOUS: %.mlir %_memref.mlir %.ll %.host.ll %.s
+
+# torchvision classification models: export_tv.py + torch-mlir + hwacha-mlir + hwacha-cc
+TVHW ?= 32
+%_tv.mlir %_tv_check.bin: export_tv.py
+	$(PYTHON) export_tv.py $* $*_tv.mlir $*_tv_check.bin $(TVHW)
+%_tv_memref.mlir: %_tv.mlir
+	$(MLIROPT) $< --pass-pipeline='$(BUFFERIZE)' -o $@
+%_tv.ll %_tv.host.ll: %_tv_memref.mlir $(HWMLIR)
+	$(HWMLIR) $< -o $*_tv.ll --host $*_tv.host.ll $(HWMLIRFLAGS)
+%_tv.s: %_tv.ll %_tv.host.ll $(HWCC)
+	$(HWCC) $< --host $*_tv.host.ll --assume-noalias -o $@
+%_tv.riscv: tv_main.c %_tv.s hwlib.s %_tv_check.bin $(COMMON)/crt.S $(COMMON)/syscalls.c
+	$(CC) $(CFLAGS) -DCHECK_FILE='"$*_tv_check.bin"' -DMODEL='"$*"' -o $@ tv_main.c $*_tv.s hwlib.s $(COMMON)/crt.S $(COMMON)/syscalls.c $(LDFLAGS)

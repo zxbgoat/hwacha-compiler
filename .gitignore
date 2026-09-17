@@ -38,3 +38,7 @@ hwacha-cc/test/torch/*.riscv
 hwacha-cc/test/torch/*.onnx
 hwacha-cc/test/torch/*.onnx.v13
 hwacha-cc/test/torch/*.torch.mlir
+hwacha-cc/test/torch/*_tv.mlir
+hwacha-cc/test/torch/*_tv_memref.mlir
+hwacha-cc/test/torch/*_check.bin
+hwacha-cc/test/torch/*.exp

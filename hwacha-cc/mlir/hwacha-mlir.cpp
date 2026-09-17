@@ -227,6 +227,52 @@ static bool lowerConvs(ModuleOp m) {
   LLVM::LLVMFuncOp unpad = declareFn(m, "unpad_ct", intsU);
   Type intsP[] = {i64, ptrTy, ptrTy, i32, i32, i32, i32, i32, i32, i32};   // ..., C, Hi, Wi, Ho, Wo, K, S
   LLVM::LLVMFuncOp poolmax = declareFn(m, "poolmax_ct", intsP);
+  Type intsDW[] = {i64, ptrTy, ptrTy, ptrTy, ptrTy, i32, i32, i32, i32, i32};         // ..., C, plane, Wp, K, pad
+  LLVM::LLVMFuncOp dwkk = declareFn(m, "dwconvKxK_ct", intsDW);
+  Type intsDW2[] = {i64, ptrTy, ptrTy, ptrTy, ptrTy, i32, i32, i32, i32, i32, i32, i32};   // ..., C, plane, Wp, plane2, Wp2, K, pad
+  LLVM::LLVMFuncOp dwkk2 = declareFn(m, "dwconvKxK_s2_ct", intsDW2);
+  // linalg.depthwise_conv_2d_nchw_chw (N=1) -> dwconvKxK / dwconvKxK_s2 into a padded scratch + unpad
+  SmallVector<linalg::DepthwiseConv2DNchwChwOp> dws;
+  m.walk([&](linalg::DepthwiseConv2DNchwChwOp d) { dws.push_back(d); });
+  for (linalg::DepthwiseConv2DNchwChwOp dw : dws) {
+    auto xT = dyn_cast<MemRefType>(dw.getInputs()[0].getType()), wT = dyn_cast<MemRefType>(dw.getInputs()[1].getType()), yT = dyn_cast<MemRefType>(dw.getOutputs()[0].getType());
+    if (!xT || !wT || !yT || !xT.hasStaticShape() || !yT.hasStaticShape() || !xT.getLayout().isIdentity() || !yT.getLayout().isIdentity()) continue;
+    auto xs = xT.getShape(), ws = wT.getShape(), ys = yT.getShape();
+    if (xs[0] != 1 || ws[1] != ws[2]) continue;
+    auto sv = dw.getStrides().getValues<int64_t>(), dv = dw.getDilations().getValues<int64_t>();
+    int64_t stride = sv[0], K = ws[1], C = xs[1], Hi = xs[2], Wi = xs[3], Ho = ys[2], Wo = ys[3];
+    if (sv[1] != stride || dv[0] != 1 || dv[1] != 1 || K % 2 == 0) continue;
+    int64_t pad;
+    if (stride == 1 && Hi == Ho + K - 1 && Wi == Wo + K - 1) pad = (K - 1) / 2;
+    else if (stride == 2 && Hi == 2 * (Ho - 1) + K && Wi == 2 * (Wo - 1) + K) pad = 0;   // torchvision "valid-on-padded" depthwise stride 2 (pad already applied by tensor.pad)
+    else if (stride == 2 && Hi == 2 * Ho + K - 2 && Wi == 2 * Wo + K - 2) pad = (K - 1) / 2;
+    else { if (PrintMLIR) llvm::errs() << "// conv-lib: unsupported depthwise\n"; continue; }
+    Value biasMem; Operation *init = initWriter(dw.getOutputs()[0], dw, biasMem);
+    if (!init) { if (PrintMLIR) llvm::errs() << "// conv-lib: depthwise output not initd\n"; continue; }
+    Location loc = dw.getLoc(); OpBuilder b(dw);
+    auto ptrOf = [&](Value mem){ Value idx = memref::ExtractAlignedPointerAsIndexOp::create(b, loc, b.getIndexType(), mem); Value ii = arith::IndexCastOp::create(b, loc, IntegerType::get(ctx,64), idx); return LLVM::IntToPtrOp::create(b, loc, LLVM::LLVMPointerType::get(ctx), ii); };
+    auto i32c = [&](int64_t v){ return LLVM::ConstantOp::create(b, loc, IntegerType::get(ctx,32), b.getI32IntegerAttr(v)); };
+    auto i64c = [&](int64_t v){ return LLVM::ConstantOp::create(b, loc, IntegerType::get(ctx,64), b.getI64IntegerAttr(v)); };
+    Value xp = ptrOf(dw.getInputs()[0]), wp = ptrOf(dw.getInputs()[1]), yp = ptrOf(dw.getOutputs()[0]);
+    Value zp;
+    if (biasMem) zp = ptrOf(biasMem);
+    else { Value z = memref::AllocOp::create(b, loc, MemRefType::get({512}, Float32Type::get(ctx))); linalg::FillOp::create(b, loc, ValueRange{arith::ConstantOp::create(b, loc, b.getF32FloatAttr(0.0f))}, ValueRange{z}); zp = ptrOf(z); }
+    int64_t plane = Hi * Wi, Wp = Wi;
+    if (stride == 1) {
+      int64_t guard = 2 * Wp + 8;
+      Value scratch = memref::AllocOp::create(b, loc, MemRefType::get({C * plane + 2 * guard}, Float32Type::get(ctx)));
+      Value sp = LLVM::GEPOp::create(b, loc, LLVM::LLVMPointerType::get(ctx), Float32Type::get(ctx), ptrOf(scratch), ArrayRef<LLVM::GEPArg>{(int32_t)guard});
+      LLVM::CallOp::create(b, loc, dwkk, ValueRange{i64c(plane), xp, wp, zp, sp, i32c(C), i32c(plane), i32c(Wp), i32c(K), i32c(pad)});
+      LLVM::CallOp::create(b, loc, unpad, ValueRange{i64c(C * Ho * Wo), sp, yp, i32c(plane), i32c(Wp), i32c(Ho), i32c(Wo), i32c(pad)});
+    } else {
+      int64_t Hp2 = Ho + 2, Wp2 = Wo + 2, plane2 = Hp2 * Wp2, guard = 2 * Wp2 + 8;
+      Value scratch = memref::AllocOp::create(b, loc, MemRefType::get({C * plane2 + 2 * guard}, Float32Type::get(ctx)));
+      Value sp = LLVM::GEPOp::create(b, loc, LLVM::LLVMPointerType::get(ctx), Float32Type::get(ctx), ptrOf(scratch), ArrayRef<LLVM::GEPArg>{(int32_t)guard});
+      LLVM::CallOp::create(b, loc, dwkk2, ValueRange{i64c(plane2), xp, wp, zp, sp, i32c(C), i32c(plane), i32c(Wp), i32c(plane2), i32c(Wp2), i32c(K), i32c(pad)});
+      LLVM::CallOp::create(b, loc, unpad, ValueRange{i64c(C * Ho * Wo), sp, yp, i32c(plane2), i32c(Wp2), i32c(Ho), i32c(Wo), i32c(1)});
+    }
+    init->erase(); dw.erase();
+  }
   // linalg.pooling_nchw_max (N=1, dense) -> poolmax_ct
   SmallVector<linalg::PoolingNchwMaxOp> pools;
   m.walk([&](linalg::PoolingNchwMaxOp p) { pools.push_back(p); });
@@ -245,6 +291,36 @@ static bool lowerConvs(ModuleOp m) {
     LLVM::CallOp::create(b, loc, poolmax, ValueRange{LLVM::ConstantOp::create(b, loc, i64, b.getI64IntegerAttr(ys[1] * ys[2] * ys[3])),
       ptrOf(pool.getInputs()[0]), ptrOf(pool.getOutputs()[0]), i32c(xs[1]), i32c(xs[2]), i32c(xs[3]), i32c(ys[2]), i32c(ys[3]), i32c(ks[0]), i32c(sv[0])});
     pool.erase();
+  }
+  // spatial-sum reduction generics (global / adaptive avg-pool numerator): a linalg.generic with
+  // (parallel, parallel, reduction, reduction) iterators, one dense input, output 1xCx1x1, body out += in.
+  Type intsCS[] = {i64, ptrTy, ptrTy, i32, i32};   // n, x, y, C, HW
+  LLVM::LLVMFuncOp chansum = declareFn(m, "chansum_ct", intsCS);
+  SmallVector<linalg::GenericOp> reds;
+  m.walk([&](linalg::GenericOp g) {
+    auto its = g.getIteratorTypesArray();
+    if (its.size() != 4 || its[0] != utils::IteratorType::parallel || its[1] != utils::IteratorType::parallel
+        || its[2] != utils::IteratorType::reduction || its[3] != utils::IteratorType::reduction) return;
+    if (g.getInputs().size() != 1 || g.getOutputs().size() != 1) return;
+    Block &bb = g.getRegion().front();
+    if (!llvm::hasSingleElement(bb.without_terminator())) return;
+    auto add = dyn_cast<arith::AddFOp>(&bb.front());
+    if (!add) return;
+    reds.push_back(g);
+  });
+  for (linalg::GenericOp g : reds) {
+    auto xT = dyn_cast<MemRefType>(g.getInputs()[0].getType()), yT = dyn_cast<MemRefType>(g.getOutputs()[0].getType());
+    if (!xT || !yT || !xT.hasStaticShape() || !xT.getLayout().isIdentity() || !yT.getLayout().isIdentity()) continue;
+    auto xs = xT.getShape();
+    if (xs[0] != 1) continue;
+    int64_t C = xs[1], HW = xs[2] * xs[3];
+    Location loc = g.getLoc(); OpBuilder b(g);
+    Value biasMem; Operation *init = initWriter(g.getOutputs()[0], g, biasMem);
+    if (!init || biasMem) continue;   // output must be zero-initialized (sum starts at 0)
+    auto ptrOf = [&](Value mem){ Value idx = memref::ExtractAlignedPointerAsIndexOp::create(b, loc, b.getIndexType(), mem); Value ii = arith::IndexCastOp::create(b, loc, IntegerType::get(ctx,64), idx); return LLVM::IntToPtrOp::create(b, loc, ptrTy, ii); };
+    auto i32c = [&](int64_t v){ return LLVM::ConstantOp::create(b, loc, IntegerType::get(ctx,32), b.getI32IntegerAttr(v)); };
+    LLVM::CallOp::create(b, loc, chansum, ValueRange{LLVM::ConstantOp::create(b, loc, IntegerType::get(ctx,64), b.getI64IntegerAttr(C)), ptrOf(g.getInputs()[0]), ptrOf(g.getOutputs()[0]), i32c(C), i32c(HW)});
+    init->erase(); g.erase();
   }
   int lowered = 0;
   for (linalg::Conv2DNchwFchwOp conv : convs) {

@@ -124,3 +124,41 @@ __kernel void poolmax(__global const float *x, __global float *y, int C, int Hi,
     for (int kw = 0; kw < K; kw++) m = fmax(m, xs[kh * Wi + kw]);
   y[p] = m;
 }
+
+// depthwise KxK convolution, stride S, on a zero-padded input plane. lane = padded position; control
+// loop over channels, KxK taps as shifted unit-stride streams. Output written at the same coords
+// (stride 1) or half-size coords (stride 2) into a per-channel plane; unpad(pad) extracts the interior.
+__kernel void dwconvKxK(__global const float *x, __global const float *w, __global const float *b, __global float *y,
+                        int C, int plane, int Wp, int K, int pad) {
+  int p = get_global_id(0);
+  int KK = K * K;
+  for (int c = 0; c < C; c++) {
+    __global const float *xs = x + c * plane + p;
+    __global const float *k = w + c * KK;
+    float a = b[c];
+    for (int t = 0; t < KK; t++) a += k[t] * xs[(t / K - pad) * Wp + (t % K - pad)];
+    y[c * plane + p] = a;
+  }
+}
+__kernel void dwconvKxK_s2(__global const float *x, __global const float *w, __global const float *b, __global float *y,
+                           int C, int plane, int Wp, int plane2, int Wp2, int K, int pad) {
+  int p = get_global_id(0);
+  int i = p / Wp2, j = p - i * Wp2;
+  int base = (2 * i - pad) * Wp + (2 * j - pad);
+  int KK = K * K;
+  for (int c = 0; c < C; c++) {
+    __global const float *xs = x + c * plane + base;
+    __global const float *k = w + c * KK;
+    float a = b[c];
+    for (int t = 0; t < KK; t++) a += k[t] * xs[(t / K) * Wp + (t % K)];
+    y[c * plane2 + p] = a;
+  }
+}
+
+// spatial sum reduction (global pool numerator): dense y[c] = sum over H*W of x[c*HW + i]. lane = channel.
+__kernel void chansum(__global const float *x, __global float *y, int C, int HW) {
+  int c = get_global_id(0);
+  float s = 0.0f;
+  for (int i = 0; i < HW; i++) s += x[c * HW + i];
+  y[c] = s;
+}
