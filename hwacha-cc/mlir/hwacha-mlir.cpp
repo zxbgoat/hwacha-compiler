@@ -11,6 +11,7 @@
 #include "mlir/Dialect/Linalg/Transforms/Transforms.h"
 #include "mlir/Dialect/Linalg/Utils/Utils.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
+#include "mlir/Dialect/Linalg/IR/LinalgInterfaces.h"
 #include "mlir/Dialect/GPU/IR/GPUDialect.h"
 #include "mlir/Dialect/GPU/Transforms/ParallelLoopMapper.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
@@ -216,14 +217,35 @@ static bool lowerConvs(ModuleOp m) {
   if (convs.empty()) return true;
   Type i64 = IntegerType::get(ctx, 64), i32 = IntegerType::get(ctx, 32), f32 = Float32Type::get(ctx);
   Type ptrTy = LLVM::LLVMPointerType::get(ctx);
-  Type ints9[] = {i64, ptrTy, ptrTy, ptrTy, ptrTy, i32, i32, i32, i32};
-  LLVM::LLVMFuncOp c3 = declareFn(m, "conv3x3_ct", ints9), c31 = declareFn(m, "conv3x3_1_ct", ints9);
+  Type intsKK[] = {i64, ptrTy, ptrTy, ptrTy, ptrTy, i32, i32, i32, i32, i32, i32};   // ..., n_in, plane, Wp, K, pad, oc
+  LLVM::LLVMFuncOp ckk = declareFn(m, "convKxK_ct", intsKK), ckk1 = declareFn(m, "convKxK_1_ct", intsKK);
   Type ints11[] = {i64, ptrTy, ptrTy, ptrTy, ptrTy, i32, i32, i32, i32, i32, i32};
   LLVM::LLVMFuncOp c3s2 = declareFn(m, "conv3x3_s2_ct", ints11);
   Type ints8[] = {i64, ptrTy, ptrTy, ptrTy, ptrTy, i32, i32, i32};
   LLVM::LLVMFuncOp c1 = declareFn(m, "conv1x1_ct", ints8), c11 = declareFn(m, "conv1x1_1_ct", ints8);
-  Type intsU[] = {i64, ptrTy, ptrTy, i32, i32, i32, i32};
+  Type intsU[] = {i64, ptrTy, ptrTy, i32, i32, i32, i32, i32};   // ..., plane, Wp, H, W, pad
   LLVM::LLVMFuncOp unpad = declareFn(m, "unpad_ct", intsU);
+  Type intsP[] = {i64, ptrTy, ptrTy, i32, i32, i32, i32, i32, i32, i32};   // ..., C, Hi, Wi, Ho, Wo, K, S
+  LLVM::LLVMFuncOp poolmax = declareFn(m, "poolmax_ct", intsP);
+  // linalg.pooling_nchw_max (N=1, dense) -> poolmax_ct
+  SmallVector<linalg::PoolingNchwMaxOp> pools;
+  m.walk([&](linalg::PoolingNchwMaxOp p) { pools.push_back(p); });
+  for (linalg::PoolingNchwMaxOp pool : pools) {
+    auto xT = dyn_cast<MemRefType>(pool.getInputs()[0].getType()), yT = dyn_cast<MemRefType>(pool.getOutputs()[0].getType());
+    auto wT = dyn_cast<MemRefType>(pool.getInputs()[1].getType());
+    if (!xT || !yT || !wT || !xT.hasStaticShape() || !yT.hasStaticShape() || !xT.getLayout().isIdentity() || !yT.getLayout().isIdentity()) continue;
+    auto xs = xT.getShape(), ys = yT.getShape(), ks = wT.getShape();
+    if (xs[0] != 1 || ks[0] != ks[1]) continue;
+    auto sv = pool.getStrides().getValues<int64_t>();
+    if (sv[0] != sv[1]) continue;
+    Location loc = pool.getLoc();
+    OpBuilder b(pool);
+    auto ptrOf = [&](Value mem) -> Value { Value idx = memref::ExtractAlignedPointerAsIndexOp::create(b, loc, b.getIndexType(), mem); Value ii = arith::IndexCastOp::create(b, loc, i64, idx); return LLVM::IntToPtrOp::create(b, loc, ptrTy, ii); };
+    auto i32c = [&](int64_t v) { return LLVM::ConstantOp::create(b, loc, i32, b.getI32IntegerAttr(v)); };
+    LLVM::CallOp::create(b, loc, poolmax, ValueRange{LLVM::ConstantOp::create(b, loc, i64, b.getI64IntegerAttr(ys[1] * ys[2] * ys[3])),
+      ptrOf(pool.getInputs()[0]), ptrOf(pool.getOutputs()[0]), i32c(xs[1]), i32c(xs[2]), i32c(xs[3]), i32c(ys[2]), i32c(ys[3]), i32c(ks[0]), i32c(sv[0])});
+    pool.erase();
+  }
   int lowered = 0;
   for (linalg::Conv2DNchwFchwOp conv : convs) {
     auto xT = dyn_cast<MemRefType>(conv.getInputs()[0].getType()), wT = dyn_cast<MemRefType>(conv.getInputs()[1].getType()), yT = dyn_cast<MemRefType>(conv.getOutputs()[0].getType());
@@ -235,8 +257,9 @@ static bool lowerConvs(ModuleOp m) {
     auto sv = conv.getStrides().getValues<int64_t>(), dv = conv.getDilations().getValues<int64_t>();
     int64_t stride = sv[0];
     if (sv[1] != stride || dv[0] != 1 || dv[1] != 1 || ws[1] != C) continue;
-    enum { K3S1, K3S2, K1S1 } kind;
-    if (kh == 3 && kw == 3 && stride == 1 && Hi == Ho + 2 && Wi == Wo + 2) kind = K3S1;
+    enum { KxKS1, K3S2, K1S1 } kind;
+    int64_t pad = 0;
+    if (kh == kw && kh % 2 == 1 && kh >= 3 && stride == 1 && Hi == Ho + kh - 1 && Wi == Wo + kw - 1) { kind = KxKS1; pad = (kh - 1) / 2; }
     else if (kh == 3 && kw == 3 && stride == 2 && Hi == 2 * Ho + 2 && Wi == 2 * Wo + 2 && O % 4 == 0) kind = K3S2;
     else if (kh == 1 && kw == 1 && stride == 1 && Hi == Ho && Wi == Wo) kind = K1S1;
     else { if (PrintMLIR) llvm::errs() << "// conv-lib: unsupported shape " << conv << "\n"; continue; }
@@ -270,18 +293,18 @@ static bool lowerConvs(ModuleOp m) {
     } else {
       int64_t plane = Hi * Wi, Wp = Wi;
       int64_t Hp2 = Ho + 2, Wp2 = Wo + 2, plane2 = Hp2 * Wp2;
-      int64_t oplane = kind == K3S1 ? plane : plane2, oWp = kind == K3S1 ? Wp : Wp2;
+      int64_t oplane = kind == KxKS1 ? plane : plane2, oWp = kind == KxKS1 ? Wp : Wp2, oPad = kind == KxKS1 ? pad : 1;
       int64_t guard = 2 * oWp + 8;
       Value scratch = memref::AllocOp::create(b, loc, MemRefType::get({O * oplane + 2 * guard}, f32));
       Value sp = LLVM::GEPOp::create(b, loc, ptrTy, f32, ptrOf(scratch), ArrayRef<LLVM::GEPArg>{(int32_t)guard});
-      if (kind == K3S1) {
+      if (kind == KxKS1) {
         int64_t oc = 0;
-        for (; oc + 8 <= O; oc += 8) LLVM::CallOp::create(b, loc, c3, ValueRange{i64c(plane), xp, wp, zp, sp, i32c(C), i32c(plane), i32c(Wp), i32c(oc)});
-        for (; oc < O; oc++) LLVM::CallOp::create(b, loc, c31, ValueRange{i64c(plane), xp, wp, zp, sp, i32c(C), i32c(plane), i32c(Wp), i32c(oc)});
+        for (; oc + 8 <= O; oc += 8) LLVM::CallOp::create(b, loc, ckk, ValueRange{i64c(plane), xp, wp, zp, sp, i32c(C), i32c(plane), i32c(Wp), i32c(kh), i32c(pad), i32c(oc)});
+        for (; oc < O; oc++) LLVM::CallOp::create(b, loc, ckk1, ValueRange{i64c(plane), xp, wp, zp, sp, i32c(C), i32c(plane), i32c(Wp), i32c(kh), i32c(pad), i32c(oc)});
       } else {
         for (int64_t oc = 0; oc < O; oc += 4) LLVM::CallOp::create(b, loc, c3s2, ValueRange{i64c(plane2), xp, wp, zp, sp, i32c(C), i32c(plane), i32c(Wp), i32c(plane2), i32c(Wp2), i32c(oc)});
       }
-      LLVM::CallOp::create(b, loc, unpad, ValueRange{i64c(O * Ho * Wo), sp, yp, i32c(oplane), i32c(oWp), i32c(Ho), i32c(Wo)});
+      LLVM::CallOp::create(b, loc, unpad, ValueRange{i64c(O * Ho * Wo), sp, yp, i32c(oplane), i32c(oWp), i32c(Ho), i32c(Wo), i32c(oPad)});
     }
     init->erase();
     conv.erase();
@@ -473,7 +496,7 @@ int main(int argc, char **argv) {
     if (!runPipeline(m, "scf-forall-to-parallel,linalg-generalize-named-ops")) return 1;
     if (FuseGenerics) collapseGenerics(m);
     if (PrintMLIR) { llvm::errs() << "// ---- after collapseGenerics\n"; m.print(llvm::errs()); llvm::errs() << "\n"; }
-    if (!runPipeline(m, "convert-linalg-to-parallel-loops,func.func(fold-memref-alias-ops)")) return 1;   // subviews from tiling folded into the accesses (bare pointers need identity layouts)
+    if (!runPipeline(m, "convert-linalg-to-parallel-loops,func.func(expand-strided-metadata,fold-memref-alias-ops,canonicalize)")) return 1;   // subviews from tiling folded into the accesses (bare pointers need identity layouts)
     if (!nestedParallelToFor(m)) return 1;
     if (CollapseAll) { if (!NoCollapse) collapseParallel(m); }
     else laneInnermost(m);

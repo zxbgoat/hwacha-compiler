@@ -71,10 +71,56 @@ __kernel void conv1x1_1(__global const float *x, __global const float *w, __glob
   for (int ic = 0; ic < n_in; ic++) a += w[oc * n_in + ic] * x[ic * plane + p];
   y[oc * plane + p] = a;
 }
-// dense y[c][i][j] = padded x[c][(i+1)*Wp + j+1]; lane = dense index
-__kernel void unpad(__global const float *x, __global float *y, int plane, int Wp, int H, int W) {
+// dense y[c][i][j] = padded x[c][(i+pad)*Wp + j+pad]; lane = dense index
+__kernel void unpad(__global const float *x, __global float *y, int plane, int Wp, int H, int W, int pad) {
   int p = get_global_id(0);
   int HW = H * W;
   int c = p / HW, q = p - c * HW, i = q / W, j = q - i * W;
-  y[p] = x[c * plane + (i + 1) * Wp + j + 1];
+  y[p] = x[c * plane + (i + pad) * Wp + j + pad];
+}
+
+// general KxK convolution, stride 1, on a zero-padded input plane. lane = padded position; the K*K
+// taps are a control-thread loop of shifted unit-stride streams, 8 output channels per pass. The output
+// is written at the same padded coordinates (stride 1) into a plane of the input's shape; unpad(pad)
+// extracts the dense interior.
+__kernel void convKxK(__global const float *x, __global const float *w, __global const float *b, __global float *y,
+                       int n_in, int plane, int Wp, int K, int pad, int oc0) {
+  int p = get_global_id(0);
+  int KK = K * K, ws = n_in * KK;
+  float a0 = b[oc0], a1 = b[oc0 + 1], a2 = b[oc0 + 2], a3 = b[oc0 + 3], a4 = b[oc0 + 4], a5 = b[oc0 + 5], a6 = b[oc0 + 6], a7 = b[oc0 + 7];
+  for (int ic = 0; ic < n_in; ic++) {
+    __global const float *xs = x + ic * plane + p;
+    __global const float *k = w + (oc0 * n_in + ic) * KK;
+    for (int t = 0; t < KK; t++) {
+      float v = xs[(t / K - pad) * Wp + (t % K - pad)];
+      a0 += k[t] * v; a1 += k[ws + t] * v; a2 += k[2 * ws + t] * v; a3 += k[3 * ws + t] * v;
+      a4 += k[4 * ws + t] * v; a5 += k[5 * ws + t] * v; a6 += k[6 * ws + t] * v; a7 += k[7 * ws + t] * v;
+    }
+  }
+  y[(oc0 + 0) * plane + p] = a0; y[(oc0 + 1) * plane + p] = a1; y[(oc0 + 2) * plane + p] = a2; y[(oc0 + 3) * plane + p] = a3;
+  y[(oc0 + 4) * plane + p] = a4; y[(oc0 + 5) * plane + p] = a5; y[(oc0 + 6) * plane + p] = a6; y[(oc0 + 7) * plane + p] = a7;
+}
+__kernel void convKxK_1(__global const float *x, __global const float *w, __global const float *b, __global float *y,
+                        int n_in, int plane, int Wp, int K, int pad, int oc) {
+  int p = get_global_id(0);
+  int KK = K * K;
+  float a = b[oc];
+  for (int ic = 0; ic < n_in; ic++) {
+    __global const float *xs = x + ic * plane + p;
+    __global const float *k = w + (oc * n_in + ic) * KK;
+    for (int t = 0; t < KK; t++) a += k[t] * xs[(t / K - pad) * Wp + (t % K - pad)];
+  }
+  y[oc * plane + p] = a;
+}
+
+// KxK max pool, stride S, dense NCHW in/out (N=1). lane = flat output index; the KxK window is gathered.
+__kernel void poolmax(__global const float *x, __global float *y, int C, int Hi, int Wi, int Ho, int Wo, int K, int S) {
+  int p = get_global_id(0);
+  int HoWo = Ho * Wo;
+  int c = p / HoWo, q = p - c * HoWo, i = q / Wo, j = q - i * Wo;
+  __global const float *xs = x + c * Hi * Wi + (i * S) * Wi + j * S;
+  float m = -1.0f / 0.0f;
+  for (int kh = 0; kh < K; kh++)
+    for (int kw = 0; kw < K; kw++) m = fmax(m, xs[kh * Wi + kw]);
+  y[p] = m;
 }

@@ -1194,10 +1194,25 @@ opset 低于 13 的（model zoo 的老文件）先 `onnx.version_converter` 升�
 - 公开模型 ONNX model zoo 的 MNIST-8 分类器（Conv/MaxPool/MatMul，非我们训练）导入、降到
   linalg 成功。
 
-**已知限制**（都是循环降低 / codegen 层面，和 ONNX 前端无关）：
-- 默认的 lane-最内维映射对 `tensor.pad` 的填充和 ConvTranspose 的 6 维 reshape 会出问题：前者被
-  降成一维带 delinearize 的下标，后者展开成上百个 store 流超过 32 个 va 寄存器。所以带这类算子的
-  模型目前要加 `--collapse-all`（退回一维 gather 形态，慢但能编）。MNIST-8 的 5×5 卷积 pad 填充在
-  两种映射下都触发 delinearize，还没解决。
-- `--fuse-generics` 把逐元素 generic 的尾部并行维折进 lane（vl 更大），但会对非连续操作数
-  delinearize，默认关闭。
+**修好的 delinearize / 覆盖问题（2026-09-17）**：
+- **pad 填充 delinearize**：`tensor.pad` 的零填充被折成一维带除法的下标而耗尽 vs。根因是
+  collapseGenerics 把尺寸为 1 的前导维也折进去，`collapseOpIterationDims` 对它插入
+  linearize/delinearize（带符号保护，LLVM -O2 折不掉）。修法：collapseGenerics 跳过尺寸-1 维并默认
+  关闭（`--fuse-generics` 开），改由 laneInnermost（最内维做 lane）处理多维并行，填充变成干净的
+  控制线程循环存零，零除法。
+- **reshape / collapse_shape delinearize**：`memref.collapse_shape`（如 flatten `1x16x4x4`→`1x256`
+  喂给 matmul）被 `fold-memref-alias-ops` 折成带除法的下标。改在它之前加 `expand-strided-metadata`
+  + `canonicalize`，连续的 collapse 变成 `reinterpret_cast` 到连续视图，读取零除法。
+- **一般 KxK 卷积**：conv-lib 从只认 3×3/1×1 推广到任意奇数 KxK stride-1（`convKxK` / `convKxK_1`
+  按 K*K 个 tap 循环，`unpad` 带 pad 偏移）。MNIST-8 的 5×5 卷积走库。
+- **max pool 库化**：`linalg.pooling_nchw_max`（任意 KxK / stride）→ `poolmax` kernel（lane=输出位置，
+  gather 窗口），否则 MaxPool 的通用降低展开成上百个流超过 va。
+- **maximum / minimum 内建**：MaxPool 降出 `llvm.maximum.f32`（IEEE NaN 传播版），hwacha-cc 之前只
+  认 maxnum，现在 maximum/minimum 也映射到 vfmax/vfmin。
+
+**结果**：ONNX model zoo 的 MNIST-8 分类器（公开模型，非我们训练：Conv 5×5、MaxPool、MatMul）
+现在端到端在 Spike 上跑通，和 onnxruntime 差 1e-6（15434 周期）。aestuans 的 ONNX 版也不再需要
+`--collapse-all`，默认的 lane-最内维映射就能编。
+
+**仍未解决**：`--fuse-generics`（把逐元素 generic 尾部并行维折进 lane 拿更大 vl）对非连续操作数
+仍会 delinearize，默认关闭。

@@ -1425,8 +1425,8 @@ bool WTGen::emitInst(Instruction &I, unsigned Pos) {
         { std::string D = dest(I); emit(PV(D), "vfmadd" + S, {D, R(CI->getArgOperand(0)), R(CI->getArgOperand(1)), R(CI->getArgOperand(2))}); } return true;
       case Intrinsic::sqrt: { std::string D = dest(I); emit(PV(D), "vfsqrt" + S, {D, R(CI->getArgOperand(0))}); } return true;
       case Intrinsic::fabs: { std::string D = dest(I), A = R(CI->getArgOperand(0)); emit(PV(D), "vfsgnjx" + S, {D, A, A}); } return true;
-      case Intrinsic::minnum: { std::string D = dest(I); emit(PV(D), "vfmin" + S, {D, R(CI->getArgOperand(0)), R(CI->getArgOperand(1))}); } return true;
-      case Intrinsic::maxnum: { std::string D = dest(I); emit(PV(D), "vfmax" + S, {D, R(CI->getArgOperand(0)), R(CI->getArgOperand(1))}); } return true;
+      case Intrinsic::minnum: case Intrinsic::minimum: { std::string D = dest(I); emit(PV(D), "vfmin" + S, {D, R(CI->getArgOperand(0)), R(CI->getArgOperand(1))}); } return true;
+      case Intrinsic::maxnum: case Intrinsic::maximum: { std::string D = dest(I); emit(PV(D), "vfmax" + S, {D, R(CI->getArgOperand(0)), R(CI->getArgOperand(1))}); } return true;
       case Intrinsic::smin: case Intrinsic::smax: case Intrinsic::umin: case Intrinsic::umax: {
         // no integer min/max in the worker-thread ISA: compare into a scratch predicate, then two predicated moves
         Value *A = CI->getArgOperand(0), *Bv = CI->getArgOperand(1);
