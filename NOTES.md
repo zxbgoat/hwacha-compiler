@@ -1245,6 +1245,13 @@ torch-mlir 能把 torchvision 的全部 80 个分类模型导入并降到 linalg
 - **一般 KxK stride-2 稠密卷积**（`convKxK_s2`）和 **一般 KxK stride-2 depthwise**：覆盖 resnet 的
   7×7 stride-2 stem、下采样 3×3-s2、1×1-s2 shortcut。关键：padded 输出平面的 base 偏移是 `2i-2`
   （与 K 无关，因为输入 pad 已烘焙进缓冲），一开始误用 `-(K-1)` 导致 7×7 stem 算错。
+- **零 bias 缓冲按输出通道数分配**（`mlir/hwacha-mlir.cpp`）：库 kernel 每个累加器从 `b[oc]` 起算，
+  真正的 bias/init 在输出里，所以传给 kernel 的 `b` 必须全零。这个零缓冲原来硬编码成 1024 float，
+  但 8 路的卷积会读 `b[oc0..oc0+7]`，输出通道超过 1024 时越界读到相邻 malloc（bump 分配器，非零）
+  的垃圾——resnet50 的 2048 通道 expand / 下采样卷积因此在通道 1024+ 全错（argmax 348→40），
+  而 resnet34（≤512 通道）没事。改成按 `max(O, 8)` 分配；depthwise 的零缓冲同样改成按 `max(C, 8)`。
+  二分定位：截断 resnet50 到各层，layer4（2×2→1×1，2048 通道）首现错误，再用最小 bottleneck 复现，
+  阈值精确落在 1024 与 1088 之间，坐实是 1024 边界。
 
 **结果**（32×32 输入，随机权重但把 BN running stats 随机化以避免退化到零输出，argmax 逐类比 PyTorch）：
 
@@ -1257,10 +1264,15 @@ torch-mlir 能把 torchvision 的全部 80 个分类模型导入并降到 linalg
 | mnasnet0_5 | depthwise separable | 837 = 837 |
 | shufflenet_v2_x0_5 | channel shuffle + depthwise | 564 = 564 |
 | efficientnet_b0 | MBConv + SE + SiLU | 742 = 742 |
+| resnet34 | 残差 basic block，深残差 | 197 = 197 |
+| resnet50 | bottleneck（1×1-3×3-1×1），通道到 2048 | 348 = 348 |
+| densenet121 | dense block，concat 特征复用 | 330 = 330 |
 
-七个覆盖主要架构族的模型全部正确。`export_tv.py`（任意 torchvision 分类模型 → linalg + PyTorch
-参考）、`tv_main.c`（argmax + 数值容差）、Makefile 里 `make <model>_tv.riscv`。
+十个覆盖主要架构族的模型全部正确（残差 basic/bottleneck、depthwise separable、SE、MBConv、
+channel shuffle、fire module、dense block）。`export_tv.py`（任意 torchvision 分类模型 → linalg +
+PyTorch 参考）、`tv_main.c`（argmax + 数值容差）、Makefile 里 `make <model>_tv.riscv`。
 
-**仍未解决 / 后续**：权重以 `.word` 文本内联进汇编让大模型的 .s 很大（mobilenet_v2 达 213MB），
-改成 `.incbin` 二进制可缓解；`--fuse-generics` 对非连续操作数仍会 delinearize，默认关闭；vit 系列
-需要注意力算子和 224×224。
+**仍未解决 / 后续**：分组卷积（`linalg.conv_2d_ngchw_gfchw`，5D memref 的按组 KxK）还没库化，
+regnet / resnext 走通用降低会 vs 超标，暂不支持；权重以 `.word` 文本内联进汇编让大模型的 .s 很大
+（mobilenet_v2 达 213MB），改成 `.incbin` 二进制可缓解；`--fuse-generics` 对非连续操作数仍会
+delinearize，默认关闭；vit 系列需要注意力算子和 224×224。

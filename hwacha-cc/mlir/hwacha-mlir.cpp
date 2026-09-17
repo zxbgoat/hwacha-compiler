@@ -3,6 +3,7 @@
 //                                                              -> host as LLVM IR (gpu.launch_func lowered)
 // Pipeline: [linalg -> parallel loops -> collapse to 1-D -> map -> gpu -> outline] -> lower-affine ->
 // scf-to-cf -> {kernel: convert-gpu-to-nvvm; host: *-to-llvm, launch_func -> call <kernel>_ct}.
+#include <algorithm>
 #include "mlir/Conversion/Passes.h"
 #include "mlir/Dialect/ControlFlow/IR/ControlFlowOps.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
@@ -257,7 +258,7 @@ static bool lowerConvs(ModuleOp m) {
     auto i32c = [&](int64_t v){ return LLVM::ConstantOp::create(b, loc, IntegerType::get(ctx,32), b.getI32IntegerAttr(v)); };
     auto i64c = [&](int64_t v){ return LLVM::ConstantOp::create(b, loc, IntegerType::get(ctx,64), b.getI64IntegerAttr(v)); };
     Value xp = ptrOf(dw.getInputs()[0]), wp = ptrOf(dw.getInputs()[1]), yp = ptrOf(dw.getOutputs()[0]);
-    Value z = memref::AllocOp::create(b, loc, MemRefType::get({1024}, Float32Type::get(ctx))); linalg::FillOp::create(b, loc, ValueRange{arith::ConstantOp::create(b, loc, b.getF32FloatAttr(0.0f))}, ValueRange{z}); Value zp = ptrOf(z);
+    Value z = memref::AllocOp::create(b, loc, MemRefType::get({std::max<int64_t>(C, 8)}, Float32Type::get(ctx))); linalg::FillOp::create(b, loc, ValueRange{arith::ConstantOp::create(b, loc, b.getF32FloatAttr(0.0f))}, ValueRange{z}); Value zp = ptrOf(z);
     int64_t plane = Hi * Wi, Wp = Wi;
     if (stride == 1) {
       int64_t guard = 2 * Wp + 8;
@@ -353,7 +354,9 @@ static bool lowerConvs(ModuleOp m) {
     auto i32c = [&](int64_t v) -> Value { return LLVM::ConstantOp::create(b, loc, i32, b.getI32IntegerAttr(v)); };
     auto i64c = [&](int64_t v) -> Value { return LLVM::ConstantOp::create(b, loc, i64, b.getI64IntegerAttr(v)); };
     Value xp = ptrOf(conv.getInputs()[0]), wp = ptrOf(conv.getInputs()[1]), yp = ptrOf(conv.getOutputs()[0]);
-    Value zeros = memref::AllocOp::create(b, loc, MemRefType::get({1024}, f32));
+    // zero bias buffer: the kernels start each accumulator at b[oc] and the real bias/init lives in the
+    // output, so this must be all-zero AND at least O long (the 8-wide passes read b[oc0..oc0+7]).
+    Value zeros = memref::AllocOp::create(b, loc, MemRefType::get({std::max<int64_t>(O, 8)}, f32));
     linalg::FillOp::create(b, loc, ValueRange{arith::ConstantOp::create(b, loc, b.getF32FloatAttr(0.0f))}, ValueRange{zeros});
     Value zp = ptrOf(zeros);
     if (kind == K1S1) {
