@@ -1233,13 +1233,34 @@ torch-mlir 能把 torchvision 的全部 80 个分类模型导入并降到 linalg
 用小输入（32×32，现代网络自适应池化接受任意尺寸）导出、和 PyTorch 逐类比对（`export_tv.py`、
 `tv_main.c`、`make <model>_tv.riscv`）。
 
-**跑通**：`squeezenet1_1`（1.2M 参数，只用稠密 1×1/3×3 卷积 + ReLU + maxpool）端到端在 Spike 上
-跑通，argmax 和 PyTorch 一致（`tv PASS`）。
+**跑通**（都端到端在 Spike 上和 PyTorch 逐类比对，argmax 完全一致；见下）。为解锁这些又做了几件事：
 
-**仍挡住的**（都是 codegen 的 scaling 限制，不是缺算子）：depthwise / SE / 宽逐元素的模型
-（mobilenet_v2/v3、mnasnet、shufflenet、efficientnet）在某些 kernel 上仍超过 **32 个地址寄存器
-（va）** 的流数上限，汇编器报 "Invalid vector address register"；resnet18 则在 7×7 卷积的 pad 填充
-kernel（深三层控制线程循环）上耗尽 vs 寄存器。这两类都需要 hwacha-cc 侧的改动——流数超限时溢出
-到 gather（gather 用 vs 基址而非 va），以及深嵌套控制线程区域的寄存器分配——属于后续工作。
-权重以 `.word` 文本内联进汇编也让大模型的 .s 很大（mobilenet_v2 达 213MB），改成 `.incbin` 二进制
-可以缓解，也是后续。
+- **va 寄存器溢出到 gather**（`src/CodeGen.cpp`）：一个 kernel 的流数超过 29（32 个 va 减去
+  ScratchVA/TreeVA 余量）时，多出来的访存改判为 indexed（gather，用 vs 基址 + vv 索引，不占 va）。
+  解决 depthwise / 宽模型的 "Invalid vector address register va32+"。
+- **卷积累加到预初始化的输出**：不再去识别/删除 torch 给卷积输出的初始化（零填充或 bias 广播），
+  而是让 kernel 累加上去（`unpad` 和 `conv1x1` 改成 `+=`，卷积传零 bias）。去掉了脆弱的
+  init 识别，稠密卷积覆盖从 26/35 升到 35/35。顺带修了 memref.copy→linalg.copy 改写生成的畸形
+  linalg.copy（要用 ValueRange 传操作数）。
+- **一般 KxK stride-2 稠密卷积**（`convKxK_s2`）和 **一般 KxK stride-2 depthwise**：覆盖 resnet 的
+  7×7 stride-2 stem、下采样 3×3-s2、1×1-s2 shortcut。关键：padded 输出平面的 base 偏移是 `2i-2`
+  （与 K 无关，因为输入 pad 已烘焙进缓冲），一开始误用 `-(K-1)` 导致 7×7 stem 算错。
+
+**结果**（32×32 输入，随机权重但把 BN running stats 随机化以避免退化到零输出，argmax 逐类比 PyTorch）：
+
+| 模型 | 结构要点 | argmax vs PyTorch |
+|---|---|---|
+| squeezenet1_1 | fire module，1×1/3×3 稠密卷积 | 561 = 561 |
+| resnet18 | 残差，7×7 stride-2 stem，3×3-s2 下采样 | 497 = 497 |
+| mobilenet_v2 | inverted residual，depthwise separable | 765 = 765 |
+| mobilenet_v3_small | depthwise + SE + hardswish/hardsigmoid | 772 = 772 |
+| mnasnet0_5 | depthwise separable | 837 = 837 |
+| shufflenet_v2_x0_5 | channel shuffle + depthwise | 564 = 564 |
+| efficientnet_b0 | MBConv + SE + SiLU | 742 = 742 |
+
+七个覆盖主要架构族的模型全部正确。`export_tv.py`（任意 torchvision 分类模型 → linalg + PyTorch
+参考）、`tv_main.c`（argmax + 数值容差）、Makefile 里 `make <model>_tv.riscv`。
+
+**仍未解决 / 后续**：权重以 `.word` 文本内联进汇编让大模型的 .s 很大（mobilenet_v2 达 213MB），
+改成 `.incbin` 二进制可缓解；`--fuse-generics` 对非连续操作数仍会 delinearize，默认关闭；vit 系列
+需要注意力算子和 224×224。

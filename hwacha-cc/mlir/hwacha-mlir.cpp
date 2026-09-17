@@ -225,8 +225,8 @@ static bool lowerConvs(ModuleOp m) {
   Type ptrTy = LLVM::LLVMPointerType::get(ctx);
   Type intsKK[] = {i64, ptrTy, ptrTy, ptrTy, ptrTy, i32, i32, i32, i32, i32, i32};   // ..., n_in, plane, Wp, K, pad, oc
   LLVM::LLVMFuncOp ckk = declareFn(m, "convKxK_ct", intsKK), ckk1 = declareFn(m, "convKxK_1_ct", intsKK);
-  Type ints11[] = {i64, ptrTy, ptrTy, ptrTy, ptrTy, i32, i32, i32, i32, i32, i32};
-  LLVM::LLVMFuncOp c3s2 = declareFn(m, "conv3x3_s2_ct", ints11);
+  Type ints11[] = {i64, ptrTy, ptrTy, ptrTy, ptrTy, i32, i32, i32, i32, i32, i32, i32};   // n, x,w,b,y, n_in, plane, Wp, plane2, Wp2, K, oc
+  LLVM::LLVMFuncOp cs2 = declareFn(m, "convKxK_s2_ct", ints11);
   Type ints8[] = {i64, ptrTy, ptrTy, ptrTy, ptrTy, i32, i32, i32};
   LLVM::LLVMFuncOp c1 = declareFn(m, "conv1x1_ct", ints8), c11 = declareFn(m, "conv1x1_1_ct", ints8);
   Type intsU[] = {i64, ptrTy, ptrTy, i32, i32, i32, i32, i32};   // ..., plane, Wp, H, W, pad
@@ -334,10 +334,10 @@ static bool lowerConvs(ModuleOp m) {
     auto sv = conv.getStrides().getValues<int64_t>(), dv = conv.getDilations().getValues<int64_t>();
     int64_t stride = sv[0];
     if (sv[1] != stride || dv[0] != 1 || dv[1] != 1 || ws[1] != C) continue;
-    enum { KxKS1, K3S2, K1S1 } kind;
+    enum { KxKS1, KxKS2, K1S1 } kind;
     int64_t pad = 0;
     if (kh == kw && kh % 2 == 1 && kh >= 3 && stride == 1 && Hi == Ho + kh - 1 && Wi == Wo + kw - 1) { kind = KxKS1; pad = (kh - 1) / 2; }
-    else if (kh == 3 && kw == 3 && stride == 2 && Hi == 2 * Ho + 2 && Wi == 2 * Wo + 2 && O % 4 == 0) kind = K3S2;
+    else if (kh == kw && (kh % 2 == 1 || kh == 1) && stride == 2 && Hi == 2 * Ho + kh - 1 && Wi == 2 * Wo + kw - 1 && O % 4 == 0) kind = KxKS2;
     else if (kh == 1 && kw == 1 && stride == 1 && Hi == Ho && Wi == Wo) kind = K1S1;
     else { if (PrintMLIR) llvm::errs() << "// conv-lib: unsupported shape " << conv << "\n"; continue; }
     // The kernels accumulate onto the output torch-mlir has already initialized (a zero fill or a
@@ -372,7 +372,7 @@ static bool lowerConvs(ModuleOp m) {
         for (; oc + 8 <= O; oc += 8) LLVM::CallOp::create(b, loc, ckk, ValueRange{i64c(plane), xp, wp, zp, sp, i32c(C), i32c(plane), i32c(Wp), i32c(kh), i32c(pad), i32c(oc)});
         for (; oc < O; oc++) LLVM::CallOp::create(b, loc, ckk1, ValueRange{i64c(plane), xp, wp, zp, sp, i32c(C), i32c(plane), i32c(Wp), i32c(kh), i32c(pad), i32c(oc)});
       } else {
-        for (int64_t oc = 0; oc < O; oc += 4) LLVM::CallOp::create(b, loc, c3s2, ValueRange{i64c(plane2), xp, wp, zp, sp, i32c(C), i32c(plane), i32c(Wp), i32c(plane2), i32c(Wp2), i32c(oc)});
+        for (int64_t oc = 0; oc < O; oc += 4) LLVM::CallOp::create(b, loc, cs2, ValueRange{i64c(plane2), xp, wp, zp, sp, i32c(C), i32c(plane), i32c(Wp), i32c(plane2), i32c(Wp2), i32c(kh), i32c(oc)});
       }
       LLVM::CallOp::create(b, loc, unpad, ValueRange{i64c(O * Ho * Wo), sp, yp, i32c(oplane), i32c(oWp), i32c(Ho), i32c(Wo), i32c(oPad)});
     }

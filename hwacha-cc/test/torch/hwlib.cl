@@ -162,3 +162,24 @@ __kernel void chansum(__global const float *x, __global float *y, int C, int HW)
   for (int i = 0; i < HW; i++) s += x[c * HW + i];
   y[c] = s;
 }
+
+// general KxK dense convolution, stride 2, on a zero-padded input. lane = padded output position of the
+// half-size plane; base offset -(K-1) matches the pre-padded input (like conv3x3_s2). 4 output channels
+// per pass (bounds vs). K=1 handles a strided 1x1 subsample.
+__kernel void convKxK_s2(__global const float *x, __global const float *w, __global const float *b, __global float *y,
+                         int n_in, int plane, int Wp, int plane2, int Wp2, int K, int oc0) {
+  int p = get_global_id(0);
+  int i = p / Wp2, j = p - i * Wp2;
+  int KK = K * K, ws = n_in * KK;
+  int base = (2 * i - 2) * Wp + (2 * j - 2);   // output plane2 has pad 1: input row for output o=i-1 is 2o = 2i-2 (independent of K)
+  float a0 = b[oc0], a1 = b[oc0 + 1], a2 = b[oc0 + 2], a3 = b[oc0 + 3];
+  for (int ic = 0; ic < n_in; ic++) {
+    __global const float *xs = x + ic * plane + base;
+    __global const float *k = w + (oc0 * n_in + ic) * KK;
+    for (int t = 0; t < KK; t++) {
+      float v = xs[(t / K) * Wp + (t % K)];
+      a0 += k[t] * v; a1 += k[ws + t] * v; a2 += k[2 * ws + t] * v; a3 += k[3 * ws + t] * v;
+    }
+  }
+  y[(oc0 + 0) * plane2 + p] = a0; y[(oc0 + 1) * plane2 + p] = a1; y[(oc0 + 2) * plane2 + p] = a2; y[(oc0 + 3) * plane2 + p] = a3;
+}

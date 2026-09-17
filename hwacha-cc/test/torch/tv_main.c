@@ -28,8 +28,11 @@ int main(void){
   long c0=rdcycle(); float *y=net(in); long c1=rdcycle();
   float md=0,mx=0; int am=0; for(int k=0;k<nout;k++){float d=fabsf(y[k]-ref[k]);if(d>md)md=d;if(fabsf(ref[k])>mx)mx=fabsf(ref[k]);if(y[k]>y[am])am=k;}
   int ra=0; for(int k=0;k<nout;k++) if(ref[k]>ref[ra]) ra=k;
-  int ok = md<=0.02f*mx;
-  printf("%s: %d classes, %ld cycles; max|diff|=%s max|ref|=%s; argmax hw=%d ref=%d; %s\n", MODEL, nout, c1-c0, ff(md), ff(mx), am, ra, ok&&am==ra?"ok":"FAIL");
-  printf(ok&&am==ra?"tv PASS\n":"tv FAIL\n");
-  return !(ok&&am==ra);
+  // PyTorch's own forward on random weights: certify Hwacha reproduces it (numeric agreement). argmax
+  // is reported for information -- with random (untrained) weights the logits can be near-degenerate,
+  // so an argmax tie is not a computation error as long as the outputs match numerically.
+  int ok = (md <= 1e-3f + 1e-2f * mx) && (am == ra);
+  printf("%s: %d classes, %ld cycles; max|diff|=%s max|ref|=%s; argmax hw=%d ref=%d%s; %s\n", MODEL, nout, c1-c0, ff(md), ff(mx), am, ra, am==ra?" (match)":"", ok?"ok":"FAIL");
+  printf(ok?"tv PASS\n":"tv FAIL\n");
+  return !ok;
 }

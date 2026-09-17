@@ -350,7 +350,7 @@ Reg WTGen::allocInputVS() {
   if (VSUsed.size() < 64) VSUsed.resize(64, false);
   for (int i = 63; i >= 1; i--)
     if (!VSUsed[i]) { VSUsed[i] = true; NumVS = std::max(NumVS, (unsigned)i + 1); return Reg{RC::VS, (unsigned)i}; }
-  report_fatal_error("out of Hwacha shared registers");
+  report_fatal_error(Twine("out of Hwacha shared registers in ") + F.getName());
 }
 
 // Operand lookup. Constants and arguments get a vs register that the control thread fills.
