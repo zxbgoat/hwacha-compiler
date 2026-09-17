@@ -132,3 +132,4 @@ bot66 PASS
 ==> /home/tesla/hwacha-compiler/hwacha-cc/test/mnist/bot66_rtl.riscv end 21:47:13 rc=0
 ==> /home/tesla/hwacha-compiler/hwacha-cc/test/mnist/teapearce_rtl.riscv start 21:47:13
 teapearce: PyTorch check at t=0.750000, class 7
+  forward (context) vs PyTorch: max |diff| = 0.000002, max |ref| = 3.549731, ok

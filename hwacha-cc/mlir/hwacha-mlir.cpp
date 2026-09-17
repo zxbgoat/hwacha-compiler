@@ -46,6 +46,7 @@ static opt<std::string> MemRefConv("memref", desc("memref calling convention on 
 static opt<bool> NoCollapse("no-collapse", desc("do not collapse multi-dimensional scf.parallel loops to 1-D"));
 static opt<bool> CollapseAll("collapse-all", desc("collapse every dimension of a parallel loop into the lane dimension (old behaviour); default: innermost dimension = lanes, the others become control-thread loops"));
 static opt<bool> NoConvLib("no-conv-lib", desc("do not lower linalg.conv_2d_nchw_fchw to the hwlib kernels (conv3x3 / conv3x3_s2 / conv1x1)"));
+static opt<bool> FuseGenerics("fuse-generics", desc("collapse trailing parallel dims of elementwise generics into the lane dimension (larger vl, but delinearizes non-contiguous operands); default off: the innermost dim alone is the lane dimension"));
 static opt<unsigned> UnrollSmall("unroll-small", desc("fully unroll kernel scf.for loops with at most this many iterations (0 = never)"), init(8));
 static opt<bool> PrintMLIR("print-mlir", desc("print the MLIR after each stage to stderr"));
 
@@ -119,11 +120,16 @@ static void collapseGenerics(ModuleOp m) {
     if (!identity) continue;   // strided subviews (pad / concat copies) are not collapsible
     SmallVector<AffineMap> maps = g.getIndexingMapsArray();
     SmallVector<utils::IteratorType> its = g.getIteratorTypesArray();
+    SmallVector<int64_t> ranges = g.getStaticLoopRanges();
     for (unsigned k = n; k >= 2; --k) {
       ReassociationIndices grp;
       bool par = true;
       for (unsigned d = n - k; d < n; ++d) { grp.push_back(d); if (its[d] != utils::IteratorType::parallel) par = false; }
       if (!par) continue;
+      // never fold a size-1 dimension into the group: collapsing it forces a linearize/delinearize
+      // (with signed guards LLVM cannot remove) instead of a clean memref.collapse_shape. Leave those
+      // (usually the leading N/C=1 dims) for laneInnermost.
+      if (llvm::any_of(grp, [&](int64_t d) { return ranges[d] == 1; })) continue;
       if (!linalg::areDimSequencesPreserved(maps, {grp})) continue;
       rw.setInsertionPoint(g);
       FailureOr<linalg::CollapseResult> r = linalg::collapseOpIterationDims(cast<linalg::LinalgOp>(g.getOperation()), {grp}, rw);
@@ -168,29 +174,38 @@ static LLVM::LLVMFuncOp declareFn(ModuleOp m, StringRef name, ArrayRef<Type> arg
   OpBuilder b(m.getContext()); b.setInsertionPointToStart(m.getBody());
   return LLVM::LLVMFuncOp::create(b, m.getLoc(), name, LLVM::LLVMFunctionType::get(LLVM::LLVMVoidType::get(m.getContext()), args));
 }
-// The op that last wrote `buf` before `before` in the same block, if it made it all zeros: a linalg.fill
-// of 0.0, or a linalg.copy whose source is itself zero-initialized. nullptr otherwise.
-static Operation *zeroInitWriter(Value buf, Operation *before) {
+// The op that last wrote `buf` before `before` in the same block, initializing every element either to
+// zero (linalg.fill 0, or a copy of a zero buffer) or to a per-output-channel bias (linalg.broadcast of a
+// 1-D memref along [0,2,3], i.e. b[c] into [1][C][H][W] -- exactly what the conv kernels add). On success
+// returns the init op and, in `bias`, the bias memref (null for a zero init). nullptr on any other writer.
+static Operation *initWriter(Value buf, Operation *before, Value &bias) {
   for (Operation *op = before->getPrevNode(); op; op = op->getPrevNode()) {
     if (!llvm::is_contained(op->getOperands(), buf)) continue;
-    // reads of the buffer (copy source, linalg input) keep it zero
     if (auto lo = dyn_cast<linalg::LinalgOp>(op)) {
       bool writes = false;
       for (OpOperand &o : lo->getOpOperands()) if (o.get() == buf && lo.isDpsInit(&o)) writes = true;
-      if (!writes) continue;
+      if (!writes) continue;   // reads (copy source, linalg input) keep the contents
     }
     if (auto f = dyn_cast<linalg::FillOp>(op)) {
       if (f.getOutputs()[0] != buf) return nullptr;
       auto cst = f.getInputs()[0].getDefiningOp<arith::ConstantOp>();
       if (!cst) return nullptr;
       auto fa = dyn_cast<FloatAttr>(cst.getValue());
-      return fa && fa.getValue().isZero() ? op : nullptr;
+      if (!fa || !fa.getValue().isZero()) return nullptr;
+      bias = Value(); return op;
+    }
+    if (auto bc = dyn_cast<linalg::BroadcastOp>(op)) {
+      if (bc.getInit() != buf) return nullptr;
+      auto src = dyn_cast<MemRefType>(bc.getInput().getType());
+      ArrayRef<int64_t> dims = bc.getDimensions();
+      if (!src || src.getRank() != 1 || dims.size() != 3 || dims[0] != 0 || dims[1] != 2 || dims[2] != 3) return nullptr;
+      bias = bc.getInput(); return op;
     }
     if (auto c = dyn_cast<linalg::CopyOp>(op)) {
       if (c.getOutputs()[0] != buf) return nullptr;
-      return zeroInitWriter(c.getInputs()[0], op) ? op : nullptr;
+      Value b2; return initWriter(c.getInputs()[0], op, b2) && !b2 ? (bias = Value(), op) : nullptr;
     }
-    return nullptr;   // any other use (read or write) in between: give up
+    return nullptr;
   }
   return nullptr;
 }
@@ -225,13 +240,11 @@ static bool lowerConvs(ModuleOp m) {
     else if (kh == 3 && kw == 3 && stride == 2 && Hi == 2 * Ho + 2 && Wi == 2 * Wo + 2 && O % 4 == 0) kind = K3S2;
     else if (kh == 1 && kw == 1 && stride == 1 && Hi == Ho && Wi == Wo) kind = K1S1;
     else { if (PrintMLIR) llvm::errs() << "// conv-lib: unsupported shape " << conv << "\n"; continue; }
-    // the output must hold zeros: torch-mlir fills it (linalg.fill 0), or bufferization copied a shared
-    // zero buffer into it (linalg.copy from a filled buffer). That last writer is dropped: the kernels
-    // write every element.
-    Operation *init = zeroInitWriter(conv.getOutputs()[0], conv);
-    if (!init) { if (PrintMLIR) llvm::errs() << "// conv-lib: output not zero-initialized before " << conv << "\n"; continue; }
-    Value zeroCst = isa<linalg::FillOp>(init) ? cast<linalg::FillOp>(init).getInputs()[0]
-                                              : cast<linalg::FillOp>(zeroInitWriter(cast<linalg::CopyOp>(init).getInputs()[0], init)).getInputs()[0];
+    // the output must be initialized to zero or to the per-channel bias (torch-mlir / ONNX pattern); that
+    // init op is dropped and the kernels write every element (adding b[oc], or 0 for a zero init).
+    Value biasMem;
+    Operation *init = initWriter(conv.getOutputs()[0], conv, biasMem);
+    if (!init) { if (PrintMLIR) llvm::errs() << "// conv-lib: output not zero/bias-initialized before " << conv << "\n"; continue; }
     Location loc = conv.getLoc();
     OpBuilder b(conv);
     auto ptrOf = [&](Value mem) -> Value {
@@ -242,10 +255,14 @@ static bool lowerConvs(ModuleOp m) {
     auto i32c = [&](int64_t v) -> Value { return LLVM::ConstantOp::create(b, loc, i32, b.getI32IntegerAttr(v)); };
     auto i64c = [&](int64_t v) -> Value { return LLVM::ConstantOp::create(b, loc, i64, b.getI64IntegerAttr(v)); };
     Value xp = ptrOf(conv.getInputs()[0]), wp = ptrOf(conv.getInputs()[1]), yp = ptrOf(conv.getOutputs()[0]);
-    // zero bias vector (the kernels add b[oc])
-    Value zeros = memref::AllocOp::create(b, loc, MemRefType::get({512}, f32));
-    linalg::FillOp::create(b, loc, ValueRange{zeroCst}, ValueRange{zeros});
-    Value zp = ptrOf(zeros);
+    // bias vector the kernels add as b[oc]: the model's bias, or a zeroed vector for a zero init
+    Value zp;
+    if (biasMem) zp = ptrOf(biasMem);
+    else {
+      Value zeros = memref::AllocOp::create(b, loc, MemRefType::get({512}, f32));
+      linalg::FillOp::create(b, loc, ValueRange{arith::ConstantOp::create(b, loc, b.getF32FloatAttr(0.0f))}, ValueRange{zeros});
+      zp = ptrOf(zeros);
+    }
     if (kind == K1S1) {
       int64_t plane = Ho * Wo, oc = 0;
       for (; oc + 8 <= O; oc += 8) LLVM::CallOp::create(b, loc, c1, ValueRange{i64c(plane), xp, wp, zp, yp, i32c(C), i32c(plane), i32c(oc)});
@@ -454,7 +471,7 @@ int main(int argc, char **argv) {
   if (!hasGpuModule(m)) {
     if (!NoConvLib && !lowerConvs(m)) return 1;
     if (!runPipeline(m, "scf-forall-to-parallel,linalg-generalize-named-ops")) return 1;
-    collapseGenerics(m);
+    if (FuseGenerics) collapseGenerics(m);
     if (PrintMLIR) { llvm::errs() << "// ---- after collapseGenerics\n"; m.print(llvm::errs()); llvm::errs() << "\n"; }
     if (!runPipeline(m, "convert-linalg-to-parallel-loops,func.func(fold-memref-alias-ops)")) return 1;   // subviews from tiling folded into the accesses (bare pointers need identity layouts)
     if (!nestedParallelToFor(m)) return 1;

@@ -1163,3 +1163,41 @@ RTL 一步前向（`test/torch/results/torch_rtl_v2.out`）：**152.5M 周期**�
 拷贝和 `tensor.pad` 的 fill + 拷贝（拷贝目标是 strided subview，折不了维，lane 只有一行 28 个）；
 BN 等逐元素 op 各自一个 kernel、c 维做控制线程循环时每次迭代 vl 只有 784。要再收窄要么在 linalg
 层做 pad-conv-BN-ReLU 的融合，要么把填充布局传播到整张图上（就是手写版做的事）。
+
+## 接入 ONNX（2026-09-17）
+
+torch-mlir 自带 ONNX 前端，接进来和路线 A 共用后半段：
+
+```
+model.onnx ─torch-mlir-import-onnx─▶ torch dialect (onnx.* 算子)
+           ─torch-onnx-to-torch-backend / torch-backend-to-linalg─▶ linalg on tensors ─(同路线 A)─▶
+```
+
+**环境**：在 `/tmp/tmenv` 里 `pip install onnx onnxruntime`；torch-mlir 的 wheel 自带
+`torch-mlir-import-onnx` 和 `torch-mlir-opt`。
+
+**导出**（`test/torch/export_onnx.py`）：`torch-mlir-import-onnx` 把 ONNX 图导成
+`torch.operator "onnx.Conv"` 这类算子，`torch-mlir-opt --torch-onnx-to-torch-backend-pipeline
+--torch-backend-to-linalg-on-tensors-backend-pipeline` 降到 linalg；用 onnxruntime 算一个参考输出。
+opset 低于 13 的（model zoo 的老文件）先 `onnx.version_converter` 升到 13，否则老 MaxPool 降不了。
+宿主 `onnx_main.c` 从 check 文件读入输入、arity 和参考输出，入口是 ONNX 图名
+（`torch.onnx.export` 出来是 `main_graph`，CNTK 导出的是 `CNTKGraph`）。
+
+**conv-lib 认 bias 广播**：ONNX 的 Conv 自带 bias，降低后卷积输出的初始化是
+`linalg.broadcast`（把 `b[c]` 广播成 `[1][C][H][W]`），不是 `linalg.fill 0`。`initWriter` 现在两者都认，
+是 bias 广播就把那个 1-D bias memref 的指针直接传给 kernel（kernel 本来就做 `a = b[oc]`），
+省掉一个广播 kernel。aestuans 的 ONNX 版 20 个卷积里 15 个走库。
+
+**验证**：
+- aestuans 的 UNet `torch.onnx.export` 成 ONNX 再走这条路，Spike 上和 onnxruntime 差 9e-6
+  （`--collapse-all`，18.5M 周期）；和它的 PyTorch 直接入口结果一致。
+- 公开模型 ONNX model zoo 的 MNIST-8 分类器（Conv/MaxPool/MatMul，非我们训练）导入、降到
+  linalg 成功。
+
+**已知限制**（都是循环降低 / codegen 层面，和 ONNX 前端无关）：
+- 默认的 lane-最内维映射对 `tensor.pad` 的填充和 ConvTranspose 的 6 维 reshape 会出问题：前者被
+  降成一维带 delinearize 的下标，后者展开成上百个 store 流超过 32 个 va 寄存器。所以带这类算子的
+  模型目前要加 `--collapse-all`（退回一维 gather 形态，慢但能编）。MNIST-8 的 5×5 卷积 pad 填充在
+  两种映射下都触发 delinearize，还没解决。
+- `--fuse-generics` 把逐元素 generic 的尾部并行维折进 lane（vl 更大），但会对非连续操作数
+  delinearize，默认关闭。

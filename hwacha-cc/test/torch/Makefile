@@ -29,8 +29,17 @@ hwlib.s: hwlib.ll $(HWCC)
 	$(HWCC) $< --host $*.host.ll --assume-noalias -o $@
 %.riscv: torch_main.c %.s hwlib.s %_check.bin $(COMMON)/crt.S $(COMMON)/syscalls.c
 	$(CC) $(CFLAGS) -DCHECK_FILE='"$*_check.bin"' -o $@ torch_main.c $*.s hwlib.s $(COMMON)/crt.S $(COMMON)/syscalls.c $(LDFLAGS)
+# ONNX models: <name>.onnx -> export_onnx.py (torch-mlir ONNX importer + onnxruntime reference) -> same pipeline
+%_onnx.mlir %_onnx_check.bin: %.onnx export_onnx.py
+	PATH=/tmp/tmenv/bin:$$PATH $(PYTHON) export_onnx.py $< $*_onnx.mlir $*_onnx_check.bin
+%_onnx.riscv: onnx_main.c %_onnx.s hwlib.s %_onnx_check.bin $(COMMON)/crt.S $(COMMON)/syscalls.c
+	$(CC) $(CFLAGS) -DCHECK_FILE='"$*_onnx_check.bin"' -DENTRY=$(ENTRY) -DNARGS=$(NARGS) -o $@ onnx_main.c $*_onnx.s hwlib.s $(COMMON)/crt.S $(COMMON)/syscalls.c $(LDFLAGS)
+ENTRY ?= main_graph
+NARGS ?= 1
+aestuans.onnx: aestuans_onnx.py
+	$(PYTHON) aestuans_onnx.py /tmp/mnist-diffusion $@
 %.spike: %.riscv
 	$(SPIKE) $<
 clean:
-	rm -f *.ll *.s *.riscv *_memref.mlir
+	rm -f *.ll *.s *.riscv *_memref.mlir *_onnx.mlir *.torch.mlir
 .PRECIOUS: %.mlir %_memref.mlir %.ll %.host.ll %.s

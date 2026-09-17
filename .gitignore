@@ -35,3 +35,6 @@ hwacha-cc/test/mnist/x86_*
 hwacha-cc/test/torch/*.mlir
 hwacha-cc/test/torch/*.ll
 hwacha-cc/test/torch/*.riscv
+hwacha-cc/test/torch/*.onnx
+hwacha-cc/test/torch/*.onnx.v13
+hwacha-cc/test/torch/*.torch.mlir
