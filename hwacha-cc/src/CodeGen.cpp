@@ -328,7 +328,7 @@ Reg WTGen::alloc(RC C) {
       if (C == RC::VW) NumVW = std::max(NumVW, i + 1);
       return Reg{C, i};
     }
-  report_fatal_error(Twine("out of Hwacha registers of class ") + (C == RC::VV ? "vv" : C == RC::VS ? "vs" : C == RC::VP ? "vp" : "vw"));
+  report_fatal_error(Twine("out of Hwacha registers of class ") + (C == RC::VV ? "vv" : C == RC::VS ? "vs" : C == RC::VP ? "vp" : "vw") + " in " + F.getName());
 }
 
 void WTGen::release(const Value *V) {
@@ -535,6 +535,10 @@ bool WTGen::materializeAddresses() {
     KindOf[A.I] = AddrKind::Gather;
     return true;
   };
+  // Hwacha has 32 address registers (va0-va31). Each new stream costs one (a strided stream two),
+  // plus ScratchVA/TreeVA when the kernel reduces. When the budget is spent, further streams fall
+  // back to indexed (gather) accesses, which use a vs base + a vv index and no va.
+  unsigned vaUsed = 0; const unsigned vaBudget = 29;
   for (const MemAccess &A : KA.memAccesses()) {
     AccessOf[A.I] = &A;
     KindOf[A.I] = A.Kind;
@@ -598,10 +602,20 @@ bool WTGen::materializeAddresses() {
       unsigned Idx = Streams.size();
       for (unsigned i = 0; i < Streams.size(); i++)
         if (Streams[i].Base == Base && Streams[i].Stride == A.Stride && Streams[i].StrideV == StrideV && Streams[i].Local == A.Local && Streams[i].PerIter == PerIter) { Idx = i; break; }
-      if (Idx == Streams.size()) { Stream S{Base, A.Stride, Idx, A.Local}; S.StrideV = StrideV; S.PerIter = PerIter; Streams.push_back(S); }
-      // a stream whose stride is not the element size needs the strided form (stride in a va register)
       Type *ET = isa<LoadInst>(A.I) ? A.I->getType() : cast<StoreInst>(A.I)->getValueOperand()->getType();
-      if ((int64_t)DL.getTypeStoreSize(ET) != A.Stride) Streams[Idx].Unit = false;
+      bool strided = (int64_t)DL.getTypeStoreSize(ET) != A.Stride;
+      if (Idx == Streams.size()) {
+        unsigned cost = strided ? 2 : 1;   // a strided stream also needs a va for its stride
+        if (vaUsed + cost > vaBudget) {     // out of address registers: spill this access to a gather
+          if (Verbose) errs() << "hwacha-cc: address registers exhausted, using indexed access for " << *A.I << "\n";
+          if (!indexed(A)) return false;
+          continue;
+        }
+        vaUsed += cost;
+        Stream S{Base, A.Stride, Idx, A.Local}; S.StrideV = StrideV; S.PerIter = PerIter; Streams.push_back(S);
+      }
+      // a stream whose stride is not the element size needs the strided form (stride in a va register)
+      if (strided) Streams[Idx].Unit = false;
       Streams[Idx].Blocks.insert(A.I->getParent());
       StreamOfInst[A.I] = Idx;
     } else if (A.Kind == AddrKind::Gather) {

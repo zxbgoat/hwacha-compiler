@@ -180,19 +180,15 @@ static LLVM::LLVMFuncOp declareFn(ModuleOp m, StringRef name, ArrayRef<Type> arg
 // 1-D memref along [0,2,3], i.e. b[c] into [1][C][H][W] -- exactly what the conv kernels add). On success
 // returns the init op and, in `bias`, the bias memref (null for a zero init). nullptr on any other writer.
 static Operation *initWriter(Value buf, Operation *before, Value &bias) {
+  static bool DBG = getenv("HWDBG");
   for (Operation *op = before->getPrevNode(); op; op = op->getPrevNode()) {
     if (!llvm::is_contained(op->getOperands(), buf)) continue;
-    if (auto lo = dyn_cast<linalg::LinalgOp>(op)) {
-      bool writes = false;
-      for (OpOperand &o : lo->getOpOperands()) if (o.get() == buf && lo.isDpsInit(&o)) writes = true;
-      if (!writes) continue;   // reads (copy source, linalg input) keep the contents
-    }
     if (auto f = dyn_cast<linalg::FillOp>(op)) {
-      if (f.getOutputs()[0] != buf) return nullptr;
+      if (f.getDpsInits()[0] != buf) { if (DBG) llvm::errs() << "// fill: init != buf\n"; return nullptr; }
       auto cst = f.getInputs()[0].getDefiningOp<arith::ConstantOp>();
-      if (!cst) return nullptr;
+      if (!cst) { if (DBG) llvm::errs() << "// fill: input not constant: " << f.getInputs()[0] << "\n"; return nullptr; }
       auto fa = dyn_cast<FloatAttr>(cst.getValue());
-      if (!fa || !fa.getValue().isZero()) return nullptr;
+      if (!fa || !fa.getValue().isZero()) { if (DBG) llvm::errs() << "// fill: not zero\n"; return nullptr; }
       bias = Value(); return op;
     }
     if (auto bc = dyn_cast<linalg::BroadcastOp>(op)) {
@@ -203,9 +199,19 @@ static Operation *initWriter(Value buf, Operation *before, Value &bias) {
       bias = bc.getInput(); return op;
     }
     if (auto c = dyn_cast<linalg::CopyOp>(op)) {
-      if (c.getOutputs()[0] != buf) return nullptr;
-      Value b2; return initWriter(c.getInputs()[0], op, b2) && !b2 ? (bias = Value(), op) : nullptr;
+      if (c.getDpsInits()[0] != buf) return nullptr;
+      Value b2; Operation *w = initWriter(c.getDpsInputs()[0], op, b2);
+      if (PrintMLIR && !w) llvm::errs() << "//   copy source " << c.getDpsInputs()[0] << " has no recognizable init\n";
+      return (w && !b2) ? (bias = Value(), op) : nullptr;
     }
+    if (auto c = dyn_cast<memref::CopyOp>(op)) {
+      if (c.getTarget() != buf) { if (buf == c.getSource()) continue; return nullptr; }
+      Value b2; Operation *w = initWriter(c.getSource(), op, b2);
+      return (w && !b2) ? (bias = Value(), op) : nullptr;
+    }
+    // any other linalg op that only READS buf (as an input) leaves the init intact: keep looking back
+    if (auto lo = dyn_cast<linalg::LinalgOp>(op))
+      if (llvm::is_contained(lo.getDpsInputs(), buf) && !llvm::is_contained(lo.getDpsInits(), buf)) continue;
     return nullptr;
   }
   return nullptr;
@@ -244,19 +250,14 @@ static bool lowerConvs(ModuleOp m) {
     if (sv[1] != stride || dv[0] != 1 || dv[1] != 1 || K % 2 == 0) continue;
     int64_t pad;
     if (stride == 1 && Hi == Ho + K - 1 && Wi == Wo + K - 1) pad = (K - 1) / 2;
-    else if (stride == 2 && Hi == 2 * (Ho - 1) + K && Wi == 2 * (Wo - 1) + K) pad = 0;   // torchvision "valid-on-padded" depthwise stride 2 (pad already applied by tensor.pad)
-    else if (stride == 2 && Hi == 2 * Ho + K - 2 && Wi == 2 * Wo + K - 2) pad = (K - 1) / 2;
+    else if (stride == 2 && Hi == 2 * Ho + K - 1 && Wi == 2 * Wo + K - 1) pad = K - 1;   // pre-padded input, like conv3x3_s2 (base offset -(K-1))
     else { if (PrintMLIR) llvm::errs() << "// conv-lib: unsupported depthwise\n"; continue; }
-    Value biasMem; Operation *init = initWriter(dw.getOutputs()[0], dw, biasMem);
-    if (!init) { if (PrintMLIR) llvm::errs() << "// conv-lib: depthwise output not initd\n"; continue; }
     Location loc = dw.getLoc(); OpBuilder b(dw);
     auto ptrOf = [&](Value mem){ Value idx = memref::ExtractAlignedPointerAsIndexOp::create(b, loc, b.getIndexType(), mem); Value ii = arith::IndexCastOp::create(b, loc, IntegerType::get(ctx,64), idx); return LLVM::IntToPtrOp::create(b, loc, LLVM::LLVMPointerType::get(ctx), ii); };
     auto i32c = [&](int64_t v){ return LLVM::ConstantOp::create(b, loc, IntegerType::get(ctx,32), b.getI32IntegerAttr(v)); };
     auto i64c = [&](int64_t v){ return LLVM::ConstantOp::create(b, loc, IntegerType::get(ctx,64), b.getI64IntegerAttr(v)); };
     Value xp = ptrOf(dw.getInputs()[0]), wp = ptrOf(dw.getInputs()[1]), yp = ptrOf(dw.getOutputs()[0]);
-    Value zp;
-    if (biasMem) zp = ptrOf(biasMem);
-    else { Value z = memref::AllocOp::create(b, loc, MemRefType::get({512}, Float32Type::get(ctx))); linalg::FillOp::create(b, loc, ValueRange{arith::ConstantOp::create(b, loc, b.getF32FloatAttr(0.0f))}, ValueRange{z}); zp = ptrOf(z); }
+    Value z = memref::AllocOp::create(b, loc, MemRefType::get({1024}, Float32Type::get(ctx))); linalg::FillOp::create(b, loc, ValueRange{arith::ConstantOp::create(b, loc, b.getF32FloatAttr(0.0f))}, ValueRange{z}); Value zp = ptrOf(z);
     int64_t plane = Hi * Wi, Wp = Wi;
     if (stride == 1) {
       int64_t guard = 2 * Wp + 8;
@@ -271,7 +272,7 @@ static bool lowerConvs(ModuleOp m) {
       LLVM::CallOp::create(b, loc, dwkk2, ValueRange{i64c(plane2), xp, wp, zp, sp, i32c(C), i32c(plane), i32c(Wp), i32c(plane2), i32c(Wp2), i32c(K), i32c(pad)});
       LLVM::CallOp::create(b, loc, unpad, ValueRange{i64c(C * Ho * Wo), sp, yp, i32c(plane2), i32c(Wp2), i32c(Ho), i32c(Wo), i32c(1)});
     }
-    init->erase(); dw.erase();
+    dw.erase();
   }
   // linalg.pooling_nchw_max (N=1, dense) -> poolmax_ct
   SmallVector<linalg::PoolingNchwMaxOp> pools;
@@ -339,11 +340,9 @@ static bool lowerConvs(ModuleOp m) {
     else if (kh == 3 && kw == 3 && stride == 2 && Hi == 2 * Ho + 2 && Wi == 2 * Wo + 2 && O % 4 == 0) kind = K3S2;
     else if (kh == 1 && kw == 1 && stride == 1 && Hi == Ho && Wi == Wo) kind = K1S1;
     else { if (PrintMLIR) llvm::errs() << "// conv-lib: unsupported shape " << conv << "\n"; continue; }
-    // the output must be initialized to zero or to the per-channel bias (torch-mlir / ONNX pattern); that
-    // init op is dropped and the kernels write every element (adding b[oc], or 0 for a zero init).
-    Value biasMem;
-    Operation *init = initWriter(conv.getOutputs()[0], conv, biasMem);
-    if (!init) { if (PrintMLIR) llvm::errs() << "// conv-lib: output not zero/bias-initialized before " << conv << "\n"; continue; }
+    // The kernels accumulate onto the output torch-mlir has already initialized (a zero fill or a
+    // per-channel bias broadcast), so the bias/zero is whatever is already in the output: pass a zero
+    // bias, keep the init op, and the conv1x1 direct writes / unpad copies add to it.
     Location loc = conv.getLoc();
     OpBuilder b(conv);
     auto ptrOf = [&](Value mem) -> Value {
@@ -354,14 +353,9 @@ static bool lowerConvs(ModuleOp m) {
     auto i32c = [&](int64_t v) -> Value { return LLVM::ConstantOp::create(b, loc, i32, b.getI32IntegerAttr(v)); };
     auto i64c = [&](int64_t v) -> Value { return LLVM::ConstantOp::create(b, loc, i64, b.getI64IntegerAttr(v)); };
     Value xp = ptrOf(conv.getInputs()[0]), wp = ptrOf(conv.getInputs()[1]), yp = ptrOf(conv.getOutputs()[0]);
-    // bias vector the kernels add as b[oc]: the model's bias, or a zeroed vector for a zero init
-    Value zp;
-    if (biasMem) zp = ptrOf(biasMem);
-    else {
-      Value zeros = memref::AllocOp::create(b, loc, MemRefType::get({512}, f32));
-      linalg::FillOp::create(b, loc, ValueRange{arith::ConstantOp::create(b, loc, b.getF32FloatAttr(0.0f))}, ValueRange{zeros});
-      zp = ptrOf(zeros);
-    }
+    Value zeros = memref::AllocOp::create(b, loc, MemRefType::get({1024}, f32));
+    linalg::FillOp::create(b, loc, ValueRange{arith::ConstantOp::create(b, loc, b.getF32FloatAttr(0.0f))}, ValueRange{zeros});
+    Value zp = ptrOf(zeros);
     if (kind == K1S1) {
       int64_t plane = Ho * Wo, oc = 0;
       for (; oc + 8 <= O; oc += 8) LLVM::CallOp::create(b, loc, c1, ValueRange{i64c(plane), xp, wp, zp, yp, i32c(C), i32c(plane), i32c(oc)});
@@ -382,7 +376,6 @@ static bool lowerConvs(ModuleOp m) {
       }
       LLVM::CallOp::create(b, loc, unpad, ValueRange{i64c(O * Ho * Wo), sp, yp, i32c(oplane), i32c(oWp), i32c(Ho), i32c(Wo), i32c(oPad)});
     }
-    init->erase();
     conv.erase();
     lowered++;
   }
@@ -556,7 +549,7 @@ int main(int argc, char **argv) {
   // linalg.copy kernel; cf.assert (shape checks) would lower to puts/abort -> drop it
   {
     SmallVector<memref::CopyOp> copies; m.walk([&](memref::CopyOp c) { copies.push_back(c); });
-    for (memref::CopyOp c : copies) { OpBuilder b(c); linalg::CopyOp::create(b, c.getLoc(), c.getSource(), c.getTarget()); c.erase(); }
+    for (memref::CopyOp c : copies) { OpBuilder b(c); linalg::CopyOp::create(b, c.getLoc(), ValueRange{c.getSource()}, ValueRange{c.getTarget()}); c.erase(); }
     SmallVector<cf::AssertOp> asserts; m.walk([&](cf::AssertOp a) { asserts.push_back(a); });
     for (cf::AssertOp a : asserts) a.erase();
   }

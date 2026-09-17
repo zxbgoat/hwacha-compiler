@@ -61,22 +61,22 @@ __kernel void conv1x1(__global const float *x, __global const float *w, __global
     a0 += k[0] * v; a1 += k[n_in] * v; a2 += k[2 * n_in] * v; a3 += k[3 * n_in] * v;
     a4 += k[4 * n_in] * v; a5 += k[5 * n_in] * v; a6 += k[6 * n_in] * v; a7 += k[7 * n_in] * v;
   }
-  y[(oc0 + 0) * plane + p] = a0; y[(oc0 + 1) * plane + p] = a1; y[(oc0 + 2) * plane + p] = a2; y[(oc0 + 3) * plane + p] = a3;
-  y[(oc0 + 4) * plane + p] = a4; y[(oc0 + 5) * plane + p] = a5; y[(oc0 + 6) * plane + p] = a6; y[(oc0 + 7) * plane + p] = a7;
+  y[(oc0 + 0) * plane + p] += a0; y[(oc0 + 1) * plane + p] += a1; y[(oc0 + 2) * plane + p] += a2; y[(oc0 + 3) * plane + p] += a3;
+  y[(oc0 + 4) * plane + p] += a4; y[(oc0 + 5) * plane + p] += a5; y[(oc0 + 6) * plane + p] += a6; y[(oc0 + 7) * plane + p] += a7;
 }
 __kernel void conv1x1_1(__global const float *x, __global const float *w, __global const float *b, __global float *y,
                         int n_in, int plane, int oc) {
   int p = get_global_id(0);
   float a = b[oc];
   for (int ic = 0; ic < n_in; ic++) a += w[oc * n_in + ic] * x[ic * plane + p];
-  y[oc * plane + p] = a;
+  y[oc * plane + p] += a;
 }
 // dense y[c][i][j] = padded x[c][(i+pad)*Wp + j+pad]; lane = dense index
 __kernel void unpad(__global const float *x, __global float *y, int plane, int Wp, int H, int W, int pad) {
   int p = get_global_id(0);
   int HW = H * W;
   int c = p / HW, q = p - c * HW, i = q / W, j = q - i * W;
-  y[p] = x[c * plane + (i + pad) * Wp + j + pad];
+  y[p] += x[c * plane + (i + pad) * Wp + j + pad];
 }
 
 // general KxK convolution, stride 1, on a zero-padded input plane. lane = padded position; the K*K
