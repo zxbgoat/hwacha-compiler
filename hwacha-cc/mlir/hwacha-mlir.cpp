@@ -238,6 +238,8 @@ static bool lowerConvs(ModuleOp m) {
   LLVM::LLVMFuncOp dwkk = declareFn(m, "dwconvKxK_ct", intsDW);
   Type intsDW2[] = {i64, ptrTy, ptrTy, ptrTy, ptrTy, i32, i32, i32, i32, i32, i32, i32};   // ..., C, plane, Wp, plane2, Wp2, K, pad
   LLVM::LLVMFuncOp dwkk2 = declareFn(m, "dwconvKxK_s2_ct", intsDW2);
+  Type intsPE[] = {i64, ptrTy, ptrTy, ptrTy, ptrTy, i32, i32, i32, i32, i32, i32, i32};   // ..., C, xplane, Wi, P, gw, plane, oc
+  LLVM::LLVMFuncOp pe = declareFn(m, "patchembed_ct", intsPE), pe1 = declareFn(m, "patchembed_1_ct", intsPE);
   // linalg.depthwise_conv_2d_nchw_chw (N=1) -> dwconvKxK / dwconvKxK_s2 into a padded scratch + unpad
   SmallVector<linalg::DepthwiseConv2DNchwChwOp> dws;
   m.walk([&](linalg::DepthwiseConv2DNchwChwOp d) { dws.push_back(d); });
@@ -335,11 +337,12 @@ static bool lowerConvs(ModuleOp m) {
     auto sv = conv.getStrides().getValues<int64_t>(), dv = conv.getDilations().getValues<int64_t>();
     int64_t stride = sv[0];
     if (sv[1] != stride || dv[0] != 1 || dv[1] != 1 || ws[1] != C) continue;
-    enum { KxKS1, KxKS2, K1S1 } kind;
+    enum { KxKS1, KxKS2, K1S1, KEMBED } kind;
     int64_t pad = 0;
     if (kh == kw && kh % 2 == 1 && kh >= 3 && stride == 1 && Hi == Ho + kh - 1 && Wi == Wo + kw - 1) { kind = KxKS1; pad = (kh - 1) / 2; }
     else if (kh == kw && (kh % 2 == 1 || kh == 1) && stride == 2 && Hi == 2 * Ho + kh - 1 && Wi == 2 * Wo + kw - 1 && O % 4 == 0) kind = KxKS2;
     else if (kh == 1 && kw == 1 && stride == 1 && Hi == Ho && Wi == Wo) kind = K1S1;
+    else if (kh == kw && kh == stride && kh >= 2 && Hi == Ho * kh && Wi == Wo * kw) kind = KEMBED;   // ViT/DiT patchify: kernel = stride, non-overlapping, no pad
     else { if (PrintMLIR) llvm::errs() << "// conv-lib: unsupported shape " << conv << "\n"; continue; }
     // The kernels accumulate onto the output torch-mlir has already initialized (a zero fill or a
     // per-channel bias broadcast), so the bias/zero is whatever is already in the output: pass a zero
@@ -363,6 +366,10 @@ static bool lowerConvs(ModuleOp m) {
       int64_t plane = Ho * Wo, oc = 0;
       for (; oc + 8 <= O; oc += 8) LLVM::CallOp::create(b, loc, c1, ValueRange{i64c(plane), xp, wp, zp, yp, i32c(C), i32c(plane), i32c(oc)});
       for (; oc < O; oc++) LLVM::CallOp::create(b, loc, c11, ValueRange{i64c(plane), xp, wp, zp, yp, i32c(C), i32c(plane), i32c(oc)});
+    } else if (kind == KEMBED) {
+      int64_t plane = Ho * Wo, xplane = Hi * Wi, oc = 0;   // patchify: P = kh, gw = Wo, output [O][Ho*Wo]
+      for (; oc + 8 <= O; oc += 8) LLVM::CallOp::create(b, loc, pe, ValueRange{i64c(plane), xp, wp, zp, yp, i32c(C), i32c(xplane), i32c(Wi), i32c(kh), i32c(Wo), i32c(plane), i32c(oc)});
+      for (; oc < O; oc++) LLVM::CallOp::create(b, loc, pe1, ValueRange{i64c(plane), xp, wp, zp, yp, i32c(C), i32c(xplane), i32c(Wi), i32c(kh), i32c(Wo), i32c(plane), i32c(oc)});
     } else {
       int64_t plane = Hi * Wi, Wp = Wi;
       int64_t Hp2 = Ho + 2, Wp2 = Wo + 2, plane2 = Hp2 * Wp2;

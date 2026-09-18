@@ -25,6 +25,9 @@ namespace hwacha {
 bool isKernel(const llvm::Function &F);
 // GPU-dialect entry (MLIR convert-gpu-to-nvvm + mlir-translate output): rewrite NVVM conventions into the
 // OpenCL ones above and run the -O2 pipeline. Adapted is set when the module contained ptx kernels.
+// Inline erff calls (erff / llvm.erf.f32 / _Z3erff) as vector arithmetic (A-S 7.1.26); emits an
+// llvm.exp.f32, so run before expandExpf.
+void expandErff(llvm::Function &F);
 // Inline expf calls (expf / llvm.exp.f32 / _Z3expf) as vector arithmetic; run before analysis.
 void expandExpf(llvm::Function &F);
 // Contract fmul+fadd/fsub into fmuladd (-ffp-contract=fast); changes rounding.

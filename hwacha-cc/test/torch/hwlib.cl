@@ -183,3 +183,40 @@ __kernel void convKxK_s2(__global const float *x, __global const float *w, __glo
   }
   y[(oc0 + 0) * plane2 + p] = a0; y[(oc0 + 1) * plane2 + p] = a1; y[(oc0 + 2) * plane2 + p] = a2; y[(oc0 + 3) * plane2 + p] = a3;
 }
+
+// patch-embed convolution (ViT / DiT patchify): kernel = stride = P, no padding, non-overlapping PxP
+// patches. lane = output token p in [0, gh*gw); control loops over input channels and the PxP patch.
+// Input is the dense [C][Hi][Wi] latent (xplane = Hi*Wi, no padding); output is [O][gh*gw], i.e. the
+// conv's 1xOxghxgw with the spatial plane flattened. 8 output channels per pass; accumulates onto the
+// pre-initialized (bias-broadcast) output like conv1x1.
+__kernel void patchembed(__global const float *x, __global const float *w, __global const float *b, __global float *y,
+                         int C, int xplane, int Wi, int P, int gw, int plane, int oc0) {
+  int p = get_global_id(0);
+  int gi = p / gw, gj = p - gi * gw;
+  int PP = P * P, ws = C * PP, base = gi * P * Wi + gj * P;
+  float a0 = b[oc0], a1 = b[oc0 + 1], a2 = b[oc0 + 2], a3 = b[oc0 + 3], a4 = b[oc0 + 4], a5 = b[oc0 + 5], a6 = b[oc0 + 6], a7 = b[oc0 + 7];
+  for (int c = 0; c < C; c++) {
+    __global const float *xs = x + c * xplane + base;
+    __global const float *k = w + (oc0 * C + c) * PP;
+    for (int t = 0; t < PP; t++) {
+      float v = xs[(t / P) * Wi + (t % P)];
+      a0 += k[t] * v; a1 += k[ws + t] * v; a2 += k[2 * ws + t] * v; a3 += k[3 * ws + t] * v;
+      a4 += k[4 * ws + t] * v; a5 += k[5 * ws + t] * v; a6 += k[6 * ws + t] * v; a7 += k[7 * ws + t] * v;
+    }
+  }
+  y[(oc0 + 0) * plane + p] += a0; y[(oc0 + 1) * plane + p] += a1; y[(oc0 + 2) * plane + p] += a2; y[(oc0 + 3) * plane + p] += a3;
+  y[(oc0 + 4) * plane + p] += a4; y[(oc0 + 5) * plane + p] += a5; y[(oc0 + 6) * plane + p] += a6; y[(oc0 + 7) * plane + p] += a7;
+}
+__kernel void patchembed_1(__global const float *x, __global const float *w, __global const float *b, __global float *y,
+                           int C, int xplane, int Wi, int P, int gw, int plane, int oc) {
+  int p = get_global_id(0);
+  int gi = p / gw, gj = p - gi * gw;
+  int PP = P * P, base = gi * P * Wi + gj * P;
+  float a = b[oc];
+  for (int c = 0; c < C; c++) {
+    __global const float *xs = x + c * xplane + base;
+    __global const float *k = w + (oc * C + c) * PP;
+    for (int t = 0; t < PP; t++) a += k[t] * xs[(t / P) * Wi + (t % P)];
+  }
+  y[oc * plane + p] += a;
+}

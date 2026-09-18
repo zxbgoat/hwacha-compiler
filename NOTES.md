@@ -1276,3 +1276,39 @@ PyTorch 参考）、`tv_main.c`（argmax + 数值容差）、Makefile 里 `make 
 regnet / resnext 走通用降低会 vs 超标，暂不支持；权重以 `.word` 文本内联进汇编让大模型的 .s 很大
 （mobilenet_v2 达 213MB），改成 `.incbin` 二进制可缓解；`--fuse-generics` 对非连续操作数仍会
 delinearize，默认关闭；vit 系列需要注意力算子和 224×224。
+
+## DiT（Diffusion Transformer）（2026-09-19）
+
+把注意力接进来:DiT 是把扩散模型的 U-Net 骨干换成 Transformer(patchify → 若干 transformer block
+→ unpatchify),条件用 adaLN(时间/类别嵌入过 MLP 出 6 组 scale/shift/gate 调制每个 block)。走
+torch-mlir 路线 A,一个最小 DiT(4 通道 8×8 latent、patch 2 → 16 token、dim 64、4 头、2 block)
+**完全降解成标准 linalg 算子,没有不透明的 attention/softmax 算子**:注意力 = `linalg.batch_matmul`
+(Q@Kᵀ、att@V,按头分批)+ softmax 的 `linalg.generic` 归约;LayerNorm = mean/var 归约 + `math.rsqrt`;
+GELU = `math.erf`;Linear/嵌入 = `linalg.matmul` + `memref.load`。matmul/batch_matmul/归约都落到已有的
+"scf.parallel + hwacha-cc 向量化"路径,直接就过。为跑通补了三处:
+
+- **patchembed 库 kernel**(`hwlib.cl` + hwacha-mlir 的 KEMBED 分支):ViT/DiT 的 patchify 是
+  kernel=stride 的非重叠分块卷积(2×2 stride-2,偶数 K),不匹配已有的奇数-K 卷积库,掉进通用路径会
+  把 4→64 通道的卷积展开成一个大 kernel 撑爆 vs。加一个 `patchembed`(lane=token,control 循环
+  输出通道/输入通道/P² patch,写 `[O][gh*gw]` 即 conv 输出的展平平面,累加到预初始化输出像 conv1x1)。
+- **erff 内联**(`src/Analysis.cpp` 的 `expandErff`):GELU 降出 `erff`(float erf),hwacha-cc 之前只
+  内联 expf。仿照 expf,把 `erff(x)` 展开成 A-S 7.1.26 近似 `sign(x)*(1 - p(t)*exp(-x²))`,其中发射一个
+  `llvm.exp.f32` 让随后的 `expandExpf` 再内联(所以 expandErff 必须先跑)。任何用 erf-GELU 的
+  transformer 都受益。
+- **unpatchify 放到 host**:末尾 `reshape(1,gh,gh,P,P,C).permute(0,5,1,3,2,4).reshape(1,C,H,W)` 是个
+  6D 转置,纯像素重排,通用降低会展开成上百个独立 load/store 撑爆 vs。模型改成返回 token 网格
+  `[1, nt, P*P*C]`,这步固定重排交给 C harness(`dit_main.c` / `export_dit.py` 里的 `unpatchify`)。
+
+**结果**(随机权重,一次前向逐 token 比 PyTorch):
+
+| 配置 | tokens | max&#124;diff&#124; | 周期 |
+|---|---|---|---|
+| dim 64,depth 2,heads 4,16 token | [1,16,16] | 0(≤1e-6) | 205810 |
+| dim 128,depth 4,heads 8,64 token | [1,64,16] | 0(≤1e-6) | 3.64M |
+
+两个配置都和 PyTorch 精确一致。`export_dit.py`(参数 `dim depth heads C H P`)、`dit_main.c`、
+`make dit.riscv`(或 `make dit.riscv DITCFG="128 4 8 4 16 2"`)。
+
+**仍未解决 / 后续**:sinusoidal 时间嵌入这里用了个可学习的 Linear(1→dim)代替,真实 DiT 的
+`timestep_embedding`(sin/cos)可加;unpatchify 若要全在片上跑,需要 codegen 支持转置/gather 不被
+完全展开;更大的 DiT(latent 32×32、patch 2、dim 384+)没试,但零件和上面一样。

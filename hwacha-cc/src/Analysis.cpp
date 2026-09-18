@@ -124,6 +124,36 @@ static bool isExpfCall(const CallInst *CI) {
   StringRef N = Callee->getName();
   return N == "expf" || N == "llvm.exp.f32" || N == "_Z3expf" || N == "__nv_expf";
 }
+// erff(x) via Abramowitz-Stegun 7.1.26 (|err| < 1.5e-7): erf(x) = sign(x) * (1 - p(t)*exp(-x^2)),
+// t = 1/(1 + 0.3275911*|x|). Emits an llvm.exp.f32 that expandExpf then inlines, so run this first.
+static bool isErffCall(const CallInst *CI) {
+  const Function *Callee = CI->getCalledFunction();
+  if (!Callee || CI->arg_size() != 1 || !CI->getType()->isFloatTy() || !CI->getArgOperand(0)->getType()->isFloatTy()) return false;
+  StringRef N = Callee->getName();
+  return N == "erff" || N == "llvm.erf.f32" || N == "_Z3erff" || N == "__nv_erff";
+}
+void hwacha::expandErff(Function &F) {
+  SmallVector<CallInst *, 8> Calls;
+  for (Instruction &I : instructions(F)) if (auto *CI = dyn_cast<CallInst>(&I)) if (isErffCall(CI)) Calls.push_back(CI);
+  for (CallInst *CI : Calls) {
+    IRBuilder<> B(CI);
+    Type *FT = B.getFloatTy();
+    auto C = [&](double v) { return ConstantFP::get(FT, v); };
+    Value *X = CI->getArgOperand(0);
+    Value *Neg = B.CreateFCmpOLT(X, C(0.0));
+    Value *A = B.CreateSelect(Neg, B.CreateFNeg(X), X);
+    Value *S = B.CreateSelect(Neg, C(-1.0), C(1.0));
+    Value *T = B.CreateFDiv(C(1.0), B.CreateFAdd(C(1.0), B.CreateFMul(C(0.3275911), A)));
+    Value *P = C(1.061405429);
+    for (double c : {-1.453152027, 1.421413741, -0.284496736, 0.254829592})
+      P = B.CreateFAdd(B.CreateFMul(P, T), C(c));
+    P = B.CreateFMul(P, T);
+    Value *E = B.CreateIntrinsic(Intrinsic::exp, {FT}, {B.CreateFNeg(B.CreateFMul(A, A))});
+    Value *Res = B.CreateFMul(S, B.CreateFSub(C(1.0), B.CreateFMul(P, E)));
+    CI->replaceAllUsesWith(Res);
+    CI->eraseFromParent();
+  }
+}
 void hwacha::expandExpf(Function &F) {
   SmallVector<CallInst *, 8> Calls;
   for (Instruction &I : instructions(F)) if (auto *CI = dyn_cast<CallInst>(&I)) if (isExpfCall(CI)) Calls.push_back(CI);

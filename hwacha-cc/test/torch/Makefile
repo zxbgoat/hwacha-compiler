@@ -56,3 +56,12 @@ TVHW ?= 32
 	$(HWCC) $< --host $*_tv.host.ll --assume-noalias -o $@
 %_tv.riscv: tv_main.c %_tv.s hwlib.s %_tv_check.bin $(COMMON)/crt.S $(COMMON)/syscalls.c
 	$(CC) $(CFLAGS) -DCHECK_FILE='"$*_tv_check.bin"' -DMODEL='"$*"' -o $@ tv_main.c $*_tv.s hwlib.s $(COMMON)/crt.S $(COMMON)/syscalls.c $(LDFLAGS)
+
+# minimal DiT (Diffusion Transformer): patchify + self-attention + adaLN + MLP, one forward vs PyTorch.
+# DITCFG = "dim depth heads C H P" (default 64 2 4 4 8 2). Intermediate steps reuse the %_memref/%.ll/%.s
+# rules; dit.riscv links its own host (dit_main.c) which does the trivial unpatchify.
+DITCFG ?=
+dit.mlir dit_check.bin: export_dit.py
+	$(PYTHON) export_dit.py dit.mlir dit_check.bin $(DITCFG)
+dit.riscv: dit_main.c dit.s hwlib.s dit_check.bin $(COMMON)/crt.S $(COMMON)/syscalls.c
+	$(CC) $(CFLAGS) -DCHECK_FILE='"dit_check.bin"' -o $@ dit_main.c dit.s hwlib.s $(COMMON)/crt.S $(COMMON)/syscalls.c $(LDFLAGS)
