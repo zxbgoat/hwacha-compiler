@@ -1306,20 +1306,28 @@ GELU = `math.erf`;Linear/嵌入 = `linalg.matmul` + `memref.load`。matmul/batch
 | 最小:dim 64,depth 2,heads 4,16 token | [1,16,16] | 0(≤1e-6) | 205810 |
 | 最小:dim 128,depth 4,heads 8,64 token | [1,64,16] | 0(≤1e-6) | 3.64M |
 | **DiT-S/2 真实规格**:dim 384,depth 12,heads 6,256 token | [1,256,16] | 1e-6 | 141M |
+| **DiT-B/2 真实规格**:dim 768,depth 12,heads 12,256 token | [1,256,16] | 3e-6 | 453M |
 
-三个配置都和 PyTorch 精确一致。`export_dit.py`(参数 `dim depth heads C H P`)、`dit_main.c`、
+四个配置都和 PyTorch 精确一致。`export_dit.py`(参数 `dim depth heads C H P`)、`dit_main.c`、
 `make dit.riscv`(或 `make dit.riscv DITCFG="128 4 8 4 16 2"`);真实规格用 `export_dit_s2.py` /
-`dit_s2_main.c` / `make dit_s2.riscv`。
+`dit_s2_main.c` / `make dit_s2.riscv`(DiT-B 用 `make dit_s2.riscv DITS2CFG="12 768 12"`)。
 
 **DiT-S/2 的真实 sin/cos 时间嵌入**:`timestep_embedding`(exp/cos/sin 出 256 维正弦基)只是标量 t 的
 固定函数,和 unpatchify 一样在 host 预计算后喂进去(`dit_s2_main.c` 里 `timestep_embedding` 的等价),
 片上跑的是 temb 的 MLP + 其余全部。这样避开 sinf/cosf 的 codegen(hwacha-cc 只内联了 expf/erff)。
 
-**权重文本膨胀在 DiT-S 规模变得突出**:DiT-S/2 有 ~3300 万权重,torch-mlir 当 `dense` 常量、hwacha-cc
-按 `.word` 发,导致 `.s` 达 **2.0GB**、binary 131MB(权重本体 33M×4B)。各工具内存都可控(bufferize
-508MB / hwacha-mlir 2.8GB / hwacha-cc 4.2GB),GNU as 对纯 `.word` 也快,所以 15GB 机器上硬推能过;
-但 DiT-B/L/XL 需要把权重改成 `.incbin` 二进制(和大 torchvision 模型同一个后续项)。
+**权重文本膨胀**:权重被 torch-mlir 当 `dense` 常量、hwacha-cc 按 `.word` 发,`.s`/中间 IR 随参数量
+线性涨,但**各工具峰值内存不随权重线性涨**(LLVM 在内存里紧凑存权重,涨的是解析 IR 文本的缓冲):
+
+| 模型 | 参数 | .s 大小 | binary | hwacha-mlir 峰值 | hwacha-cc 峰值/用时 |
+|---|---|---|---|---|---|
+| DiT-S/2 | 33M | 2.0GB | 131MB | 2.8GB | 4.2GB / 3:04 |
+| DiT-B/2 | 130M | 7.9GB | 520MB | 3.7GB | 8.1GB / 12:08 |
+
+GNU as 对纯 `.word` 内存轻且快(DiT-B 的 7.9GB .s 汇编+链接只 29s / 552MB)。所以 15GB 机器上 DiT-B
+硬推能过;DiT-L(~458M)的 .s 约 28GB、hwacha-cc 峰值会超 15GB,那时需要把权重改成 `.incbin` 二进制
+(和大 torchvision 模型同一个后续项)。
 
 **仍未解决 / 后续**:unpatchify 与 sin/cos 若要全在片上跑,需要 codegen 支持转置/gather 不被完全展开、
-以及 sinf/cosf 内联;权重 `.incbin`(见上);cross-attention(PixArt)、MMDiT 双流(SD3/FLUX)是原版
-DiT 之外的额外结构,需要再接。
+以及 sinf/cosf 内联;权重 `.incbin` 以支持 DiT-L/XL(见上);cross-attention(PixArt)、MMDiT 双流
+(SD3/FLUX)是原版 DiT 之外的额外结构,需要再接。
