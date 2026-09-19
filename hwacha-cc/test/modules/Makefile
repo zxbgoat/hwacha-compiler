@@ -23,7 +23,7 @@ LAYERS := linear conv3x3 conv1x1 conv_s2 conv5x5 convtranspose2 dwconv3x3 maxpoo
           reflectionpad2d zeropad2d constantpad2d replicationpad2d circularpad2d zeropad1d batchnorm1d batchnorm3d \
           instancenorm1d rmsnorm rrelu softmin softmax2d identity dropout dropout2d alphadropout \
           unflatten pixelunshuffle channelshuffle upsamplingnearest2d upsamplingbilinear2d \
-          rnn lstm gru rnncell transformerencoderlayer
+          rnn lstm gru rnncell transformerencoderlayer groupconv groupconv_s2
 BUFFERIZE := builtin.module(one-shot-bufferize{bufferize-function-boundaries=1 function-boundary-type-conversion=identity-layout-map},canonicalize,cse,ownership-based-buffer-deallocation,canonicalize,buffer-deallocation-simplification,bufferization-lower-deallocations,cse,canonicalize,convert-bufferization-to-memref)
 
 # the conv/pool/norm library kernels live with the torchvision tests; reuse that prebuilt assembly

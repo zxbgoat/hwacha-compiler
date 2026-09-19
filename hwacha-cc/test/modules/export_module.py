@@ -152,6 +152,8 @@ def build(layer):
     # transformer
     if layer=='transformerencoderlayer':
         return nn.TransformerEncoderLayer(d_model=32,nhead=4,dim_feedforward=64,batch_first=True).eval(), torch.randn(1,8,32)
+    if layer=='groupconv':       return nn.Conv2d(8,8,3,padding=1,groups=2), x8
+    if layer=='groupconv_s2':    return nn.Conv2d(8,8,3,stride=2,padding=1,groups=2), x8
     raise SystemExit("unknown layer "+layer)
 
 if __name__=='__main__':

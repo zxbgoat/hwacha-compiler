@@ -293,6 +293,57 @@ static bool lowerConvs(ModuleOp m) {
     LLVM::CallOp::create(b, loc, unpad3d, ValueRange{i64c(O * Do * Ho * Wo), sp, yp, i32c(plane), i32c(HpWp), i32c(Wp), i32c(Do), i32c(Ho), i32c(Wo), i32c(pad)});
     conv.erase();
   }
+  // linalg.conv_2d_ngchw_gfchw (N=1, grouped): each group is an independent dense conv over a contiguous
+  // channel slice [C/G][Hp][Wp] -> [F/G][Ho][Wo], so reuse convKxK / convKxK_s2 + unpad per group with the
+  // x/w/y pointers offset to that group. Unblocks regnet / resnext.
+  SmallVector<linalg::Conv2DNgchwGfchwOp> gconvs;
+  m.walk([&](linalg::Conv2DNgchwGfchwOp c) { gconvs.push_back(c); });
+  for (linalg::Conv2DNgchwGfchwOp conv : gconvs) {
+    auto xT = dyn_cast<MemRefType>(conv.getInputs()[0].getType()), wT = dyn_cast<MemRefType>(conv.getInputs()[1].getType()), yT = dyn_cast<MemRefType>(conv.getOutputs()[0].getType());
+    if (!xT || !wT || !yT || !xT.hasStaticShape() || !wT.hasStaticShape() || !yT.hasStaticShape()) continue;
+    if (!xT.getLayout().isIdentity() || !wT.getLayout().isIdentity() || !yT.getLayout().isIdentity()) continue;
+    auto xs = xT.getShape(), ws = wT.getShape(), ys = yT.getShape();   // x [1,G,C/G,Hi,Wi] w [G,F/G,C/G,kh,kw] y [1,G,F/G,Ho,Wo]
+    if (xs[0] != 1 || ys[0] != 1) continue;
+    int64_t G = xs[1], CG = xs[2], Hi = xs[3], Wi = xs[4], FG = ws[1], kh = ws[3], kw = ws[4], Ho = ys[3], Wo = ys[4];
+    if (ws[0] != G || ws[2] != CG || ys[1] != G) continue;
+    auto sv = conv.getStrides().getValues<int64_t>(), dv = conv.getDilations().getValues<int64_t>();
+    int64_t stride = sv[0];
+    if (sv[1] != stride || dv[0] != 1 || dv[1] != 1) continue;
+    bool s1 = stride == 1 && kh == kw && kh % 2 == 1 && Hi == Ho + kh - 1 && Wi == Wo + kw - 1;
+    bool s2 = stride == 2 && kh == kw && (kh % 2 == 1 || kh == 1) && Hi == 2 * Ho + kh - 1 && Wi == 2 * Wo + kw - 1 && FG % 4 == 0;
+    if (!s1 && !s2) continue;
+    int64_t K = kh, pad = s1 ? (K - 1) / 2 : 0;
+    Location loc = conv.getLoc(); OpBuilder b(conv);
+    auto ptrOf = [&](Value mem) -> Value { Value idx = memref::ExtractAlignedPointerAsIndexOp::create(b, loc, b.getIndexType(), mem); Value ii = arith::IndexCastOp::create(b, loc, i64, idx); return LLVM::IntToPtrOp::create(b, loc, ptrTy, ii); };
+    auto i32c = [&](int64_t v) { return LLVM::ConstantOp::create(b, loc, i32, b.getI32IntegerAttr(v)); };
+    auto i64c = [&](int64_t v) { return LLVM::ConstantOp::create(b, loc, i64, b.getI64IntegerAttr(v)); };
+    auto gep = [&](Value base, int64_t off) -> Value { return LLVM::GEPOp::create(b, loc, ptrTy, f32, base, ArrayRef<LLVM::GEPArg>{(int32_t)off}); };
+    Value xp = ptrOf(conv.getInputs()[0]), wp = ptrOf(conv.getInputs()[1]), yp = ptrOf(conv.getOutputs()[0]);
+    Value zeros = memref::AllocOp::create(b, loc, MemRefType::get({std::max<int64_t>(FG, 8)}, f32));
+    linalg::FillOp::create(b, loc, ValueRange{arith::ConstantOp::create(b, loc, b.getF32FloatAttr(0.0f))}, ValueRange{zeros});
+    Value zp = ptrOf(zeros);
+    int64_t plane = Hi * Wi, Wp = Wi, Hp2 = Ho + 2, Wp2 = Wo + 2, plane2 = Hp2 * Wp2;
+    int64_t xGE = CG * Hi * Wi, wGE = FG * CG * K * K, yGE = FG * Ho * Wo;
+    for (int64_t g = 0; g < G; g++) {
+      Value xpg = gep(xp, g * xGE), wpg = gep(wp, g * wGE), ypg = gep(yp, g * yGE);
+      if (s1) {
+        int64_t guard = 2 * Wp + 8;
+        Value scratch = memref::AllocOp::create(b, loc, MemRefType::get({FG * plane + 2 * guard}, f32));
+        Value sp = gep(ptrOf(scratch), guard);
+        int64_t oc = 0;
+        for (; oc + 8 <= FG; oc += 8) LLVM::CallOp::create(b, loc, ckk, ValueRange{i64c(plane), xpg, wpg, zp, sp, i32c(CG), i32c(plane), i32c(Wp), i32c(K), i32c(pad), i32c(oc)});
+        for (; oc < FG; oc++) LLVM::CallOp::create(b, loc, ckk1, ValueRange{i64c(plane), xpg, wpg, zp, sp, i32c(CG), i32c(plane), i32c(Wp), i32c(K), i32c(pad), i32c(oc)});
+        LLVM::CallOp::create(b, loc, unpad, ValueRange{i64c(FG * Ho * Wo), sp, ypg, i32c(plane), i32c(Wp), i32c(Ho), i32c(Wo), i32c(pad)});
+      } else {
+        int64_t guard = 2 * Wp2 + 8;
+        Value scratch = memref::AllocOp::create(b, loc, MemRefType::get({FG * plane2 + 2 * guard}, f32));
+        Value sp = gep(ptrOf(scratch), guard);
+        for (int64_t oc = 0; oc < FG; oc += 4) LLVM::CallOp::create(b, loc, cs2, ValueRange{i64c(plane2), xpg, wpg, zp, sp, i32c(CG), i32c(plane), i32c(Wp), i32c(plane2), i32c(Wp2), i32c(K), i32c(oc)});
+        LLVM::CallOp::create(b, loc, unpad, ValueRange{i64c(FG * Ho * Wo), sp, ypg, i32c(plane2), i32c(Wp2), i32c(Ho), i32c(Wo), i32c(1)});
+      }
+    }
+    conv.erase();
+  }
   Type intsPE[] = {i64, ptrTy, ptrTy, ptrTy, ptrTy, i32, i32, i32, i32, i32, i32, i32};   // ..., C, xplane, Wi, P, gw, plane, oc
   LLVM::LLVMFuncOp pe = declareFn(m, "patchembed_ct", intsPE), pe1 = declareFn(m, "patchembed_1_ct", intsPE);
   // linalg.depthwise_conv_2d_nchw_chw (N=1) -> dwconvKxK / dwconvKxK_s2 into a padded scratch + unpad

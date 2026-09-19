@@ -20,7 +20,7 @@ Covers the `torch.nn` catalogue from docs.pytorch.org/docs/2.14/nn.html plus the
 | group | layers |
 |---|---|
 | linear / shape | linear, bilinear-free mlp, identity, flatten, unflatten |
-| convolution | conv1d, conv3x3, conv1x1, conv5x5, conv3d, conv_s2 (stride 2), dwconv3x3 (depthwise), convtranspose1d/2d/3d |
+| convolution | conv1d, conv3x3, conv1x1, conv5x5, conv3d, conv_s2 (stride 2), dwconv3x3 (depthwise), groupconv / groupconv_s2 (grouped), convtranspose1d/2d/3d |
 | pooling | maxpool1d/2d/3d, avgpool1d/2d/3d, lppool2d, adaptiveavgpool1d/2d/3d, adaptivemaxpool1d/2d |
 | padding | pad (constant), zeropad1d/2d, constantpad2d, replicationpad2d, circularpad2d, reflectionpad2d |
 | normalization | batchnorm1d/2d/3d, layernorm, groupnorm, instancenorm1d/2d, rmsnorm, lrn, normalize (L2) |
@@ -47,5 +47,4 @@ NVVM canonicalization re-forms from that.
 
 Not attempted: Lazy* variants (need a materializing forward), loss functions (need a target), Embedding /
 EmbeddingBag (integer input, incompatible with the float harness), MaxUnpool / FractionalMaxPool (need
-indices or randomness), SyncBatchNorm and the distributed / container modules; grouped conv with groups>1
-and channels>1 (`conv_2d_ngchw_gfchw`, the regnet/resnext gap).
+indices or randomness), SyncBatchNorm and the distributed / container modules.
