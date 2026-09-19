@@ -133,3 +133,6 @@ bot66 PASS
 ==> /home/tesla/hwacha-compiler/hwacha-cc/test/mnist/teapearce_rtl.riscv start 21:47:13
 teapearce: PyTorch check at t=0.750000, class 7
   forward (context) vs PyTorch: max |diff| = 0.000002, max |ref| = 3.549731, ok
+  forward (no context) vs PyTorch: max |diff| = 0.000002, max |ref| = 3.550446, ok
+sampling 1 of 400 steps, class 7, guidance w=0.000000, checking 0
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
