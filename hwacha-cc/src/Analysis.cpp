@@ -168,6 +168,23 @@ void hwacha::expandFloorf(Function &F) {
   }
 }
 
+// llvm.abs.iN(x) -> x < 0 ? -x : x. NVVM canonicalization forms this integer-abs intrinsic (from
+// reflection padding's index math); hwacha-cc's codegen has no call lowering, so expand it to arith here.
+void hwacha::expandAbsI(Function &F) {
+  SmallVector<CallInst *, 8> Calls;
+  for (Instruction &I : instructions(F)) if (auto *CI = dyn_cast<CallInst>(&I)) {
+    const Function *Callee = CI->getCalledFunction();
+    if (Callee && Callee->getName().starts_with("llvm.abs.") && CI->getType()->isIntegerTy()) Calls.push_back(CI);
+  }
+  for (CallInst *CI : Calls) {
+    IRBuilder<> B(CI);
+    Value *X = CI->getArgOperand(0);
+    Value *Neg = B.CreateNeg(X);
+    Value *R = B.CreateSelect(B.CreateICmpSLT(X, ConstantInt::get(X->getType(), 0)), Neg, X);
+    CI->replaceAllUsesWith(R); CI->eraseFromParent();
+  }
+}
+
 // logf(x) as straight-line vector arithmetic (Cephes single-precision logf): frexp x = m * 2^e with
 // m in [sqrt(1/2), sqrt(2)), then a degree-8 polynomial in (m-1). No calls, so it needs no follow-up pass.
 static bool isLogfCall(const CallInst *CI) {

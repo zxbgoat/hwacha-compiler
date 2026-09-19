@@ -1481,6 +1481,22 @@ bool WTGen::emitInst(Instruction &I, unsigned Pos) {
         VPUsed[P.Idx] = false; if (DidB) (Bc.Class == RC::VV ? VVUsed : VWUsed)[Bc.Idx] = false;
         return true;
       }
+      case Intrinsic::abs: {   // |x| = x < 0 ? -x : x  (no integer abs in the worker-thread ISA)
+        Value *A = CI->getArgOperand(0);
+        std::string W = is32(T) ? "w" : "", RA = R(A);
+        Reg Bc{RC::VS, 0}; bool DidB = false;
+        if (classOf(A) == RC::VS) { Bc = alloc(isNarrow(A) ? RC::VW : RC::VV); DidB = true; emit("", isNarrow(A) ? "vaddw" : "vadd", {Bc.str(), RA, "vs0"}); RA = Bc.str(); }
+        Reg Neg = alloc(isNarrow(&I) ? RC::VW : RC::VV);
+        emit("", "vsub" + W, {Neg.str(), "vs0", RA});          // Neg = -x
+        Reg P = alloc(RC::VP);
+        emit("", "vcmplt", {P.str(), RA, "vs0"});               // P = x < 0
+        std::string D = dest(I), Mv = isNarrow(&I) ? "vaddw" : "vadd";
+        emit(P.str(), Mv, {D, Neg.str(), "vs0"});
+        emit("!" + P.str(), Mv, {D, RA, "vs0"});
+        VPUsed[P.Idx] = false; (Neg.Class == RC::VV ? VVUsed : VWUsed)[Neg.Idx] = false;
+        if (DidB) (Bc.Class == RC::VV ? VVUsed : VWUsed)[Bc.Idx] = false;
+        return true;
+      }
       default: break;
       }
     }

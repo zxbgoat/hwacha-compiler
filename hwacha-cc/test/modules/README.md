@@ -12,7 +12,7 @@ Each of PyTorch's basic `torch.nn` layers, taken on its own through the route-A 
 to lanes, which vectorizes the pad / copy / reduction loops that the default lane-innermost mapping would
 otherwise unroll and overflow the scalar (vs) registers on.
 
-## Coverage (90 / 92 pass)
+## Coverage (all attempted layers pass)
 
 Covers the `torch.nn` catalogue from docs.pytorch.org/docs/2.14/nn.html plus the extra
 `torch.nn.functional` ops, each layer on its own:
@@ -22,7 +22,7 @@ Covers the `torch.nn` catalogue from docs.pytorch.org/docs/2.14/nn.html plus the
 | linear / shape | linear, bilinear-free mlp, identity, flatten, unflatten |
 | convolution | conv1d, conv3x3, conv1x1, conv5x5, conv3d, conv_s2 (stride 2), dwconv3x3 (depthwise), convtranspose1d/2d/3d |
 | pooling | maxpool1d/2d/3d, avgpool1d/2d/3d, lppool2d, adaptiveavgpool1d/2d/3d, adaptivemaxpool1d/2d |
-| padding | pad (constant), zeropad1d/2d, constantpad2d, replicationpad2d, circularpad2d |
+| padding | pad (constant), zeropad1d/2d, constantpad2d, replicationpad2d, circularpad2d, reflectionpad2d |
 | normalization | batchnorm1d/2d/3d, layernorm, groupnorm, instancenorm1d/2d, rmsnorm, lrn, normalize (L2) |
 | activation | relu, relu6, rrelu, leakyrelu, prelu, elu, celu, selu, gelu, silu, sigmoid, tanh, softsign, softplus, mish, hardswish, hardsigmoid, hardtanh, tanhshrink, softshrink, hardshrink, threshold, logsigmoid |
 | softmax family | softmax, softmin, softmax2d, logsoftmax, glu |
@@ -39,11 +39,11 @@ comparison masks are stored/loaded as 0/1 bytes (a predicate register cannot be 
 a select whose two arms are both loads keeps them in distinct registers (the load emits under the block
 predicate, not the select arm's, so it cannot be computed straight into the select register).
 
-## Known gaps (2)
+## Not attempted
 
-- **reflectionpad2d** / **pad_reflect** — reflection padding does not lower through torch-mlir (missing
-  an LLVM lowering for the reflection index arithmetic); constant / replication / circular / zero padding
-  all work.
+Every layer in `make run` passes. Reflection padding needed two fixes to get there: hwacha-mlir expands
+`math.absi` to arith (it has no LLVM translation), and hwacha-cc lowers the `llvm.abs.iN` intrinsic that
+NVVM canonicalization re-forms from that.
 
 Not attempted: Lazy* variants (need a materializing forward), loss functions (need a target), Embedding /
 EmbeddingBag (integer input, incompatible with the float harness), MaxUnpool / FractionalMaxPool (need

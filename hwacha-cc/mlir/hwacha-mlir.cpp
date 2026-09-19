@@ -12,6 +12,7 @@
 #include "mlir/Dialect/Linalg/Transforms/Transforms.h"
 #include "mlir/Dialect/Linalg/Utils/Utils.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
+#include "mlir/Dialect/Math/IR/Math.h"
 #include "mlir/Dialect/Linalg/IR/LinalgInterfaces.h"
 #include "mlir/Dialect/GPU/IR/GPUDialect.h"
 #include "mlir/Dialect/GPU/Transforms/ParallelLoopMapper.h"
@@ -221,6 +222,20 @@ static Operation *initWriter(Value buf, Operation *before, Value &bias) {
     return nullptr;
   }
   return nullptr;
+}
+// math.absi has no LLVM translation and convert-gpu-to-nvvm does not lower it, so expand it to arith
+// (used by reflection padding's index arithmetic): |x| = x < 0 ? -x : x.
+static void expandAbsI(ModuleOp m) {
+  SmallVector<math::AbsIOp> ops;
+  m.walk([&](math::AbsIOp o) { ops.push_back(o); });
+  for (math::AbsIOp o : ops) {
+    OpBuilder b(o); Location loc = o.getLoc(); Value x = o.getOperand();
+    Value zero = arith::ConstantOp::create(b, loc, b.getZeroAttr(x.getType()));
+    Value neg = arith::SubIOp::create(b, loc, zero, x);
+    Value isneg = arith::CmpIOp::create(b, loc, arith::CmpIPredicate::slt, x, zero);
+    o.replaceAllUsesWith(arith::SelectOp::create(b, loc, isneg, neg, x).getResult());
+    o.erase();
+  }
 }
 static bool lowerConvs(ModuleOp m) {
   MLIRContext *ctx = m.getContext();
@@ -670,6 +685,7 @@ int main(int argc, char **argv) {
   if (!hasGpuModule(m)) {
     if (!NoConvLib && !lowerConvs(m)) return 1;
     if (!runPipeline(m, "scf-forall-to-parallel,linalg-generalize-named-ops")) return 1;
+    expandAbsI(m);   // math.absi -> arith (reflection padding); no LLVM translation otherwise
     if (FuseGenerics) collapseGenerics(m);
     if (PrintMLIR) { llvm::errs() << "// ---- after collapseGenerics\n"; m.print(llvm::errs()); llvm::errs() << "\n"; }
     if (!runPipeline(m, "convert-linalg-to-parallel-loops,func.func(expand-strided-metadata,fold-memref-alias-ops,canonicalize)")) return 1;   // subviews from tiling folded into the accesses (bare pointers need identity layouts)
