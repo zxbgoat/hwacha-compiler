@@ -1267,15 +1267,23 @@ torch-mlir 能把 torchvision 的全部 80 个分类模型导入并降到 linalg
 | resnet34 | 残差 basic block，深残差 | 197 = 197 |
 | resnet50 | bottleneck（1×1-3×3-1×1），通道到 2048 | 348 = 348 |
 | densenet121 | dense block，concat 特征复用 | 330 = 330 |
+| resnext50_32x4d | 分组卷积 bottleneck（32 组） | 774 = 774 |
+| regnet_y_400mf | 分组卷积 + SE（需 `--collapse-all`） | argmax 匹配，max&#124;diff&#124;=0 |
 
-十个覆盖主要架构族的模型全部正确（残差 basic/bottleneck、depthwise separable、SE、MBConv、
+十二个覆盖主要架构族的模型全部正确（残差 basic/bottleneck、depthwise separable、grouped、SE、MBConv、
 channel shuffle、fire module、dense block）。`export_tv.py`（任意 torchvision 分类模型 → linalg +
 PyTorch 参考）、`tv_main.c`（argmax + 数值容差）、Makefile 里 `make <model>_tv.riscv`。
 
-**仍未解决 / 后续**：分组卷积（`linalg.conv_2d_ngchw_gfchw`，5D memref 的按组 KxK）还没库化，
-regnet / resnext 走通用降低会 vs 超标，暂不支持；权重以 `.word` 文本内联进汇编让大模型的 .s 很大
-（mobilenet_v2 达 213MB），改成 `.incbin` 二进制可缓解；`--fuse-generics` 对非连续操作数仍会
-delinearize，默认关闭；vit 系列需要注意力算子和 224×224。
+**分组卷积（2026-09-20）**：`linalg.conv_2d_ngchw_gfchw` 是 G 个独立的、在连续通道切片
+（`[C/G][Hp][Wp] → [F/G][Ho][Wo]`）上的稠密卷积。hwacha-mlir 按组循环，把 x/w/y 指针偏移到每组,
+复用现有的 `convKxK` / `convKxK_s2` + `unpad`,不需要新 kernel（stride 1 奇数 KxK 和 stride 2 都支持）。
+resnext50 全 69 个卷积（含 16 个分组卷积）都降到库,argmax 774=774。regnet_y_400mf 的分组卷积同样降低,
+但它 5D 分组输入的 pad-fill 在 laneInnermost 下退化成标量 store 撑爆 vs,加 `--collapse-all` 向量化后通过
+（max|diff|=0）。
+
+**仍未解决 / 后续**：权重以 `.word` 文本内联进汇编让大模型的 .s 很大（mobilenet_v2 达 213MB，DiT-B
+7.9GB），改成 `.incbin` 二进制可缓解（见 DiT 段,已在 hwacha-mlir 落地 `--weights-bin`,torchvision 侧
+还没接）；`--fuse-generics` 对非连续操作数仍会 delinearize,默认关闭；vit 系列需要注意力算子和 224×224。
 
 ## DiT（Diffusion Transformer）（2026-09-19）
 
