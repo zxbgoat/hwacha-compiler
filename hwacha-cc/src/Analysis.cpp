@@ -217,15 +217,28 @@ static bool isNamed(const CallInst *CI, std::initializer_list<StringRef> names) 
   return false;
 }
 void hwacha::expandLogExpM1Pow(Function &F) {
-  SmallVector<CallInst *, 8> log1p, expm1, pow;
+  SmallVector<CallInst *, 8> log1p, expm1, pow, powi;
   for (Instruction &I : instructions(F)) if (auto *CI = dyn_cast<CallInst>(&I)) {
     if (CI->getType()->isFloatTy()) {
       if (CI->arg_size() == 1 && isNamed(CI, {"log1pf", "llvm.log1p.f32", "__nv_log1pf"})) log1p.push_back(CI);
       else if (CI->arg_size() == 1 && isNamed(CI, {"expm1f", "llvm.expm1.f32", "__nv_expm1f"})) expm1.push_back(CI);
       else if (CI->arg_size() == 2 && isNamed(CI, {"powf", "llvm.pow.f32", "__nv_powf"})) pow.push_back(CI);
+      else if (CI->arg_size() == 2 && isNamed(CI, {"powif", "llvm.powi.f32", "__nv_powif"})) powi.push_back(CI);
     }
   }
   auto FT = Type::getFloatTy(F.getContext());
+  for (CallInst *CI : powi) {     // integer power: constant exponent -> repeated multiply, else exp(n*log(x))
+    IRBuilder<> B(CI);
+    Value *X = CI->getArgOperand(0), *N = CI->getArgOperand(1), *R;
+    if (auto *CN = dyn_cast<ConstantInt>(N)) {
+      int64_t n = CN->getSExtValue(), an = n < 0 ? -n : n;
+      if (an == 0) R = ConstantFP::get(FT, 1.0);
+      else { R = X; for (int64_t i = 1; i < an; i++) R = B.CreateFMul(R, X); }
+      if (n < 0) R = B.CreateFDiv(ConstantFP::get(FT, 1.0), R);
+    } else
+      R = B.CreateIntrinsic(Intrinsic::exp, {FT}, {B.CreateFMul(B.CreateSIToFP(N, FT), B.CreateIntrinsic(Intrinsic::log, {FT}, {X}))});
+    CI->replaceAllUsesWith(R); CI->eraseFromParent();
+  }
   for (CallInst *CI : log1p) {   // log1p(x) = log(1 + x)
     IRBuilder<> B(CI);
     Value *R = B.CreateIntrinsic(Intrinsic::log, {FT}, {B.CreateFAdd(CI->getArgOperand(0), ConstantFP::get(FT, 1.0))});

@@ -17,7 +17,13 @@ LAYERS := linear conv3x3 conv1x1 conv_s2 conv5x5 convtranspose2 dwconv3x3 maxpoo
           adaptiveavgpool batchnorm2d layernorm groupnorm relu leakyrelu gelu silu sigmoid tanh hardswish \
           hardsigmoid elu softmax flatten upsample upsample_bilinear pixelshuffle attention mlp \
           softplus mish hardtanh relu6 selu celu softsign tanhshrink softshrink hardshrink logsigmoid \
-          logsoftmax prelu glu threshold normalize instancenorm lrn pad sdpa unfold interpolate
+          logsoftmax prelu glu threshold normalize instancenorm lrn pad sdpa unfold interpolate \
+          conv1d convtranspose1d convtranspose3d maxpool1d maxpool3d avgpool1d avgpool3d \
+          adaptiveavgpool1d adaptiveavgpool3d adaptivemaxpool1d adaptivemaxpool2d lppool2d \
+          zeropad2d constantpad2d replicationpad2d circularpad2d zeropad1d batchnorm1d batchnorm3d \
+          instancenorm1d rmsnorm rrelu softmin softmax2d identity dropout dropout2d alphadropout \
+          unflatten pixelunshuffle channelshuffle upsamplingnearest2d upsamplingbilinear2d \
+          rnn lstm gru rnncell transformerencoderlayer
 BUFFERIZE := builtin.module(one-shot-bufferize{bufferize-function-boundaries=1 function-boundary-type-conversion=identity-layout-map},canonicalize,cse,ownership-based-buffer-deallocation,canonicalize,buffer-deallocation-simplification,bufferization-lower-deallocations,cse,canonicalize,convert-bufferization-to-memref)
 
 # the conv/pool/norm library kernels live with the torchvision tests; reuse that prebuilt assembly
