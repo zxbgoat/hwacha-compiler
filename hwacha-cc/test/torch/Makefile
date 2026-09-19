@@ -71,5 +71,9 @@ dit.riscv: dit_main.c dit.s hwlib.s dit_check.bin $(COMMON)/crt.S $(COMMON)/sysc
 DITS2CFG ?=
 dit_s2.mlir dit_s2_check.bin: export_dit_s2.py export_dit.py
 	$(PYTHON) export_dit_s2.py dit_s2.mlir dit_s2_check.bin $(DITS2CFG)
-dit_s2.riscv: dit_s2_main.c dit_s2.s hwlib.s dit_s2_check.bin $(COMMON)/crt.S $(COMMON)/syscalls.c
-	$(CC) $(CFLAGS) -DCHECK_FILE='"dit_s2_check.bin"' -o $@ dit_s2_main.c dit_s2.s hwlib.s $(COMMON)/crt.S $(COMMON)/syscalls.c $(LDFLAGS)
+# strip the ~33M-2GB weights to a binary blob + .incbin .S so the .ll/.s stay small (memory-bounded for
+# DiT-L/XL); dit_s2_weights.bin.S is emitted next to the .ll and linked in, reading dit_s2_weights.bin.
+dit_s2.ll dit_s2.host.ll dit_s2_weights.bin.S: dit_s2_memref.mlir $(HWMLIR)
+	$(HWMLIR) $< -o dit_s2.ll --host dit_s2.host.ll --weights-bin dit_s2_weights.bin $(HWMLIRFLAGS)
+dit_s2.riscv: dit_s2_main.c dit_s2.s hwlib.s dit_s2_weights.bin.S dit_s2_check.bin $(COMMON)/crt.S $(COMMON)/syscalls.c
+	$(CC) $(CFLAGS) -DCHECK_FILE='"dit_s2_check.bin"' -o $@ dit_s2_main.c dit_s2.s hwlib.s dit_s2_weights.bin.S $(COMMON)/crt.S $(COMMON)/syscalls.c $(LDFLAGS)
