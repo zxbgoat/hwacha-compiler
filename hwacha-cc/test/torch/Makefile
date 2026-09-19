@@ -65,3 +65,11 @@ dit.mlir dit_check.bin: export_dit.py
 	$(PYTHON) export_dit.py dit.mlir dit_check.bin $(DITCFG)
 dit.riscv: dit_main.c dit.s hwlib.s dit_check.bin $(COMMON)/crt.S $(COMMON)/syscalls.c
 	$(CC) $(CFLAGS) -DCHECK_FILE='"dit_check.bin"' -o $@ dit_main.c dit.s hwlib.s $(COMMON)/crt.S $(COMMON)/syscalls.c $(LDFLAGS)
+
+# DiT-S/2 at the real config (latent 4x32x32, patch 2 -> 256 tokens, depth 12, hidden 384, 6 heads).
+# DITS2CFG = "depth hidden heads" (default 12 384 6). Sinusoidal timestep embedding precomputed on host.
+DITS2CFG ?=
+dit_s2.mlir dit_s2_check.bin: export_dit_s2.py export_dit.py
+	$(PYTHON) export_dit_s2.py dit_s2.mlir dit_s2_check.bin $(DITS2CFG)
+dit_s2.riscv: dit_s2_main.c dit_s2.s hwlib.s dit_s2_check.bin $(COMMON)/crt.S $(COMMON)/syscalls.c
+	$(CC) $(CFLAGS) -DCHECK_FILE='"dit_s2_check.bin"' -o $@ dit_s2_main.c dit_s2.s hwlib.s $(COMMON)/crt.S $(COMMON)/syscalls.c $(LDFLAGS)

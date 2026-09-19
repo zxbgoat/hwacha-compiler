@@ -1303,12 +1303,23 @@ GELU = `math.erf`;Linear/嵌入 = `linalg.matmul` + `memref.load`。matmul/batch
 
 | 配置 | tokens | max&#124;diff&#124; | 周期 |
 |---|---|---|---|
-| dim 64,depth 2,heads 4,16 token | [1,16,16] | 0(≤1e-6) | 205810 |
-| dim 128,depth 4,heads 8,64 token | [1,64,16] | 0(≤1e-6) | 3.64M |
+| 最小:dim 64,depth 2,heads 4,16 token | [1,16,16] | 0(≤1e-6) | 205810 |
+| 最小:dim 128,depth 4,heads 8,64 token | [1,64,16] | 0(≤1e-6) | 3.64M |
+| **DiT-S/2 真实规格**:dim 384,depth 12,heads 6,256 token | [1,256,16] | 1e-6 | 141M |
 
-两个配置都和 PyTorch 精确一致。`export_dit.py`(参数 `dim depth heads C H P`)、`dit_main.c`、
-`make dit.riscv`(或 `make dit.riscv DITCFG="128 4 8 4 16 2"`)。
+三个配置都和 PyTorch 精确一致。`export_dit.py`(参数 `dim depth heads C H P`)、`dit_main.c`、
+`make dit.riscv`(或 `make dit.riscv DITCFG="128 4 8 4 16 2"`);真实规格用 `export_dit_s2.py` /
+`dit_s2_main.c` / `make dit_s2.riscv`。
 
-**仍未解决 / 后续**:sinusoidal 时间嵌入这里用了个可学习的 Linear(1→dim)代替,真实 DiT 的
-`timestep_embedding`(sin/cos)可加;unpatchify 若要全在片上跑,需要 codegen 支持转置/gather 不被
-完全展开;更大的 DiT(latent 32×32、patch 2、dim 384+)没试,但零件和上面一样。
+**DiT-S/2 的真实 sin/cos 时间嵌入**:`timestep_embedding`(exp/cos/sin 出 256 维正弦基)只是标量 t 的
+固定函数,和 unpatchify 一样在 host 预计算后喂进去(`dit_s2_main.c` 里 `timestep_embedding` 的等价),
+片上跑的是 temb 的 MLP + 其余全部。这样避开 sinf/cosf 的 codegen(hwacha-cc 只内联了 expf/erff)。
+
+**权重文本膨胀在 DiT-S 规模变得突出**:DiT-S/2 有 ~3300 万权重,torch-mlir 当 `dense` 常量、hwacha-cc
+按 `.word` 发,导致 `.s` 达 **2.0GB**、binary 131MB(权重本体 33M×4B)。各工具内存都可控(bufferize
+508MB / hwacha-mlir 2.8GB / hwacha-cc 4.2GB),GNU as 对纯 `.word` 也快,所以 15GB 机器上硬推能过;
+但 DiT-B/L/XL 需要把权重改成 `.incbin` 二进制(和大 torchvision 模型同一个后续项)。
+
+**仍未解决 / 后续**:unpatchify 与 sin/cos 若要全在片上跑,需要 codegen 支持转置/gather 不被完全展开、
+以及 sinf/cosf 内联;权重 `.incbin`(见上);cross-attention(PixArt)、MMDiT 双流(SD3/FLUX)是原版
+DiT 之外的额外结构,需要再接。
