@@ -13,6 +13,20 @@ def rand_bn(m):   # give BatchNorm/GroupNorm non-degenerate eval stats + affine
             mod.weight.data.uniform_(0.5,1.5); mod.bias.data.normal_(0,0.2)
     return m
 
+class Fn(nn.Module):     # wrap an arbitrary torch.nn.functional call as a single-input module
+    def __init__(s, fn): super().__init__(); s.fn=fn
+    def forward(s, x): return s.fn(x)
+
+class SDPA(nn.Module):   # F.scaled_dot_product_attention (fused): does torch-mlir decompose it to matmul+softmax?
+    def __init__(s,dim,heads):
+        super().__init__(); s.h=heads; s.dh=dim//heads
+        s.qkv=nn.Linear(dim,dim*3); s.proj=nn.Linear(dim,dim)
+    def forward(s,x):
+        B,N,D=x.shape
+        q,k,v=s.qkv(x).reshape(B,N,3,s.h,s.dh).permute(2,0,3,1,4)
+        o=F.scaled_dot_product_attention(q,k,v)
+        return s.proj(o.transpose(1,2).reshape(B,N,D))
+
 class Attn(nn.Module):   # single-head-group multi-head self-attention (manual, so it lowers to matmul+softmax)
     def __init__(s,dim,heads):
         super().__init__(); s.h=heads; s.dh=dim//heads; s.sc=s.dh**-0.5
@@ -56,6 +70,32 @@ def build(layer):
     if layer=='pixelshuffle':    return nn.PixelShuffle(2), torch.randn(1,16,4,4)
     if layer=='attention':       return Attn(32,4), torch.randn(1,16,32)
     if layer=='mlp':             return nn.Sequential(nn.Linear(16,32),nn.GELU(),nn.Linear(32,16)), torch.randn(1,16)
+    # ---- torch.nn.functional ops not covered by the nn-module layers above ----
+    # extra activations
+    if layer=='softplus':        return nn.Softplus(), torch.randn(1,16)
+    if layer=='mish':            return nn.Mish(), torch.randn(1,16)
+    if layer=='hardtanh':        return nn.Hardtanh(), torch.randn(1,16)
+    if layer=='relu6':           return nn.ReLU6(), torch.randn(1,16)
+    if layer=='selu':            return nn.SELU(), torch.randn(1,16)
+    if layer=='celu':            return nn.CELU(), torch.randn(1,16)
+    if layer=='softsign':        return nn.Softsign(), torch.randn(1,16)
+    if layer=='tanhshrink':      return nn.Tanhshrink(), torch.randn(1,16)
+    if layer=='softshrink':      return nn.Softshrink(), torch.randn(1,16)
+    if layer=='hardshrink':      return nn.Hardshrink(), torch.randn(1,16)
+    if layer=='logsigmoid':      return nn.LogSigmoid(), torch.randn(1,16)
+    if layer=='logsoftmax':      return nn.LogSoftmax(-1), torch.randn(1,16)
+    if layer=='prelu':           return nn.PReLU(num_parameters=1), torch.randn(1,16)
+    if layer=='glu':             return nn.GLU(dim=-1), torch.randn(1,16)
+    if layer=='threshold':       return nn.Threshold(0.5,0.0), torch.randn(1,16)
+    # other functional ops
+    if layer=='normalize':       return Fn(lambda t: F.normalize(t,dim=-1)), torch.randn(1,16)
+    if layer=='instancenorm':    return nn.InstanceNorm2d(4,affine=True).eval(), x4
+    if layer=='lrn':             return nn.LocalResponseNorm(3), x4
+    if layer=='pad':             return Fn(lambda t: F.pad(t,(1,1,1,1))), x4
+    if layer=='pad_reflect':     return Fn(lambda t: F.pad(t,(1,1,1,1),mode='reflect')), x4
+    if layer=='sdpa':            return SDPA(32,4), torch.randn(1,16,32)
+    if layer=='unfold':          return nn.Unfold(kernel_size=2,stride=2), x4
+    if layer=='interpolate':     return Fn(lambda t: F.interpolate(t,scale_factor=2,mode='bilinear',align_corners=False)), torch.randn(1,4,4,4)
     raise SystemExit("unknown layer "+layer)
 
 if __name__=='__main__':

@@ -168,6 +168,82 @@ void hwacha::expandFloorf(Function &F) {
   }
 }
 
+// logf(x) as straight-line vector arithmetic (Cephes single-precision logf): frexp x = m * 2^e with
+// m in [sqrt(1/2), sqrt(2)), then a degree-8 polynomial in (m-1). No calls, so it needs no follow-up pass.
+static bool isLogfCall(const CallInst *CI) {
+  const Function *Callee = CI->getCalledFunction();
+  if (!Callee || CI->arg_size() != 1 || !CI->getType()->isFloatTy() || !CI->getArgOperand(0)->getType()->isFloatTy()) return false;
+  StringRef N = Callee->getName();
+  return N == "logf" || N == "llvm.log.f32" || N == "_Z4logf" || N == "__nv_logf";
+}
+void hwacha::expandLogf(Function &F) {
+  SmallVector<CallInst *, 8> Calls;
+  for (Instruction &I : instructions(F)) if (auto *CI = dyn_cast<CallInst>(&I)) if (isLogfCall(CI)) Calls.push_back(CI);
+  for (CallInst *CI : Calls) {
+    IRBuilder<> B(CI);
+    Type *FT = B.getFloatTy(), *IT = B.getInt32Ty();
+    auto C = [&](double v) { return ConstantFP::get(FT, v); };
+    Value *X = CI->getArgOperand(0);
+    Value *IX = B.CreateBitCast(X, IT);
+    // frexp: e = ((ix >> 23) & 0xff) - 126; m = (ix & 0x807fffff) | 0x3f000000  -> m in [0.5, 1)
+    Value *E = B.CreateSub(B.CreateAnd(B.CreateAShr(IX, 23), B.getInt32(0xff)), B.getInt32(126));
+    Value *M = B.CreateBitCast(B.CreateOr(B.CreateAnd(IX, B.getInt32(0x807fffff)), B.getInt32(0x3f000000)), FT);
+    Value *EF = B.CreateSIToFP(E, FT);
+    // if m < SQRTHF (0.70710678): e -= 1; m = m + m - 1; else m -= 1
+    Value *Lt = B.CreateFCmpOLT(M, C(0.70710678118654752440));
+    EF = B.CreateSelect(Lt, B.CreateFSub(EF, C(1.0)), EF);
+    Value *M2 = B.CreateSelect(Lt, B.CreateFSub(B.CreateFAdd(M, M), C(1.0)), B.CreateFSub(M, C(1.0)));
+    Value *Z = B.CreateFMul(M2, M2);
+    Value *Y = C(7.0376836292E-2);
+    for (double c : {-1.1514610310E-1, 1.1676998740E-1, -1.2420140846E-1, 1.4249322787E-1,
+                     -1.6668057665E-1, 2.0000714765E-1, -2.4999993993E-1, 3.3333331174E-1})
+      Y = B.CreateFAdd(B.CreateFMul(Y, M2), C(c));
+    Y = B.CreateFMul(B.CreateFMul(Y, M2), Z);
+    Y = B.CreateFAdd(Y, B.CreateFMul(EF, C(-2.12194440E-4)));
+    Y = B.CreateFSub(Y, B.CreateFMul(Z, C(0.5)));
+    Value *R = B.CreateFAdd(M2, Y);
+    R = B.CreateFAdd(R, B.CreateFMul(EF, C(0.693359375)));
+    CI->replaceAllUsesWith(R); CI->eraseFromParent();
+  }
+}
+
+// log1pf/expm1f/powf via the exp and log primitives above (adequate for the tolerances here); each emits
+// an llvm.log.f32 / llvm.exp.f32, so run these before expandLogf / expandExpf.
+static bool isNamed(const CallInst *CI, std::initializer_list<StringRef> names) {
+  const Function *Callee = CI->getCalledFunction();
+  if (!Callee) return false;
+  StringRef N = Callee->getName();
+  for (StringRef n : names) if (N == n) return true;
+  return false;
+}
+void hwacha::expandLogExpM1Pow(Function &F) {
+  SmallVector<CallInst *, 8> log1p, expm1, pow;
+  for (Instruction &I : instructions(F)) if (auto *CI = dyn_cast<CallInst>(&I)) {
+    if (CI->getType()->isFloatTy()) {
+      if (CI->arg_size() == 1 && isNamed(CI, {"log1pf", "llvm.log1p.f32", "__nv_log1pf"})) log1p.push_back(CI);
+      else if (CI->arg_size() == 1 && isNamed(CI, {"expm1f", "llvm.expm1.f32", "__nv_expm1f"})) expm1.push_back(CI);
+      else if (CI->arg_size() == 2 && isNamed(CI, {"powf", "llvm.pow.f32", "__nv_powf"})) pow.push_back(CI);
+    }
+  }
+  auto FT = Type::getFloatTy(F.getContext());
+  for (CallInst *CI : log1p) {   // log1p(x) = log(1 + x)
+    IRBuilder<> B(CI);
+    Value *R = B.CreateIntrinsic(Intrinsic::log, {FT}, {B.CreateFAdd(CI->getArgOperand(0), ConstantFP::get(FT, 1.0))});
+    CI->replaceAllUsesWith(R); CI->eraseFromParent();
+  }
+  for (CallInst *CI : expm1) {   // expm1(x) = exp(x) - 1
+    IRBuilder<> B(CI);
+    Value *R = B.CreateFSub(B.CreateIntrinsic(Intrinsic::exp, {FT}, {CI->getArgOperand(0)}), ConstantFP::get(FT, 1.0));
+    CI->replaceAllUsesWith(R); CI->eraseFromParent();
+  }
+  for (CallInst *CI : pow) {      // pow(x, y) = exp(y * log(x))  (bases are positive here)
+    IRBuilder<> B(CI);
+    Value *L = B.CreateIntrinsic(Intrinsic::log, {FT}, {CI->getArgOperand(0)});
+    Value *R = B.CreateIntrinsic(Intrinsic::exp, {FT}, {B.CreateFMul(CI->getArgOperand(1), L)});
+    CI->replaceAllUsesWith(R); CI->eraseFromParent();
+  }
+}
+
 // erff(x) via Abramowitz-Stegun 7.1.26 (|err| < 1.5e-7): erf(x) = sign(x) * (1 - p(t)*exp(-x^2)),
 // t = 1/(1 + 0.3275911*|x|). Emits an llvm.exp.f32 that expandExpf then inlines, so run this first.
 static bool isErffCall(const CallInst *CI) {

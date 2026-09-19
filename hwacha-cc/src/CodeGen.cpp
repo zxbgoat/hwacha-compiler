@@ -1149,8 +1149,10 @@ bool WTGen::emitInst(Instruction &I, unsigned Pos) {
     RC C = classOf(&I);
     ArmPred.clear();
     // An instruction whose only use is a select in the same block can be computed under the
-    // select's condition straight into the select's register (saves a register and a move).
-    if (I.hasOneUse() && !I.getType()->isIntegerTy(1)) {
+    // select's condition straight into the select's register (saves a register and a move). Loads are
+    // excluded: they emit under the block predicate, not ArmPred, so two loaded arms would both write
+    // the select register unmasked and the second would clobber the first.
+    if (I.hasOneUse() && !I.getType()->isIntegerTy(1) && !isa<LoadInst>(&I)) {
       if (auto *Sel = dyn_cast<SelectInst>(I.user_back())) {
         Value *Cond = Sel->getCondition();
         auto *CI = dyn_cast<Instruction>(Cond);
@@ -1189,27 +1191,49 @@ bool WTGen::emitInst(Instruction &I, unsigned Pos) {
   if (auto *L = dyn_cast<LoadInst>(&I)) {
     AddrKind K = KindOf.lookup(L);
     bool IsFloat; std::string Suf = memSuffix(L->getType(), IsFloat);
+    // an i1 load lands in a predicate register, but vlb into a vp register is illegal: load the byte into
+    // a vector register and reduce it to the predicate (byte != 0).
+    bool isPred = L->getType()->isIntegerTy(1);
+    Reg pTmp{RC::VW, 0};
+    std::string LD = dest(I);
+    if (isPred) { pTmp = alloc(RC::VW); LD = pTmp.str(); Suf = "b"; }
     // a narrow integer load whose users are all zero-extensions is a zero-extending load
-    if (L->getType()->isIntegerTy() && L->getType()->getIntegerBitWidth() < 64 && !L->use_empty() &&
+    else if (L->getType()->isIntegerTy() && L->getType()->getIntegerBitWidth() < 64 && !L->use_empty() &&
         all_of(L->users(), [](const User *U) { return isa<ZExtInst>(U); })) { Suf += "u"; UnsignedLoads.insert(L); }
+    auto finish = [&]() {
+      if (isPred) {
+        std::string D = dest(I);   // one call: dest(I) allocates a fresh predicate each time it is invoked
+        emit("", "vcmpeq", {D, LD, "vs0"});
+        emit("", "vpop", {D, D, D, D, "0x55"});   // not: predicate = (byte != 0)
+        VWUsed[pTmp.Idx] = false;
+      }
+      return true;
+    };
     if (K == AddrKind::Stream) {
       Stream &St = Streams[StreamOfInst[L]];
-      if (St.Unit) emit(VP, "vl" + Suf, {dest(I), "va" + std::to_string(St.VA)});
-      else emit(VP, "vlst" + Suf, {dest(I), "va" + std::to_string(St.VA), "va" + std::to_string(St.StrideVA)});
-      return true;
+      if (St.Unit) emit(VP, "vl" + Suf, {LD, "va" + std::to_string(St.VA)});
+      else emit(VP, "vlst" + Suf, {LD, "va" + std::to_string(St.VA), "va" + std::to_string(St.StrideVA)});
+      return finish();
     }
-    if (K == AddrKind::Gather) { std::string Idx = R(GatherIndex[L]), Base = R(GatherBase[L]); emit(VP, "vlx" + Suf, {dest(I), Base, Idx}); return true; }
+    if (K == AddrKind::Gather) { std::string Idx = R(GatherIndex[L]), Base = R(GatherBase[L]); emit(VP, "vlx" + Suf, {LD, Base, Idx}); return finish(); }
     // uniform: scalar load from a vs address (or an indexed load off a zero base if the address
     // ended up in a vector register)
     std::string P = R(L->getPointerOperand());
-    if (isVec(classOf(L->getPointerOperand()))) { std::string D = dest(I); emit(PV(D), "vlx" + Suf, {D, "vs0", P}); return true; }
-    emit("", "vls" + Suf, {dest(I), P}); return true;
+    if (isVec(classOf(L->getPointerOperand()))) { emit(PV(LD), "vlx" + Suf, {LD, "vs0", P}); return finish(); }
+    emit("", "vls" + Suf, {LD, P}); return finish();
   }
   if (auto *S = dyn_cast<StoreInst>(&I)) {
     AddrKind K = KindOf.lookup(S);
     Value *V = S->getValueOperand();
     bool IsFloat; std::string Suf = memSuffix(V->getType(), IsFloat);
     std::string Val = R(V);
+    if (V->getType()->isIntegerTy(1)) {   // storing a predicate (e.g. a bufferized i1 comparison mask):
+      Reg Tmp = alloc(RC::VW);            // materialize it as 0/1 bytes first -- vsb of a vp register is illegal
+      Value *One = ConstantInt::get(Type::getInt64Ty(F.getContext()), 1);
+      emit("", "vaddw", {Tmp.str(), "vs0", "vs0"});
+      emit(R(V), "vaddw", {Tmp.str(), "vs0", R(One)});
+      Val = Tmp.str(); VWUsed[Tmp.Idx] = false;
+    }
     if (K == AddrKind::Stream) {
       Reg Bc{RC::VS, 0}; bool DidBc = false;
       if (classOf(V) == RC::VS) {          // vector store needs a vector source: broadcast

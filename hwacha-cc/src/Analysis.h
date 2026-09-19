@@ -32,6 +32,11 @@ void expandErff(llvm::Function &F);
 void expandTanhf(llvm::Function &F);
 // Inline floorf as trunc-toward-zero with a step-down for negatives (vector arithmetic).
 void expandFloorf(llvm::Function &F);
+// Inline logf (logf / llvm.log.f32 / _Z4logf) as vector arithmetic (Cephes single-precision logf).
+void expandLogf(llvm::Function &F);
+// Inline log1pf / expm1f / powf via the log and exp primitives; emits llvm.log.f32 / llvm.exp.f32, so
+// run before expandLogf / expandExpf.
+void expandLogExpM1Pow(llvm::Function &F);
 // Inline expf calls (expf / llvm.exp.f32 / _Z3expf) as vector arithmetic; run before analysis.
 void expandExpf(llvm::Function &F);
 // Contract fmul+fadd/fsub into fmuladd (-ffp-contract=fast); changes rounding.

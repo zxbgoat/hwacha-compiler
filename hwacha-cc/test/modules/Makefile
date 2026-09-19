@@ -15,7 +15,9 @@ SPIKE   := spike --isa=rv64gc --extension=hwacha
 HWMLIRFLAGS ?= --collapse-all
 LAYERS := linear conv3x3 conv1x1 conv_s2 conv5x5 convtranspose2 dwconv3x3 maxpool2 avgpool2 \
           adaptiveavgpool batchnorm2d layernorm groupnorm relu leakyrelu gelu silu sigmoid tanh hardswish \
-          hardsigmoid elu softmax flatten upsample upsample_bilinear pixelshuffle attention mlp
+          hardsigmoid elu softmax flatten upsample upsample_bilinear pixelshuffle attention mlp \
+          softplus mish hardtanh relu6 selu celu softsign tanhshrink softshrink hardshrink logsigmoid \
+          logsoftmax prelu glu threshold normalize instancenorm lrn pad sdpa unfold interpolate
 BUFFERIZE := builtin.module(one-shot-bufferize{bufferize-function-boundaries=1 function-boundary-type-conversion=identity-layout-map},canonicalize,cse,ownership-based-buffer-deallocation,canonicalize,buffer-deallocation-simplification,bufferization-lower-deallocations,cse,canonicalize,convert-bufferization-to-memref)
 
 # the conv/pool/norm library kernels live with the torchvision tests; reuse that prebuilt assembly
