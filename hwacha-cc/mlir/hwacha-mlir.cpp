@@ -321,6 +321,7 @@ static bool lowerConvs(ModuleOp m) {
   for (linalg::GenericOp g : reds) {
     auto xT = dyn_cast<MemRefType>(g.getInputs()[0].getType()), yT = dyn_cast<MemRefType>(g.getOutputs()[0].getType());
     if (!xT || !yT || !xT.hasStaticShape() || !xT.getLayout().isIdentity() || !yT.getLayout().isIdentity()) continue;
+    if (!xT.getElementType().isF32()) continue;   // the chansum kernel is f32-only; f64 reductions (e.g. GroupNorm's mean/var) go through the generic path
     auto xs = xT.getShape();
     if (xs[0] != 1) continue;
     int64_t C = xs[1], HW = xs[2] * xs[3];

@@ -14,7 +14,7 @@ SPIKE   := spike --isa=rv64gc --extension=hwacha
 # the pad/copy/reduction loops that the default lane-innermost mapping would unroll and overflow vs on.
 HWMLIRFLAGS ?= --collapse-all
 LAYERS := linear conv3x3 conv1x1 conv_s2 conv5x5 convtranspose2 dwconv3x3 maxpool2 avgpool2 \
-          adaptiveavgpool batchnorm2d layernorm relu leakyrelu gelu silu sigmoid tanh hardswish \
+          adaptiveavgpool batchnorm2d layernorm groupnorm relu leakyrelu gelu silu sigmoid tanh hardswish \
           hardsigmoid elu softmax flatten upsample upsample_bilinear pixelshuffle attention mlp
 BUFFERIZE := builtin.module(one-shot-bufferize{bufferize-function-boundaries=1 function-boundary-type-conversion=identity-layout-map},canonicalize,cse,ownership-based-buffer-deallocation,canonicalize,buffer-deallocation-simplification,bufferization-lower-deallocations,cse,canonicalize,convert-bufferization-to-memref)
 
