@@ -18,7 +18,7 @@ LAYERS := linear conv3x3 conv1x1 conv_s2 conv5x5 convtranspose2 dwconv3x3 maxpoo
           hardsigmoid elu softmax flatten upsample upsample_bilinear pixelshuffle attention mlp \
           softplus mish hardtanh relu6 selu celu softsign tanhshrink softshrink hardshrink logsigmoid \
           logsoftmax prelu glu threshold normalize instancenorm lrn pad sdpa unfold interpolate \
-          conv1d convtranspose1d convtranspose3d maxpool1d maxpool3d avgpool1d avgpool3d \
+          conv3d conv1d convtranspose1d convtranspose3d maxpool1d maxpool3d avgpool1d avgpool3d \
           adaptiveavgpool1d adaptiveavgpool3d adaptivemaxpool1d adaptivemaxpool2d lppool2d \
           zeropad2d constantpad2d replicationpad2d circularpad2d zeropad1d batchnorm1d batchnorm3d \
           instancenorm1d rmsnorm rrelu softmin softmax2d identity dropout dropout2d alphadropout \

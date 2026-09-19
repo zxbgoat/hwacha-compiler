@@ -220,3 +220,46 @@ __kernel void patchembed_1(__global const float *x, __global const float *w, __g
   }
   y[oc * plane + p] += a;
 }
+
+// general KxKxK dense 3D convolution, stride 1, on a zero-padded input volume [C][Dp][Hp][Wp]
+// (plane = Dp*Hp*Wp, HpWp = Hp*Wp). lane = padded output position; control loops over input channels and
+// the K^3 taps. 4 output channels per pass (27 taps use more scalars than the 2D case). Writes every
+// padded position; unpad3d extracts the interior. Zero bias -> unpad3d accumulates onto the pre-init.
+__kernel void convKxKxK(__global const float *x, __global const float *w, __global const float *b, __global float *y,
+                        int n_in, int plane, int HpWp, int Wp, int K, int pad, int oc0) {
+  int p = get_global_id(0);
+  int KKK = K * K * K, KK = K * K, ws = n_in * KKK;
+  float a0 = b[oc0], a1 = b[oc0 + 1], a2 = b[oc0 + 2], a3 = b[oc0 + 3];
+  for (int ic = 0; ic < n_in; ic++) {
+    __global const float *xs = x + ic * plane + p;
+    __global const float *k = w + (oc0 * n_in + ic) * KKK;
+    for (int t = 0; t < KKK; t++) {
+      int td = t / KK, r = t - td * KK, th = r / K, tw = r - th * K;
+      float v = xs[(td - pad) * HpWp + (th - pad) * Wp + (tw - pad)];
+      a0 += k[t] * v; a1 += k[ws + t] * v; a2 += k[2 * ws + t] * v; a3 += k[3 * ws + t] * v;
+    }
+  }
+  y[(oc0 + 0) * plane + p] = a0; y[(oc0 + 1) * plane + p] = a1; y[(oc0 + 2) * plane + p] = a2; y[(oc0 + 3) * plane + p] = a3;
+}
+__kernel void convKxKxK_1(__global const float *x, __global const float *w, __global const float *b, __global float *y,
+                          int n_in, int plane, int HpWp, int Wp, int K, int pad, int oc) {
+  int p = get_global_id(0);
+  int KKK = K * K * K, KK = K * K;
+  float a = b[oc];
+  for (int ic = 0; ic < n_in; ic++) {
+    __global const float *xs = x + ic * plane + p;
+    __global const float *k = w + (oc * n_in + ic) * KKK;
+    for (int t = 0; t < KKK; t++) {
+      int td = t / KK, r = t - td * KK, th = r / K, tw = r - th * K;
+      a += k[t] * xs[(td - pad) * HpWp + (th - pad) * Wp + (tw - pad)];
+    }
+  }
+  y[oc * plane + p] = a;
+}
+// dense y[c][d][h][w] += padded x[c][(d+pad)*HpWp + (h+pad)*Wp + w+pad]; lane = dense index
+__kernel void unpad3d(__global const float *x, __global float *y, int plane, int HpWp, int Wp, int D, int H, int W, int pad) {
+  int p = get_global_id(0);
+  int HW = H * W, DHW = D * HW;
+  int c = p / DHW, q = p - c * DHW, di = q / HW, r = q - di * HW, hi = r / W, wi = r - hi * W;
+  y[p] += x[c * plane + (di + pad) * HpWp + (hi + pad) * Wp + wi + pad];
+}

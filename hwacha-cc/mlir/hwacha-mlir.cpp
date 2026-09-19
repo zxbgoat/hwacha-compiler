@@ -244,6 +244,40 @@ static bool lowerConvs(ModuleOp m) {
   LLVM::LLVMFuncOp dwkk = declareFn(m, "dwconvKxK_ct", intsDW);
   Type intsDW2[] = {i64, ptrTy, ptrTy, ptrTy, ptrTy, i32, i32, i32, i32, i32, i32, i32};   // ..., C, plane, Wp, plane2, Wp2, K, pad
   LLVM::LLVMFuncOp dwkk2 = declareFn(m, "dwconvKxK_s2_ct", intsDW2);
+  Type intsC3[] = {i64, ptrTy, ptrTy, ptrTy, ptrTy, i32, i32, i32, i32, i32, i32, i32};   // ..., n_in, plane, HpWp, Wp, K, pad, oc
+  LLVM::LLVMFuncOp c3 = declareFn(m, "convKxKxK_ct", intsC3), c31 = declareFn(m, "convKxKxK_1_ct", intsC3);
+  Type intsU3[] = {i64, ptrTy, ptrTy, i32, i32, i32, i32, i32, i32, i32};   // ..., plane, HpWp, Wp, D, H, W, pad
+  LLVM::LLVMFuncOp unpad3d = declareFn(m, "unpad3d_ct", intsU3);
+  // linalg.conv_3d_ncdhw_fcdhw (N=1, odd KxKxK, stride 1, pre-padded input) -> convKxKxK into a scratch + unpad3d
+  SmallVector<linalg::Conv3DNcdhwFcdhwOp> conv3s;
+  m.walk([&](linalg::Conv3DNcdhwFcdhwOp c) { conv3s.push_back(c); });
+  for (linalg::Conv3DNcdhwFcdhwOp conv : conv3s) {
+    auto xT = dyn_cast<MemRefType>(conv.getInputs()[0].getType()), wT = dyn_cast<MemRefType>(conv.getInputs()[1].getType()), yT = dyn_cast<MemRefType>(conv.getOutputs()[0].getType());
+    if (!xT || !wT || !yT || !xT.hasStaticShape() || !wT.hasStaticShape() || !yT.hasStaticShape()) continue;
+    if (!xT.getLayout().isIdentity() || !wT.getLayout().isIdentity() || !yT.getLayout().isIdentity()) continue;
+    auto xs = xT.getShape(), ws = wT.getShape(), ys = yT.getShape();
+    if (xs[0] != 1 || ys[0] != 1 || ws[1] != xs[1]) continue;
+    int64_t C = xs[1], Di = xs[2], Hi = xs[3], Wi = xs[4], O = ws[0], kd = ws[2], kh = ws[3], kw = ws[4], Do = ys[2], Ho = ys[3], Wo = ys[4];
+    auto sv = conv.getStrides().getValues<int64_t>(), dv = conv.getDilations().getValues<int64_t>();
+    if (sv[0] != 1 || sv[1] != 1 || sv[2] != 1 || dv[0] != 1 || dv[1] != 1 || dv[2] != 1) continue;
+    if (!(kd == kh && kh == kw && kh % 2 == 1 && Di == Do + kd - 1 && Hi == Ho + kh - 1 && Wi == Wo + kw - 1)) continue;
+    int64_t K = kh, pad = (K - 1) / 2, plane = Di * Hi * Wi, HpWp = Hi * Wi, Wp = Wi, guard = 2 * HpWp + 8;
+    Location loc = conv.getLoc(); OpBuilder b(conv);
+    auto ptrOf = [&](Value mem) -> Value { Value idx = memref::ExtractAlignedPointerAsIndexOp::create(b, loc, b.getIndexType(), mem); Value ii = arith::IndexCastOp::create(b, loc, i64, idx); return LLVM::IntToPtrOp::create(b, loc, ptrTy, ii); };
+    auto i32c = [&](int64_t v) { return LLVM::ConstantOp::create(b, loc, i32, b.getI32IntegerAttr(v)); };
+    auto i64c = [&](int64_t v) { return LLVM::ConstantOp::create(b, loc, i64, b.getI64IntegerAttr(v)); };
+    Value xp = ptrOf(conv.getInputs()[0]), wp = ptrOf(conv.getInputs()[1]), yp = ptrOf(conv.getOutputs()[0]);
+    Value zeros = memref::AllocOp::create(b, loc, MemRefType::get({std::max<int64_t>(O, 8)}, f32));
+    linalg::FillOp::create(b, loc, ValueRange{arith::ConstantOp::create(b, loc, b.getF32FloatAttr(0.0f))}, ValueRange{zeros});
+    Value zp = ptrOf(zeros);
+    Value scratch = memref::AllocOp::create(b, loc, MemRefType::get({O * plane + 2 * guard}, f32));
+    Value sp = LLVM::GEPOp::create(b, loc, ptrTy, f32, ptrOf(scratch), ArrayRef<LLVM::GEPArg>{(int32_t)guard});
+    int64_t oc = 0;
+    for (; oc + 4 <= O; oc += 4) LLVM::CallOp::create(b, loc, c3, ValueRange{i64c(plane), xp, wp, zp, sp, i32c(C), i32c(plane), i32c(HpWp), i32c(Wp), i32c(K), i32c(pad), i32c(oc)});
+    for (; oc < O; oc++) LLVM::CallOp::create(b, loc, c31, ValueRange{i64c(plane), xp, wp, zp, sp, i32c(C), i32c(plane), i32c(HpWp), i32c(Wp), i32c(K), i32c(pad), i32c(oc)});
+    LLVM::CallOp::create(b, loc, unpad3d, ValueRange{i64c(O * Do * Ho * Wo), sp, yp, i32c(plane), i32c(HpWp), i32c(Wp), i32c(Do), i32c(Ho), i32c(Wo), i32c(pad)});
+    conv.erase();
+  }
   Type intsPE[] = {i64, ptrTy, ptrTy, ptrTy, ptrTy, i32, i32, i32, i32, i32, i32, i32};   // ..., C, xplane, Wi, P, gw, plane, oc
   LLVM::LLVMFuncOp pe = declareFn(m, "patchembed_ct", intsPE), pe1 = declareFn(m, "patchembed_1_ct", intsPE);
   // linalg.depthwise_conv_2d_nchw_chw (N=1) -> dwconvKxK / dwconvKxK_s2 into a padded scratch + unpad
