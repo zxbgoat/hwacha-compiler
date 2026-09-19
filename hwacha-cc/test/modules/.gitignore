@@ -1,0 +1,8 @@
+*.mlir
+*_check.bin
+*.ll
+*.s
+*.riscv
+*_weights.bin
+*_weights.bin.S
+__pycache__/

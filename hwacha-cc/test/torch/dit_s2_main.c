@@ -19,7 +19,7 @@ uintptr_t handle_trap(uintptr_t c,uintptr_t e,uintptr_t r[32]){uintptr_t t;asm v
 #define ARENA (290L<<20)
 static char arena[ARENA] __attribute__((aligned(64)));
 typedef struct blk { long size; int free; struct blk *next; } blk;
-static blk *head; static long hwm;
+static blk *head; static long hwm, live, livemax;
 static void heap_init(void){ head=(blk*)arena; head->size=ARENA-sizeof(blk); head->free=1; head->next=0; }
 void *malloc(size_t n){
   if(!head) heap_init();
@@ -32,15 +32,16 @@ void *malloc(size_t n){
         b->size=n; b->next=nb;
       }
       b->free=0;
+      live+=b->size; if(live>livemax) livemax=live;
       char *p=(char*)b+sizeof(blk); if(p+n-arena>hwm) hwm=p+n-arena;
       return p;
     }
   }
-  printf("arena of (need %ld, hwm %ld KB)\n",(long)n,hwm/1024); exit(1);
+  printf("arena of (need %ld, hwm %ld KB, live-peak %ld KB)\n",(long)n,hwm/1024,livemax/1024); exit(1);
 }
 void free(void*p){
   if(!p) return;
-  blk *b=(blk*)((char*)p-sizeof(blk)); b->free=1;
+  blk *b=(blk*)((char*)p-sizeof(blk)); b->free=1; live-=b->size;
   for(blk *c=head;c;c=c->next)                                   // coalesce forward runs
     while(c->free && c->next && c->next->free){ c->size+=sizeof(blk)+c->next->size; c->next=c->next->next; }
 }

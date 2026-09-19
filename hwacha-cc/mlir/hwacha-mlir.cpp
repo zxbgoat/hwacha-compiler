@@ -226,7 +226,8 @@ static bool lowerConvs(ModuleOp m) {
   MLIRContext *ctx = m.getContext();
   SmallVector<linalg::Conv2DNchwFchwOp> convs;
   m.walk([&](linalg::Conv2DNchwFchwOp c) { convs.push_back(c); });
-  if (convs.empty()) return true;
+  // note: do not return early when there are no dense convs -- the depthwise / max-pool / spatial-sum
+  // matchers below must still run for modules whose only op is a pooling or depthwise layer.
   Type i64 = IntegerType::get(ctx, 64), i32 = IntegerType::get(ctx, 32), f32 = Float32Type::get(ctx);
   Type ptrTy = LLVM::LLVMPointerType::get(ctx);
   Type intsKK[] = {i64, ptrTy, ptrTy, ptrTy, ptrTy, i32, i32, i32, i32, i32, i32};   // ..., n_in, plane, Wp, K, pad, oc

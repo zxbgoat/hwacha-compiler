@@ -28,6 +28,10 @@ bool isKernel(const llvm::Function &F);
 // Inline erff calls (erff / llvm.erf.f32 / _Z3erff) as vector arithmetic (A-S 7.1.26); emits an
 // llvm.exp.f32, so run before expandExpf.
 void expandErff(llvm::Function &F);
+// Inline tanhf as 1 - 2/(exp(2x)+1); emits an llvm.exp.f32, so run before expandExpf.
+void expandTanhf(llvm::Function &F);
+// Inline floorf as trunc-toward-zero with a step-down for negatives (vector arithmetic).
+void expandFloorf(llvm::Function &F);
 // Inline expf calls (expf / llvm.exp.f32 / _Z3expf) as vector arithmetic; run before analysis.
 void expandExpf(llvm::Function &F);
 // Contract fmul+fadd/fsub into fmuladd (-ffp-contract=fast); changes rounding.

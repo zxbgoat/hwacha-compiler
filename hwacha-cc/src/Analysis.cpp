@@ -124,6 +124,50 @@ static bool isExpfCall(const CallInst *CI) {
   StringRef N = Callee->getName();
   return N == "expf" || N == "llvm.exp.f32" || N == "_Z3expf" || N == "__nv_expf";
 }
+// tanhf(x) = 1 - 2/(exp(2x) + 1). Emits an llvm.exp.f32 (which clamps its argument), so run before
+// expandExpf. Saturates correctly: 2x above ~88 -> exp huge -> ~1; below ~-87 -> exp ~0 -> -1.
+static bool isTanhfCall(const CallInst *CI) {
+  const Function *Callee = CI->getCalledFunction();
+  if (!Callee || CI->arg_size() != 1 || !CI->getType()->isFloatTy() || !CI->getArgOperand(0)->getType()->isFloatTy()) return false;
+  StringRef N = Callee->getName();
+  return N == "tanhf" || N == "llvm.tanh.f32" || N == "_Z4tanhf" || N == "__nv_tanhf";
+}
+void hwacha::expandTanhf(Function &F) {
+  SmallVector<CallInst *, 8> Calls;
+  for (Instruction &I : instructions(F)) if (auto *CI = dyn_cast<CallInst>(&I)) if (isTanhfCall(CI)) Calls.push_back(CI);
+  for (CallInst *CI : Calls) {
+    IRBuilder<> B(CI);
+    Type *FT = B.getFloatTy();
+    auto C = [&](double v) { return ConstantFP::get(FT, v); };
+    Value *X = CI->getArgOperand(0);
+    Value *E = B.CreateIntrinsic(Intrinsic::exp, {FT}, {B.CreateFMul(X, C(2.0))});
+    Value *R = B.CreateFSub(C(1.0), B.CreateFDiv(C(2.0), B.CreateFAdd(E, C(1.0))));
+    CI->replaceAllUsesWith(R); CI->eraseFromParent();
+  }
+}
+
+// floorf(x) for the value range models actually use (upsample index math): trunc toward zero, then step
+// down by one where truncation rounded up (negatives with a fraction). Pure vector arithmetic.
+static bool isFloorfCall(const CallInst *CI) {
+  const Function *Callee = CI->getCalledFunction();
+  if (!Callee || CI->arg_size() != 1 || !CI->getType()->isFloatTy() || !CI->getArgOperand(0)->getType()->isFloatTy()) return false;
+  StringRef N = Callee->getName();
+  return N == "floorf" || N == "llvm.floor.f32" || N == "_Z5floorf" || N == "__nv_floorf";
+}
+void hwacha::expandFloorf(Function &F) {
+  SmallVector<CallInst *, 8> Calls;
+  for (Instruction &I : instructions(F)) if (auto *CI = dyn_cast<CallInst>(&I)) if (isFloorfCall(CI)) Calls.push_back(CI);
+  for (CallInst *CI : Calls) {
+    IRBuilder<> B(CI);
+    Type *FT = B.getFloatTy(), *IT = B.getInt32Ty();
+    auto C = [&](double v) { return ConstantFP::get(FT, v); };
+    Value *X = CI->getArgOperand(0);
+    Value *T = B.CreateSIToFP(B.CreateFPToSI(X, IT), FT);          // trunc toward zero
+    Value *R = B.CreateSelect(B.CreateFCmpOGT(T, X), B.CreateFSub(T, C(1.0)), T);
+    CI->replaceAllUsesWith(R); CI->eraseFromParent();
+  }
+}
+
 // erff(x) via Abramowitz-Stegun 7.1.26 (|err| < 1.5e-7): erf(x) = sign(x) * (1 - p(t)*exp(-x^2)),
 // t = 1/(1 + 0.3275911*|x|). Emits an llvm.exp.f32 that expandExpf then inlines, so run this first.
 static bool isErffCall(const CallInst *CI) {
