@@ -1570,8 +1570,13 @@ static Value *cloneUniform(Value *V, ValueToValueMapTy &VMap, IRBuilder<> &B, ra
     GlobalVariable *C = CT.getGlobalVariable(GV->getName(), true);
     if (!C) {
       bool Data = GV->hasInitializer() && !isa<UndefValue>(GV->getInitializer());
-      C = new GlobalVariable(CT, GV->getValueType(), Data && GV->isConstant(), GV->isDeclaration() ? GlobalValue::WeakAnyLinkage : GlobalValue::InternalLinkage,
-                             Data ? GV->getInitializer() : Constant::getNullValue(GV->getValueType()), GV->getName());
+      if (GV->isDeclaration() && GV->isConstant()) {
+        // a weight stripped to the .incbin blob (external constant): keep it an external declaration so
+        // it resolves against that blob at link time, rather than reserving a zero copy in .bss here.
+        C = new GlobalVariable(CT, GV->getValueType(), true, GlobalValue::ExternalLinkage, nullptr, GV->getName());
+      } else
+        C = new GlobalVariable(CT, GV->getValueType(), Data && GV->isConstant(), GV->isDeclaration() ? GlobalValue::WeakAnyLinkage : GlobalValue::InternalLinkage,
+                               Data ? GV->getInitializer() : Constant::getNullValue(GV->getValueType()), GV->getName());
       C->setAlignment(GV->getAlign().value_or(Align(8)));
     }
     VMap[V] = C; return C;
