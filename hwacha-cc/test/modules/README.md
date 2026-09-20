@@ -19,16 +19,17 @@ Covers the `torch.nn` catalogue from docs.pytorch.org/docs/2.14/nn.html plus the
 
 | group | layers |
 |---|---|
-| linear / shape | linear, bilinear-free mlp, identity, flatten, unflatten |
+| linear / shape | linear, bilinear, mlp, identity, flatten, unflatten |
+| padding | pad (constant), zeropad1d/2d/3d, constantpad1d/2d/3d, reflectionpad1d/2d/3d, replicationpad1d/2d/3d, circularpad1d/2d/3d |
+| dropout (eval) | dropout, dropout1d/2d/3d, alphadropout, featurealphadropout |
+| recurrent | rnn, lstm, gru, rnncell, lstmcell, grucell |
+| distance / sparse | cosinesimilarity, pairwisedistance, embedding |
 | convolution | conv1d, conv3x3, conv1x1, conv5x5, conv3d, conv_s2 (stride 2), dwconv3x3 (depthwise), groupconv / groupconv_s2 (grouped), convtranspose1d/2d/3d |
 | pooling | maxpool1d/2d/3d, avgpool1d/2d/3d, lppool1d/2d/3d, adaptiveavgpool1d/2d/3d, adaptivemaxpool1d/2d |
-| padding | pad (constant), zeropad1d/2d, constantpad2d, replicationpad2d, circularpad2d, reflectionpad2d |
 | normalization | batchnorm1d/2d/3d, lazybatchnorm2d, layernorm, groupnorm, instancenorm1d/2d/3d, rmsnorm, lrn, normalize (L2) |
 | activation | relu, relu6, rrelu, leakyrelu, prelu, elu, celu, selu, gelu, silu, sigmoid, tanh, softsign, softplus, mish, hardswish, hardsigmoid, hardtanh, tanhshrink, softshrink, hardshrink, threshold, logsigmoid |
 | softmax family | softmax, softmin, softmax2d, logsoftmax, glu |
-| dropout (eval) | dropout, dropout2d, alphadropout |
 | vision / shuffle | upsample (nearest), upsample_bilinear, interpolate, upsamplingnearest2d, upsamplingbilinear2d, pixelshuffle, pixelunshuffle, channelshuffle, unfold |
-| recurrent | rnn, lstm, gru, rnncell |
 | attention / transformer | attention (manual), multiheadattention (nn.MultiheadAttention), sdpa (fused F.scaled_dot_product_attention), transformerencoderlayer, transformerencoder, transformerdecoderlayer, transformerdecoder, transformer (full encoder-decoder) |
 
 All of the above match PyTorch to the harness tolerance on Spike.
@@ -60,6 +61,9 @@ Every non-linear activation in the section runs, including nn.MultiheadAttention
 AdaptiveLogSoftmaxWithLoss is the one exception -- it is a loss layer that needs a target and returns a
 loss, so it belongs with the loss functions below.
 
+Two more layers hit torch-mlir pipeline gaps rather than hwacha ones: **Fold** lowers to `tm_tensor` (the
+same standalone-dialect problem as MaxUnpool), and **EmbeddingBag** has no torch-mlir lowering for
+`aten.embedding_bag`. Plain **Embedding** works -- the float harness input is cast to long indices.
+
 Not attempted: the other Lazy* variants (redundant with the non-lazy layers), loss functions incl.
-AdaptiveLogSoftmaxWithLoss (need a target), Embedding / EmbeddingBag (integer input, incompatible with the
-float harness), and the distributed / container modules.
+AdaptiveLogSoftmaxWithLoss (need a target), and the distributed / container modules.

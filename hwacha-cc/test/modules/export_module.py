@@ -34,6 +34,10 @@ class MHA(nn.Module):    # nn.MultiheadAttention as self-attention: forward(x) =
     def __init__(s, dim, heads): super().__init__(); s.m=nn.MultiheadAttention(dim, heads, batch_first=True)
     def forward(s, x): return s.m(x, x, x, need_weights=False)[0]
 
+class Emb(nn.Module):    # Embedding / EmbeddingBag; the float harness input is cast to long indices
+    def __init__(s, bag): super().__init__(); s.e = nn.EmbeddingBag(10,16,mode='mean') if bag else nn.Embedding(10,16)
+    def forward(s, x): return s.e(x.long())
+
 class SDPA(nn.Module):   # F.scaled_dot_product_attention (fused): does torch-mlir decompose it to matmul+softmax?
     def __init__(s,dim,heads):
         super().__init__(); s.h=heads; s.dh=dim//heads
@@ -182,6 +186,33 @@ def build(layer):
         return TwoIn(tr,(1,8,32)), torch.randn(1,8,32)                      # forward(src) with a fixed tgt
     if layer=='groupconv':       return nn.Conv2d(8,8,3,padding=1,groups=2), x8
     if layer=='groupconv_s2':    return nn.Conv2d(8,8,3,stride=2,padding=1,groups=2), x8
+    # ---- remaining nn.html layers ----
+    if layer=='fold':            return nn.Fold(output_size=(4,4),kernel_size=2,stride=2), torch.randn(1,16,4)
+    # recurrent cells (LSTMCell returns (h,c) -> take h)
+    if layer=='lstmcell':        return Seq0(nn.LSTMCell(8,16).eval()), torch.randn(1,8)
+    if layer=='grucell':         return nn.GRUCell(8,16).eval(), torch.randn(1,8)
+    # linear
+    if layer=='bilinear':        return TwoIn(nn.Bilinear(8,8,16).eval(),(1,8)), torch.randn(1,8)
+    # dropout (eval = identity)
+    if layer=='dropout1d':       return nn.Dropout1d(0.5).eval(), x1
+    if layer=='dropout3d':       return nn.Dropout3d(0.5).eval(), x3
+    if layer=='featurealphadropout': return nn.FeatureAlphaDropout(0.5).eval(), x4
+    # padding 1d / 3d variants
+    if layer=='reflectionpad1d': return nn.ReflectionPad1d(1), x1
+    if layer=='reflectionpad3d': return nn.ReflectionPad3d(1), x3
+    if layer=='replicationpad1d':return nn.ReplicationPad1d(1), x1
+    if layer=='replicationpad3d':return nn.ReplicationPad3d(1), x3
+    if layer=='zeropad3d':       return nn.ZeroPad3d(1), x3
+    if layer=='constantpad1d':   return nn.ConstantPad1d(1,0.5), x1
+    if layer=='constantpad3d':   return nn.ConstantPad3d(1,0.5), x3
+    if layer=='circularpad1d':   return nn.CircularPad1d(1), x1
+    if layer=='circularpad3d':   return nn.CircularPad3d(1), x3
+    # distance functions (two inputs -> fixed second)
+    if layer=='cosinesimilarity':return TwoIn(nn.CosineSimilarity(dim=1),(4,8)), torch.randn(4,8)
+    if layer=='pairwisedistance':return TwoIn(nn.PairwiseDistance(),(4,8)), torch.randn(4,8)
+    # sparse (float indices cast to long inside)
+    if layer=='embedding':       return Emb(False), torch.tensor([[1.,3.,0.,5.]])
+    if layer=='embeddingbag':    return Emb(True), torch.tensor([[1.,3.,0.,5.]])
     # remaining pooling layers from nn.html
     if layer=='lppool1d':        return nn.LPPool1d(2,2), x1
     if layer=='lppool3d':        return nn.LPPool3d(2,2), x3
