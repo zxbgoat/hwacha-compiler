@@ -20,6 +20,7 @@
 #include "mlir/Dialect/SCF/IR/SCF.h"
 #include "mlir/Dialect/SCF/Utils/Utils.h"
 #include "mlir/Dialect/Utils/StaticValueUtils.h"
+#include "mlir/IR/DialectResourceBlobManager.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/IR/PatternMatch.h"
@@ -669,6 +670,31 @@ struct WeightStrip {
   llvm::StringSet<> done;
 };
 
+// Flatten multi-dimensional constant globals to 1-D before translating to LLVM IR. The translation turns a
+// dense tensor<AxBx..xf32> into nested llvm::ConstantArrays with one ConstantDataArray per innermost row,
+// i.e. one heap object per row: for 1x1 conv weights (innermost dim 1) that is ~100 bytes per float, and
+// efficientnet_v2_l's 112M such floats take it past 12 GB. As a flat array the same data is one
+// ConstantDataArray over the raw bytes. Nothing downstream depends on the global's shape: memref lowering
+// only takes its address (opaque pointers) and indexes from the memref type, and the weight stripping
+// serializes bytes. Handles both dense<> and dense_resource<> (what torch-mlir emits) initializers.
+static void flattenGlobals(ModuleOp m) {
+  m.walk([](LLVM::GlobalOp g) {
+    auto arr = dyn_cast<LLVM::LLVMArrayType>(g.getGlobalType());
+    if (!arr || !isa<LLVM::LLVMArrayType>(arr.getElementType())) return;
+    Attribute v = g.getValueAttr();
+    auto tt = dyn_cast_or_null<RankedTensorType>(dyn_cast_or_null<ElementsAttr>(v) ? cast<ElementsAttr>(v).getType() : Type());
+    if (!tt || tt.getRank() < 2) return;
+    int64_t n = tt.getNumElements();
+    auto flat = RankedTensorType::get({n}, tt.getElementType());
+    Attribute nv;
+    if (auto dense = dyn_cast<DenseElementsAttr>(v)) { if (dense.isSplat()) return; nv = dense.reshape(flat); }
+    else if (auto res = dyn_cast<DenseResourceElementsAttr>(v)) nv = DenseResourceElementsAttr::get(flat, res.getRawHandle());
+    else return;
+    g.setGlobalType(LLVM::LLVMArrayType::get(tt.getElementType(), n));
+    g.setValueAttr(nv);
+  });
+}
+
 static bool emit(ModuleOp m, StringRef path, StringRef name, WeightStrip *ws = nullptr) {
   llvm::LLVMContext lctx;
   std::unique_ptr<llvm::Module> lm = translateModuleToLLVMIR(m, lctx, name);
@@ -782,6 +808,7 @@ int main(int argc, char **argv) {
       } else if (!isa<LLVM::GlobalOp, LLVM::LLVMFuncOp>(op)) op.erase();   // host-side leftovers
     }
     k->removeAttr("gpu.container_module");
+    flattenGlobals(k);
     if (PrintMLIR) { llvm::errs() << "// ---- kernel module\n"; k.print(llvm::errs()); llvm::errs() << "\n"; }
     if (!emit(k, OutputFile, "hwacha-kernels", ws)) return 1;
   }
@@ -801,6 +828,7 @@ int main(int argc, char **argv) {
     for (Operation &op : llvm::make_early_inc_range(*m.getBody())) if (isa<gpu::GPUModuleOp>(op)) op.erase();
     m->removeAttr("gpu.container_module");
     if (!runPipeline(m, "reconcile-unrealized-casts")) return 1;
+    flattenGlobals(m);
     if (!emit(m, HostFile, "hwacha-host", ws)) return 1;
   }
   if (ws && PrintMLIR) llvm::errs() << "// ---- weights: stripped " << ws->n << " globals (" << ws->bytes
