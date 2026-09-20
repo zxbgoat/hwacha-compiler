@@ -30,6 +30,10 @@ class Unpool(nn.Module):  # max-pool (returning indices) then max-unpool, so a s
     def __init__(s, pool, unpool): super().__init__(); s.pool=pool; s.unpool=unpool
     def forward(s, x): y, idx = s.pool(x); return s.unpool(y, idx)
 
+class MHA(nn.Module):    # nn.MultiheadAttention as self-attention: forward(x) = mha(x,x,x)[0]
+    def __init__(s, dim, heads): super().__init__(); s.m=nn.MultiheadAttention(dim, heads, batch_first=True)
+    def forward(s, x): return s.m(x, x, x, need_weights=False)[0]
+
 class SDPA(nn.Module):   # F.scaled_dot_product_attention (fused): does torch-mlir decompose it to matmul+softmax?
     def __init__(s,dim,heads):
         super().__init__(); s.h=heads; s.dh=dim//heads
@@ -82,6 +86,7 @@ def build(layer):
     if layer=='upsample_bilinear': return nn.Upsample(scale_factor=2,mode='bilinear',align_corners=False), torch.randn(1,4,4,4)
     if layer=='pixelshuffle':    return nn.PixelShuffle(2), torch.randn(1,16,4,4)
     if layer=='attention':       return Attn(32,4), torch.randn(1,16,32)
+    if layer=='multiheadattention': return MHA(32,4).eval(), torch.randn(1,16,32)
     if layer=='mlp':             return nn.Sequential(nn.Linear(16,32),nn.GELU(),nn.Linear(32,16)), torch.randn(1,16)
     # ---- torch.nn.functional ops not covered by the nn-module layers above ----
     # extra activations

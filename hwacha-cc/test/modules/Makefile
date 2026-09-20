@@ -15,7 +15,7 @@ SPIKE   := spike --isa=rv64gc --extension=hwacha
 HWMLIRFLAGS ?= --collapse-all
 LAYERS := linear conv3x3 conv1x1 conv_s2 conv5x5 convtranspose2 dwconv3x3 maxpool2 avgpool2 \
           adaptiveavgpool batchnorm2d layernorm groupnorm relu leakyrelu gelu silu sigmoid tanh hardswish \
-          hardsigmoid elu softmax flatten upsample upsample_bilinear pixelshuffle attention mlp \
+          hardsigmoid elu softmax flatten upsample upsample_bilinear pixelshuffle attention multiheadattention mlp \
           softplus mish hardtanh relu6 selu celu softsign tanhshrink softshrink hardshrink logsigmoid \
           logsoftmax prelu glu threshold normalize instancenorm lrn pad sdpa unfold interpolate \
           conv3d conv1d convtranspose1d convtranspose3d maxpool1d maxpool3d avgpool1d avgpool3d \

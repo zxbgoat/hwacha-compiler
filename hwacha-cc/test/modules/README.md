@@ -29,7 +29,7 @@ Covers the `torch.nn` catalogue from docs.pytorch.org/docs/2.14/nn.html plus the
 | dropout (eval) | dropout, dropout2d, alphadropout |
 | vision / shuffle | upsample (nearest), upsample_bilinear, interpolate, upsamplingnearest2d, upsamplingbilinear2d, pixelshuffle, pixelunshuffle, channelshuffle, unfold |
 | recurrent | rnn, lstm, gru, rnncell |
-| attention / transformer | attention (manual), sdpa (fused F.scaled_dot_product_attention), transformerencoderlayer, transformerencoder, transformerdecoderlayer, transformerdecoder, transformer (full encoder-decoder) |
+| attention / transformer | attention (manual), multiheadattention (nn.MultiheadAttention), sdpa (fused F.scaled_dot_product_attention), transformerencoderlayer, transformerencoder, transformerdecoderlayer, transformerdecoder, transformer (full encoder-decoder) |
 
 All of the above match PyTorch to the harness tolerance on Spike.
 
@@ -56,6 +56,10 @@ is included as a representative and passes. SyncBatchNorm is a distributed (mult
 applicable. So of the Normalization section, every layer runs except those two families, which are covered
 by their non-lazy / non-distributed equivalents.
 
-Not attempted: the other Lazy* variants (redundant with the non-lazy layers), loss functions (need a
-target), Embedding / EmbeddingBag (integer input, incompatible with the float harness), and the
-distributed / container modules.
+Every non-linear activation in the section runs, including nn.MultiheadAttention (self-attention);
+AdaptiveLogSoftmaxWithLoss is the one exception -- it is a loss layer that needs a target and returns a
+loss, so it belongs with the loss functions below.
+
+Not attempted: the other Lazy* variants (redundant with the non-lazy layers), loss functions incl.
+AdaptiveLogSoftmaxWithLoss (need a target), Embedding / EmbeddingBag (integer input, incompatible with the
+float harness), and the distributed / container modules.
