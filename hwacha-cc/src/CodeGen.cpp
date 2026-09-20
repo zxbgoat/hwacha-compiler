@@ -123,6 +123,7 @@ public:
   unsigned ScratchVA = 0;     // va register holding the scratch buffer (set when a reduction exists)
   unsigned TreeVA = 0;        // va register for the upper half during the tree steps
   unsigned ScratchVS = 0;     // vs register holding the scratch address (scalar load of the result)
+  unsigned PredLoadVS = 0;    // vs temp for uniform i1 loads (vlsb cannot target a vector register)
   bool BlockSplit = false;    // the current block was split by a reduction (no skip jump around it)
   std::vector<Segment> Segments;
   unsigned NumVV = 0, NumVP = 1, NumVS = 0, NumVW = 0;
@@ -1220,6 +1221,15 @@ bool WTGen::emitInst(Instruction &I, unsigned Pos) {
     // ended up in a vector register)
     std::string P = R(L->getPointerOperand());
     if (isVec(classOf(L->getPointerOperand()))) { emit(PV(LD), "vlx" + Suf, {LD, "vs0", P}); return finish(); }
+    if (isPred) {   // a shared load cannot target a vector register: take the byte through a vs temp.
+      // One temp per kernel, never freed: vs registers the control thread fills (vmcs, all sent before
+      // the vf) are allocated lazily while the block is emitted, so a freed temp could be handed to a
+      // later address and then be clobbered by this load at run time.
+      VWUsed[pTmp.Idx] = false;
+      if (!PredLoadVS) PredLoadVS = alloc(RC::VS).Idx;
+      LD = "vs" + std::to_string(PredLoadVS);
+      emit("", "vlsb", {LD, P}); return finish();
+    }
     emit("", "vls" + Suf, {LD, P}); return finish();
   }
   if (auto *S = dyn_cast<StoreInst>(&I)) {
