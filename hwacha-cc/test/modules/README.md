@@ -21,7 +21,7 @@ Covers the `torch.nn` catalogue from docs.pytorch.org/docs/2.14/nn.html plus the
 |---|---|
 | linear / shape | linear, bilinear-free mlp, identity, flatten, unflatten |
 | convolution | conv1d, conv3x3, conv1x1, conv5x5, conv3d, conv_s2 (stride 2), dwconv3x3 (depthwise), groupconv / groupconv_s2 (grouped), convtranspose1d/2d/3d |
-| pooling | maxpool1d/2d/3d, avgpool1d/2d/3d, lppool2d, adaptiveavgpool1d/2d/3d, adaptivemaxpool1d/2d |
+| pooling | maxpool1d/2d/3d, avgpool1d/2d/3d, lppool1d/2d/3d, adaptiveavgpool1d/2d/3d, adaptivemaxpool1d/2d |
 | padding | pad (constant), zeropad1d/2d, constantpad2d, replicationpad2d, circularpad2d, reflectionpad2d |
 | normalization | batchnorm1d/2d/3d, layernorm, groupnorm, instancenorm1d/2d, rmsnorm, lrn, normalize (L2) |
 | activation | relu, relu6, rrelu, leakyrelu, prelu, elu, celu, selu, gelu, silu, sigmoid, tanh, softsign, softplus, mish, hardswish, hardsigmoid, hardtanh, tanhshrink, softshrink, hardshrink, threshold, logsigmoid |
@@ -45,6 +45,12 @@ Every layer in `make run` passes. Reflection padding needed two fixes to get the
 `math.absi` to arith (it has no LLVM translation), and hwacha-cc lowers the `llvm.abs.iN` intrinsic that
 NVVM canonicalization re-forms from that.
 
+Pooling layers that do not go through this pipeline: **MaxUnpool1d/2d/3d** lower to `tm_tensor.scatter`, a
+torch-mlir dialect the standalone mlir-opt cannot parse; **FractionalMaxPool2d/3d** have no torch-mlir
+lowering (`torch.aten.fractional_max_pool2d` is marked illegal); **AdaptiveMaxPool3d** emits a combined
+max+argmax generic (two results, an i1 mask, 8 iterators) that overflows the scalar registers at 3D size
+(the 1d/2d variants fit). Everything else in the Pooling section works.
+
 Not attempted: Lazy* variants (need a materializing forward), loss functions (need a target), Embedding /
-EmbeddingBag (integer input, incompatible with the float harness), MaxUnpool / FractionalMaxPool (need
-indices or randomness), SyncBatchNorm and the distributed / container modules.
+EmbeddingBag (integer input, incompatible with the float harness), SyncBatchNorm and the distributed /
+container modules.

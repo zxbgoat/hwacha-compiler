@@ -26,6 +26,10 @@ class TwoIn(nn.Module):  # wrap a two-input module (decoder tgt+memory, transfor
         super().__init__(); s.m=m; s.register_buffer('second', torch.randn(*second_shape))
     def forward(s, x): return s.m(x, s.second)
 
+class Unpool(nn.Module):  # max-pool (returning indices) then max-unpool, so a single input drives MaxUnpool
+    def __init__(s, pool, unpool): super().__init__(); s.pool=pool; s.unpool=unpool
+    def forward(s, x): y, idx = s.pool(x); return s.unpool(y, idx)
+
 class SDPA(nn.Module):   # F.scaled_dot_product_attention (fused): does torch-mlir decompose it to matmul+softmax?
     def __init__(s,dim,heads):
         super().__init__(); s.h=heads; s.dh=dim//heads
@@ -171,6 +175,16 @@ def build(layer):
         return TwoIn(tr,(1,8,32)), torch.randn(1,8,32)                      # forward(src) with a fixed tgt
     if layer=='groupconv':       return nn.Conv2d(8,8,3,padding=1,groups=2), x8
     if layer=='groupconv_s2':    return nn.Conv2d(8,8,3,stride=2,padding=1,groups=2), x8
+    # remaining pooling layers from nn.html
+    if layer=='lppool1d':        return nn.LPPool1d(2,2), x1
+    if layer=='lppool3d':        return nn.LPPool3d(2,2), x3
+    if layer=='adaptivemaxpool3d': return nn.AdaptiveMaxPool3d(1), x3
+    if layer=='maxunpool1d':     return Unpool(nn.MaxPool1d(2,return_indices=True), nn.MaxUnpool1d(2)), x1
+    if layer=='maxunpool2d':     return Unpool(nn.MaxPool2d(2,return_indices=True), nn.MaxUnpool2d(2)), x4
+    if layer=='maxunpool3d':     return Unpool(nn.MaxPool3d(2,return_indices=True), nn.MaxUnpool3d(2)), x3
+    if layer=='fractionalmaxpool2d':
+        rs=torch.rand(1,4,2)
+        return Fn(lambda t: F.fractional_max_pool2d(t,kernel_size=2,output_size=(4,4),_random_samples=rs)), x4
     raise SystemExit("unknown layer "+layer)
 
 if __name__=='__main__':
