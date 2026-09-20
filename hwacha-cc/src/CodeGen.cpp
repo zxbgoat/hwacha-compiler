@@ -1216,7 +1216,13 @@ bool WTGen::emitInst(Instruction &I, unsigned Pos) {
       else emit(VP, "vlst" + Suf, {LD, "va" + std::to_string(St.VA), "va" + std::to_string(St.StrideVA)});
       return finish();
     }
-    if (K == AddrKind::Gather) { std::string Idx = R(GatherIndex[L]), Base = R(GatherBase[L]); emit(VP, "vlx" + Suf, {LD, Base, Idx}); return finish(); }
+    if (K == AddrKind::Gather) {
+      std::string Idx = R(GatherIndex[L]), Base = R(GatherBase[L]);
+      // the base is uniform by construction, but a uniform value defined under divergent control flow
+      // lives in a vector register (merged by predicates); vlx needs a vs base, so fold it into the index
+      if (isVec(classOf(GatherBase[L]))) { Reg T = alloc(RC::VV); emit(VP, "vadd", {T.str(), Base, Idx}); emit(VP, "vlx" + Suf, {LD, "vs0", T.str()}); VVUsed[T.Idx] = false; return finish(); }
+      emit(VP, "vlx" + Suf, {LD, Base, Idx}); return finish();
+    }
     // uniform: scalar load from a vs address (or an indexed load off a zero base if the address
     // ended up in a vector register)
     std::string P = R(L->getPointerOperand());
@@ -1273,6 +1279,10 @@ bool WTGen::emitInst(Instruction &I, unsigned Pos) {
       if (classOf(V) == RC::VS) {          // scatter needs a vector source: broadcast
         Reg Tmp = alloc(isNarrow(V) ? RC::VW : RC::VV); emit("", isNarrow(V) ? "vaddw" : "vadd", {Tmp.str(), Val, "vs0"}); Val = Tmp.str();
         (Tmp.Class == RC::VV ? VVUsed : VWUsed)[Tmp.Idx] = false;
+      }
+      if (isVec(classOf(GatherBase[S]))) {   // vector base (see the load case): fold it into the index
+        Reg T = alloc(RC::VV); emit(VP, "vadd", {T.str(), R(GatherBase[S]), R(GatherIndex[S])});
+        emit(VP, "vsx" + Suf, {Val, "vs0", T.str()}); VVUsed[T.Idx] = false; return true;
       }
       emit(VP, "vsx" + Suf, {Val, R(GatherBase[S]), R(GatherIndex[S])}); return true;
     }
