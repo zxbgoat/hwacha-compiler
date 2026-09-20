@@ -1575,8 +1575,16 @@ bool WTGen::emitInst(Instruction &I, unsigned Pos) {
       std::string ShR = R(Sh);
       emit("", "vsll", {D, R(Src), ShR}); emit("", "vsrl", {D, D, ShR}); return true;
     }
-    case Instruction::SIToFP: emit("", "vfcvt" + fpSuffix(T) + (is32(ST) ? ".w" : ".l"), {dest(I), R(Src)}); return true;
-    case Instruction::UIToFP: emit("", "vfcvt" + fpSuffix(T) + (is32(ST) ? ".wu" : ".lu"), {dest(I), R(Src)}); return true;
+    case Instruction::SIToFP: case Instruction::UIToFP:
+      if (ST->isIntegerTy(1)) {   // predicate -> 0.0 / 1.0 (or -1.0 for sitofp): vfcvt cannot read a vp register
+        std::string D = dest(I), P = R(Src);
+        emit("", isNarrow(&I) ? "vaddw" : "vadd", {D, "vs0", "vs0"});   // all-zero bits = +0.0
+        emit(P, "vfadd" + fpSuffix(T), {D, D, R(ConstantFP::get(T, Cast->getOpcode() == Instruction::UIToFP ? 1.0 : -1.0))});
+        return true;
+      }
+      if (Cast->getOpcode() == Instruction::SIToFP) emit("", "vfcvt" + fpSuffix(T) + (is32(ST) ? ".w" : ".l"), {dest(I), R(Src)});
+      else emit("", "vfcvt" + fpSuffix(T) + (is32(ST) ? ".wu" : ".lu"), {dest(I), R(Src)});
+      return true;
     // C float->int conversion truncates: encode rtz explicitly (the assembler default is dyn = frm, normally RNE)
     case Instruction::FPToSI: emit("", "vfcvt" + std::string(is32(T) ? ".w" : ".l") + fpSuffix(ST), {dest(I), R(Src), "rtz"}); return true;
     case Instruction::FPToUI: emit("", "vfcvt" + std::string(is32(T) ? ".wu" : ".lu") + fpSuffix(ST), {dest(I), R(Src), "rtz"}); return true;
