@@ -23,7 +23,7 @@ Covers the `torch.nn` catalogue from docs.pytorch.org/docs/2.14/nn.html plus the
 | convolution | conv1d, conv3x3, conv1x1, conv5x5, conv3d, conv_s2 (stride 2), dwconv3x3 (depthwise), groupconv / groupconv_s2 (grouped), convtranspose1d/2d/3d |
 | pooling | maxpool1d/2d/3d, avgpool1d/2d/3d, lppool1d/2d/3d, adaptiveavgpool1d/2d/3d, adaptivemaxpool1d/2d |
 | padding | pad (constant), zeropad1d/2d, constantpad2d, replicationpad2d, circularpad2d, reflectionpad2d |
-| normalization | batchnorm1d/2d/3d, layernorm, groupnorm, instancenorm1d/2d, rmsnorm, lrn, normalize (L2) |
+| normalization | batchnorm1d/2d/3d, lazybatchnorm2d, layernorm, groupnorm, instancenorm1d/2d/3d, rmsnorm, lrn, normalize (L2) |
 | activation | relu, relu6, rrelu, leakyrelu, prelu, elu, celu, selu, gelu, silu, sigmoid, tanh, softsign, softplus, mish, hardswish, hardsigmoid, hardtanh, tanhshrink, softshrink, hardshrink, threshold, logsigmoid |
 | softmax family | softmax, softmin, softmax2d, logsoftmax, glu |
 | dropout (eval) | dropout, dropout2d, alphadropout |
@@ -51,6 +51,11 @@ lowering (`torch.aten.fractional_max_pool2d` is marked illegal); **AdaptiveMaxPo
 max+argmax generic (two results, an i1 mask, 8 iterators) that overflows the scalar registers at 3D size
 (the 1d/2d variants fit). Everything else in the Pooling section works.
 
-Not attempted: Lazy* variants (need a materializing forward), loss functions (need a target), Embedding /
-EmbeddingBag (integer input, incompatible with the float harness), SyncBatchNorm and the distributed /
-container modules.
+Lazy* layers materialize on a first forward and are then identical to their non-lazy form; lazybatchnorm2d
+is included as a representative and passes. SyncBatchNorm is a distributed (multi-process) layer and is not
+applicable. So of the Normalization section, every layer runs except those two families, which are covered
+by their non-lazy / non-distributed equivalents.
+
+Not attempted: the other Lazy* variants (redundant with the non-lazy layers), loss functions (need a
+target), Embedding / EmbeddingBag (integer input, incompatible with the float harness), and the
+distributed / container modules.

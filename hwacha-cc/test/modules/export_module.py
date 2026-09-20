@@ -137,7 +137,9 @@ def build(layer):
     if layer=='batchnorm1d':     return rand_bn(nn.BatchNorm1d(4).eval()), x1
     if layer=='batchnorm3d':     return rand_bn(nn.BatchNorm3d(2).eval()), x3
     if layer=='instancenorm1d':  return nn.InstanceNorm1d(4,affine=True).eval(), x1
+    if layer=='instancenorm3d':  return nn.InstanceNorm3d(2,affine=True).eval(), x3
     if layer=='rmsnorm':         return nn.RMSNorm(16), torch.randn(1,4,16)
+    if layer=='lazybatchnorm2d': m=nn.LazyBatchNorm2d(); m(x4); return rand_bn(m.eval()), x4   # materialize (a forward), then randomize stats
     # more activations
     if layer=='rrelu':           return nn.RReLU().eval(), torch.randn(1,16)
     if layer=='softmin':         return nn.Softmin(-1), torch.randn(1,16)

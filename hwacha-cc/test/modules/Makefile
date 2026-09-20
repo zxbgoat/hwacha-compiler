@@ -21,7 +21,7 @@ LAYERS := linear conv3x3 conv1x1 conv_s2 conv5x5 convtranspose2 dwconv3x3 maxpoo
           conv3d conv1d convtranspose1d convtranspose3d maxpool1d maxpool3d avgpool1d avgpool3d \
           adaptiveavgpool1d adaptiveavgpool3d adaptivemaxpool1d adaptivemaxpool2d lppool1d lppool2d lppool3d \
           reflectionpad2d zeropad2d constantpad2d replicationpad2d circularpad2d zeropad1d batchnorm1d batchnorm3d \
-          instancenorm1d rmsnorm rrelu softmin softmax2d identity dropout dropout2d alphadropout \
+          instancenorm1d instancenorm3d rmsnorm lazybatchnorm2d rrelu softmin softmax2d identity dropout dropout2d alphadropout \
           unflatten pixelunshuffle channelshuffle upsamplingnearest2d upsamplingbilinear2d \
           rnn lstm gru rnncell transformerencoderlayer transformerencoder transformerdecoderlayer \
           transformerdecoder transformer groupconv groupconv_s2
