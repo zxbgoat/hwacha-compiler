@@ -50,12 +50,14 @@ TVHW ?= 32
 	$(PYTHON) export_tv.py $* $*_tv.mlir $*_tv_check.bin $(TVHW)
 %_tv_memref.mlir: %_tv.mlir
 	$(MLIROPT) $< --pass-pipeline='$(BUFFERIZE)' -o $@
-%_tv.ll %_tv.host.ll: %_tv_memref.mlir $(HWMLIR)
-	$(HWMLIR) $< -o $*_tv.ll --host $*_tv.host.ll $(HWMLIRFLAGS)
+# strip the weights to a .incbin binary blob (+ .S stub) so the .ll/.s stay small and hwacha-cc's parse
+# memory does not grow with the model's parameter count (mobilenet_v2's inline .s was 213MB).
+%_tv.ll %_tv.host.ll %_tv_weights.bin.S: %_tv_memref.mlir $(HWMLIR)
+	$(HWMLIR) $< -o $*_tv.ll --host $*_tv.host.ll --weights-bin $*_tv_weights.bin $(HWMLIRFLAGS)
 %_tv.s: %_tv.ll %_tv.host.ll $(HWCC)
 	$(HWCC) $< --host $*_tv.host.ll --assume-noalias -o $@
-%_tv.riscv: tv_main.c %_tv.s hwlib.s %_tv_check.bin $(COMMON)/crt.S $(COMMON)/syscalls.c
-	$(CC) $(CFLAGS) -DCHECK_FILE='"$*_tv_check.bin"' -DMODEL='"$*"' -o $@ tv_main.c $*_tv.s hwlib.s $(COMMON)/crt.S $(COMMON)/syscalls.c $(LDFLAGS)
+%_tv.riscv: tv_main.c %_tv.s hwlib.s %_tv_weights.bin.S %_tv_check.bin $(COMMON)/crt.S $(COMMON)/syscalls.c
+	$(CC) $(CFLAGS) -DCHECK_FILE='"$*_tv_check.bin"' -DMODEL='"$*"' -o $@ tv_main.c $*_tv.s hwlib.s $*_tv_weights.bin.S $(COMMON)/crt.S $(COMMON)/syscalls.c $(LDFLAGS)
 
 # minimal DiT (Diffusion Transformer): patchify + self-attention + adaLN + MLP, one forward vs PyTorch.
 # DITCFG = "dim depth heads C H P" (default 64 2 4 4 8 2). Intermediate steps reuse the %_memref/%.ll/%.s
