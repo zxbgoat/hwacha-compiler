@@ -21,6 +21,11 @@ class Seq0(nn.Module):   # wrap a module whose forward returns a tuple (e.g. RNN
     def __init__(s, m): super().__init__(); s.m=m
     def forward(s, x): return s.m(x)[0]
 
+class TwoIn(nn.Module):  # wrap a two-input module (decoder tgt+memory, transformer src+tgt) as single-input
+    def __init__(s, m, second_shape):
+        super().__init__(); s.m=m; s.register_buffer('second', torch.randn(*second_shape))
+    def forward(s, x): return s.m(x, s.second)
+
 class SDPA(nn.Module):   # F.scaled_dot_product_attention (fused): does torch-mlir decompose it to matmul+softmax?
     def __init__(s,dim,heads):
         super().__init__(); s.h=heads; s.dh=dim//heads
@@ -152,6 +157,18 @@ def build(layer):
     # transformer
     if layer=='transformerencoderlayer':
         return nn.TransformerEncoderLayer(d_model=32,nhead=4,dim_feedforward=64,batch_first=True).eval(), torch.randn(1,8,32)
+    if layer=='transformerencoder':
+        el=nn.TransformerEncoderLayer(d_model=32,nhead=4,dim_feedforward=64,batch_first=True)
+        return nn.TransformerEncoder(el,num_layers=2).eval(), torch.randn(1,8,32)
+    if layer=='transformerdecoderlayer':
+        dl=nn.TransformerDecoderLayer(d_model=32,nhead=4,dim_feedforward=64,batch_first=True).eval()
+        return TwoIn(dl,(1,8,32)), torch.randn(1,8,32)                      # forward(tgt) with a fixed memory
+    if layer=='transformerdecoder':
+        dl=nn.TransformerDecoderLayer(d_model=32,nhead=4,dim_feedforward=64,batch_first=True)
+        return TwoIn(nn.TransformerDecoder(dl,num_layers=2).eval(),(1,8,32)), torch.randn(1,8,32)
+    if layer=='transformer':
+        tr=nn.Transformer(d_model=32,nhead=4,num_encoder_layers=2,num_decoder_layers=2,dim_feedforward=64,batch_first=True).eval()
+        return TwoIn(tr,(1,8,32)), torch.randn(1,8,32)                      # forward(src) with a fixed tgt
     if layer=='groupconv':       return nn.Conv2d(8,8,3,padding=1,groups=2), x8
     if layer=='groupconv_s2':    return nn.Conv2d(8,8,3,stride=2,padding=1,groups=2), x8
     raise SystemExit("unknown layer "+layer)

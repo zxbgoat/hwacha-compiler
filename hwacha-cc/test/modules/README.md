@@ -29,7 +29,7 @@ Covers the `torch.nn` catalogue from docs.pytorch.org/docs/2.14/nn.html plus the
 | dropout (eval) | dropout, dropout2d, alphadropout |
 | vision / shuffle | upsample (nearest), upsample_bilinear, interpolate, upsamplingnearest2d, upsamplingbilinear2d, pixelshuffle, pixelunshuffle, channelshuffle, unfold |
 | recurrent | rnn, lstm, gru, rnncell |
-| attention / transformer | attention (manual), sdpa (fused F.scaled_dot_product_attention), transformerencoderlayer |
+| attention / transformer | attention (manual), sdpa (fused F.scaled_dot_product_attention), transformerencoderlayer, transformerencoder, transformerdecoderlayer, transformerdecoder, transformer (full encoder-decoder) |
 
 All of the above match PyTorch to the harness tolerance on Spike.
 
