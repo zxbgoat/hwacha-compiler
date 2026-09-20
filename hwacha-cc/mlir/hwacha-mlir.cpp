@@ -360,7 +360,10 @@ static bool lowerConvs(ModuleOp m) {
     if (sv[1] != stride || dv[0] != 1 || dv[1] != 1 || K % 2 == 0) continue;
     int64_t pad;
     if (stride == 1 && Hi == Ho + K - 1 && Wi == Wo + K - 1) pad = (K - 1) / 2;
-    else if (stride == 2 && Hi == 2 * Ho + K - 1 && Wi == 2 * Wo + K - 1) pad = K - 1;   // pre-padded input, like conv3x3_s2 (base offset -(K-1))
+    // stride 2: the input is pre-padded by (K-1)/2 on each side and the kernel computes a padded output
+    // grid with a 1-pixel border (unpad drops it), so output pixel (i,j) of that grid reads from input
+    // row 2*i - pad; pad must be 2 (the border times the stride) for any K. K-1 only coincides for K=3.
+    else if (stride == 2 && Hi == 2 * Ho + K - 1 && Wi == 2 * Wo + K - 1) pad = 2;
     else { if (PrintMLIR) llvm::errs() << "// conv-lib: unsupported depthwise\n"; continue; }
     Location loc = dw.getLoc(); OpBuilder b(dw);
     auto ptrOf = [&](Value mem){ Value idx = memref::ExtractAlignedPointerAsIndexOp::create(b, loc, b.getIndexType(), mem); Value ii = arith::IndexCastOp::create(b, loc, IntegerType::get(ctx,64), idx); return LLVM::IntToPtrOp::create(b, loc, LLVM::LLVMPointerType::get(ctx), ii); };
