@@ -738,6 +738,25 @@ void WTGen::computePositions() {
       if (auto It = GatherIndex.find(&I); It != GatherIndex.end()) { use(It->second, Pos); use(GatherBase[&I], Pos); }
     }
   }
+  // aliases: a no-op cast (sext of a wider int, trunc, bitcast, ptrtoint, inttoptr, freeze) shares
+  // its operand's register, so the operand lives as long as the alias does. Emission also extends
+  // it, but too late: releaseAt(operand's last use) has run by the time the cast is emitted (srad:
+  // `ei` was freed one instruction before its sext, and the register was handed to a phi).
+  for (bool Changed = true; Changed;) {
+    Changed = false;
+    for (Instruction &I : instructions(F)) {
+      Value *Src = nullptr;
+      if (auto *C = dyn_cast<CastInst>(&I)) {
+        auto Op = C->getOpcode();
+        bool Alias = Op == Instruction::PtrToInt || Op == Instruction::IntToPtr || Op == Instruction::BitCast ||
+                     (Op == Instruction::SExt && !C->getSrcTy()->isIntegerTy(1)) || (Op == Instruction::Trunc && !C->getDestTy()->isIntegerTy(1));
+        if (Alias) Src = C->getOperand(0);
+      } else if (auto *Fr = dyn_cast<FreezeInst>(&I)) Src = Fr->getOperand(0);
+      if (!Src || !isa<Instruction>(Src)) continue;
+      unsigned L = LastUse.lookup(&I);
+      if (L > LastUse.lookup(Src)) { LastUse[Src] = L; Changed = true; }
+    }
+  }
   // values defined before a loop and used inside it live until the loop ends
   for (auto &KV : LastUse) {
     unsigned D = DefPos.lookup(KV.first);
