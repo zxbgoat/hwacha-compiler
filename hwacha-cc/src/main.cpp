@@ -55,10 +55,12 @@ int main(int argc, char **argv) {
   int n = 0;
   for (Function &F : *M) {
     if (!hwacha::isKernel(F)) continue;
+    hwacha::lowerSwitches(F); hwacha::flattenNDRange(F); hwacha::expandOpenCLMisc(F); hwacha::expandMemIntrinsics(F);
     hwacha::expandAbsI(F); hwacha::expandLogExpM1Pow(F); hwacha::expandTanhf(F); hwacha::expandFloorf(F); hwacha::expandErff(F); hwacha::expandLogf(F);
     hwacha::expandExpf(F);
     if (FPContract) hwacha::contractFMA(F);
     hwacha::prepareKernel(F);
+    hwacha::lowerSwitches(F); hwacha::expandOpenCLMisc(F); hwacha::dropNUW(F);   // InstCombine / SimplifyCFG re-form usub.sat and switches
     hwacha::KernelAnalysis KA(F);
     if (AnalyzeOnly) { KA.print(outs()); n++; continue; }
     if (!hwacha::generateKernel(F, KA, *CT, WT, errs(), Opts)) return 1;

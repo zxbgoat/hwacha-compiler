@@ -1,4 +1,5 @@
 #include "CodeGen.h"
+#include "llvm/ADT/DenseSet.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Analysis/ScalarEvolutionExpressions.h"
@@ -91,6 +92,7 @@ public:
   std::vector<std::pair<unsigned, Value *>> VSInputs;
   unsigned VSOffset = 0;      // vs register that receives the stripmine element offset, 0 if unused
   unsigned VSLocalSize = 0;   // vs register that receives vl (get_local_size), 0 if unused
+  unsigned VSGlobalSize = 0;  // vs register that receives n (get_global_size), 0 if unused
   unsigned VSGroupId = 0;     // vs register that receives the stripmine iteration index, 0 if unused
   bool UsesBarrier = false;
   uint64_t GroupSize = 0;     // reqd_work_group_size(X,1,1) if present
@@ -434,7 +436,7 @@ bool WTGen::ctCloneableImpl(Value *V, DenseSet<Value *> &Seen, unsigned Depth) {
   auto *I = dyn_cast<Instruction>(V);
   if (!I || !isUniform(I)) return false;
   if (isWorkItemId(I)) return false;
-  if (isLocalSizeCall(I) || isGroupIdCall(I)) return true;
+  if (isLocalSizeCall(I) || isGroupIdCall(I) || isGlobalSizeCall(I)) return true;
   if (isWorkGroupReduce(I)) return true;   // the control thread computes it itself
   if (isa<CallBase>(I)) return false;
   if (auto *LD = dyn_cast<LoadInst>(I)) { if (!ctLoadOK(LD)) return false; return ctCloneable(LD->getPointerOperand(), Seen, Depth + 1); }
@@ -500,7 +502,7 @@ void WTGen::selectCTLoops() {
         if (I.isTerminator() || isa<StoreInst>(I)) continue;
         if (isWorkGroupReduce(&I)) continue;                                                     // a segment boundary inside the region
         if (isBarrierCall(&I) || (isa<CallBase>(I) && I.mayWriteToMemory())) { Ok = false; break; }   // barriers, atomics
-        if (isa<CallBase>(I) && !isLocalSizeCall(&I) && !isGroupIdCall(&I)) { if (isUniform(&I)) Ok = false; continue; }   // uniform builtin
+        if (isa<CallBase>(I) && !isLocalSizeCall(&I) && !isGroupIdCall(&I) && !isGlobalSizeCall(&I)) { if (isUniform(&I)) Ok = false; continue; }   // uniform builtin
         if (isUniform(&I)) Ok = ctCloneable(&I, Seen);
       }
     }
@@ -889,14 +891,19 @@ bool WTGen::emitBlock(BasicBlock *BB, unsigned &Pos) {
     if (!I.isTerminator()) releaseAt(Pos);
   }
   // A consensual jump costs a predicate reduction (~50 cycles on the RTL, the scalar unit stalls
-  // until the vector unit answers). A loop header is executed every iteration and is only ever
-  // fully inactive right before the loop exits, so skipping it is pure overhead: never emit
-  // the jump there. Other blocks are skipped when they hold at least two instructions.
-  if (Pred != 0 && !Opts.NoSkip && !IsHeader && !BlockSplit) {
+  // until the vector unit answers). A loop header is executed every iteration and is normally only
+  // fully inactive right before the loop exits, so skipping it is overhead -- except that a loop can
+  // also be *entered* with no lane active: the guard before it was all-false and the consensual jump
+  // around the guarded region lands on the loop, whose rotated body then runs once with garbage
+  // uniform values (lud_diagonal's `if (tx > i) for (j < i)` at i = 0). Vector ops under a false
+  // predicate are harmless, but a uniform load / store (vls* / vss*) is unpredicated and faults, so
+  // headers with uniform memory ops get the jump too. Other blocks are skipped when they hold at
+  // least two instructions.
+  bool HasUniformMem = false;
+  for (Instruction &I : *BB)
+    if ((isa<LoadInst>(I) || isa<StoreInst>(I)) && Needed.count(&I) && KindOf.lookup(&I) == AddrKind::Uniform) HasUniformMem = true;
+  if (Pred != 0 && !Opts.NoSkip && (!IsHeader || HasUniformMem) && !BlockSplit) {
     size_t Lines = std::count(Text.begin() + BodyStart, Text.end(), '\n');
-    bool HasUniformMem = false;
-    for (Instruction &I : *BB)
-      if ((isa<LoadInst>(I) || isa<StoreInst>(I)) && Needed.count(&I) && KindOf.lookup(&I) == AddrKind::Uniform) HasUniformMem = true;
     if (Lines >= 2 || (Lines >= 1 && HasUniformMem)) {
       if (!LinkVS) LinkVS = alloc(RC::VS).Idx;
       std::string Skip = ".L" + F.getName().str() + "_skip" + std::to_string(LabelCounter++);
@@ -1062,7 +1069,21 @@ bool WTGen::run() {
   for (Loop *L : LI->getLoopsInPreorder())
     if (!L->getLoopPreheader() || !L->getLoopLatch()) return fail("loop is not in simplified form");
   selectCTLoops();
+  // SCEV proves facts per thread (a dominating `tx <= m` guard, loop guards) and its expander turns a
+  // sext into a zext, or splits an AddRec into zext(start) + step*i, on the strength of them. Under
+  // predicated SIMT execution those proofs do not hold for the values as computed (nw: the start
+  // 17 - 17*tx is negative for the lanes the guard admits, and zext(-17) + 34 != 17). The kernel's
+  // own IR keeps its sext / zext as written; every integer zext the expander creates is turned into
+  // a sext, the value clang's signed index arithmetic means.
+  DenseSet<const Instruction *> Before;
+  for (Instruction &I : instructions(F)) Before.insert(&I);
   if (!materializeAddresses()) return false;
+  for (Instruction &I : llvm::make_early_inc_range(instructions(F))) {
+    auto *Z = dyn_cast<ZExtInst>(&I);
+    if (!Z || Before.count(Z) || !Z->getSrcTy()->isIntegerTy() || Z->getSrcTy()->isIntegerTy(1)) continue;
+    IRBuilder<> B(Z); Value *S = B.CreateSExt(Z->getOperand(0), Z->getDestTy());
+    Z->replaceAllUsesWith(S); Z->eraseFromParent();
+  }
   { unsigned Next = Streams.size(); for (auto &S : Streams) if (!S.Unit) S.StrideVA = Next++; ScratchVA = Next; TreeVA = Next + 1; }
   KA.recomputeUniformity();
   computeNeeded();
@@ -1100,6 +1121,10 @@ bool WTGen::run() {
       SpecialCalls.insert(&I);
       if (!VSGroupId) VSGroupId = allocInputVS().Idx;
       RegOf[&I] = Reg{RC::VS, VSGroupId};
+    } else if (isGlobalSizeCall(&I)) {
+      SpecialCalls.insert(&I);
+      if (!VSGlobalSize) VSGlobalSize = allocInputVS().Idx;
+      RegOf[&I] = Reg{RC::VS, VSGlobalSize};
     }
   }
   // inputs (arguments, constants) get their vs registers before any temporary so they never collide
@@ -1822,6 +1847,7 @@ static bool generateCT(Function &K, WTGen &WT, Module &CT, raw_ostream &Err) {
   if (WT.VSOffset) asmCall(B, "vmcs vs" + std::to_string(WT.VSOffset) + ", $0", "r", {Off});
   if (WT.VSLocalSize) asmCall(B, "vmcs vs" + std::to_string(WT.VSLocalSize) + ", $0", "r", {VL});
   if (WT.VSGroupId) asmCall(B, "vmcs vs" + std::to_string(WT.VSGroupId) + ", $0", "r", {Grp});
+  if (WT.VSGlobalSize) asmCall(B, "vmcs vs" + std::to_string(WT.VSGlobalSize) + ", $0", "r", {N});
 
   // ---- vf segments; control-thread loops between them
   // Per-group values the kernel's uniform slice may reference are cloned fresh for every group

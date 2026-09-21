@@ -2,6 +2,7 @@
 #include "llvm/Analysis/ScalarEvolutionExpressions.h"
 #include "llvm/Analysis/TargetTransformInfoImpl.h"
 #include "llvm/ADT/GenericUniformityImpl.h"
+#include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/CFG.h"
 #include "llvm/IR/InstIterator.h"
 #include "llvm/IR/Constants.h"
@@ -191,7 +192,7 @@ static bool isLogfCall(const CallInst *CI) {
   const Function *Callee = CI->getCalledFunction();
   if (!Callee || CI->arg_size() != 1 || !CI->getType()->isFloatTy() || !CI->getArgOperand(0)->getType()->isFloatTy()) return false;
   StringRef N = Callee->getName();
-  return N == "logf" || N == "llvm.log.f32" || N == "_Z4logf" || N == "__nv_logf";
+  return N == "logf" || N == "llvm.log.f32" || N == "_Z4logf" || N == "_Z3logf" || N == "__nv_logf";   // _Z3logf: OpenCL log(float)
 }
 void hwacha::expandLogf(Function &F) {
   SmallVector<CallInst *, 8> Calls;
@@ -469,5 +470,141 @@ void KernelAnalysis::print(raw_ostream &OS) const {
     case AddrKind::Gather:  OS << "GATHER  index=" << *A.Index; break;
     }
     OS << "   <- " << *A.I << "\n";
+  }
+}
+
+
+// ---- OpenCL / Rodinia odds and ends -------------------------------------------------------------
+#include "llvm/Passes/PassBuilder.h"
+#include "llvm/Transforms/Utils/LowerSwitch.h"
+
+// ceil(float) -> -floor(-x) (expandFloorf then inlines the floor), mul24 -> mul, abs(int) and
+// llvm.usub.sat -> selects. Run before expandFloorf / expandAbsI.
+void hwacha::expandOpenCLMisc(Function &F) {
+  SmallVector<CallInst *, 8> Calls;
+  for (Instruction &I : instructions(F)) if (auto *CI = dyn_cast<CallInst>(&I)) if (CI->getCalledFunction()) Calls.push_back(CI);
+  for (CallInst *CI : Calls) {
+    StringRef N = CI->getCalledFunction()->getName();
+    IRBuilder<> B(CI); Value *R = nullptr;
+    if (N == "_Z4ceilf" && CI->arg_size() == 1 && CI->getType()->isFloatTy()) {
+      Value *X = CI->getArgOperand(0);
+      R = B.CreateFNeg(B.CreateUnaryIntrinsic(Intrinsic::floor, B.CreateFNeg(X)));
+    } else if (N == "_Z5mul24ii" || N == "_Z5mul24jj") {
+      R = B.CreateMul(CI->getArgOperand(0), CI->getArgOperand(1));
+    } else if (N == "_Z3absi" || N == "_Z3absl") {
+      Value *X = CI->getArgOperand(0);
+      R = B.CreateSelect(B.CreateICmpSLT(X, ConstantInt::get(X->getType(), 0)), B.CreateNeg(X), X);
+    } else if (N.starts_with("llvm.usub.sat.")) {
+      Value *A = CI->getArgOperand(0), *Bv = CI->getArgOperand(1);
+      R = B.CreateSelect(B.CreateICmpUGT(A, Bv), B.CreateSub(A, Bv), ConstantInt::get(A->getType(), 0));
+    }
+    if (R) { CI->replaceAllUsesWith(R); CI->eraseFromParent(); }
+  }
+}
+
+// switch -> branches (the worker-thread codegen only knows conditional branches).
+void hwacha::lowerSwitches(Function &F) {
+  bool Any = false;
+  for (BasicBlock &BB : F) if (isa<SwitchInst>(BB.getTerminator())) { Any = true; break; }
+  if (!Any) return;
+  PassBuilder PB; FunctionAnalysisManager FAM; PB.registerFunctionAnalyses(FAM);
+  FunctionPassManager FPM; FPM.addPass(LowerSwitchPass()); FPM.run(F, FAM);
+}
+
+bool hwacha::isGlobalSizeCall(const Value *V) { return dim0Call(V, "_Z15get_global_sizej"); }
+
+// 2-D NDRanges: a work-group of LS0 x LS1 work-items is flattened onto LS0*LS1 lanes and the NG0 x NG1
+// groups onto NG0*NG1 sequential groups. (Barriers keep their meaning only while the whole group fits
+// one stripmine, i.e. LS0*LS1 <= the kernel's maxvl; hwacha_vl_short reports when it does not.) The lane / group index the
+// codegen provides (get_local_id(0) / get_group_id(0)) becomes the flattened one, and every
+// work-item query is rewritten in terms of it and of the host-set globals hwacha_ls0, hwacha_ls1,
+// hwacha_ng0 (the host also sets hwacha_group_size = LS0*LS1 and passes n = the flattened total):
+//   lid0 = lane % LS0   lid1 = lane / LS0   grp0 = group % NG0   grp1 = group / NG0
+//   gid_d = grp_d * LS_d + lid_d   local_size(d) = LS_d   global_size(0) = NG0*LS0
+// Only kernels that query dimension 1 are touched.
+void hwacha::flattenNDRange(Function &F) {
+  auto dimOf = [](const CallInst *CI) -> int { auto *C = dyn_cast<ConstantInt>(CI->getArgOperand(0)); return C ? (int)C->getZExtValue() : -1; };
+  SmallVector<CallInst *, 16> Q; bool Uses1 = false;
+  for (Instruction &I : instructions(F)) if (auto *CI = dyn_cast<CallInst>(&I)) if (Function *Callee = CI->getCalledFunction()) {
+    StringRef N = Callee->getName();
+    if (N == "_Z12get_local_idj" || N == "_Z12get_group_idj" || N == "_Z13get_global_idj" || N == "_Z14get_local_sizej" || N == "_Z15get_global_sizej" || N == "_Z14get_num_groupsj") {
+      Q.push_back(CI); if (dimOf(CI) == 1) Uses1 = true;
+      if (dimOf(CI) >= 2) { errs() << "hwacha-cc: " << F.getName() << ": 3-D NDRange queries are not supported\n"; }
+    }
+  }
+  if (!Uses1) return;
+  Module &M = *F.getParent(); LLVMContext &Ctx = F.getContext(); Type *I64 = Type::getInt64Ty(Ctx);
+  auto glob = [&](StringRef Name) { GlobalVariable *G = M.getGlobalVariable(Name, true); if (!G) G = new GlobalVariable(M, I64, false, GlobalValue::ExternalLinkage, nullptr, Name); return G; };
+  auto decl = [&](StringRef Name) { return M.getOrInsertFunction(Name, FunctionType::get(I64, {Type::getInt32Ty(Ctx)}, false)); };
+  IRBuilder<> B(&*F.getEntryBlock().getFirstInsertionPt());
+  // The flattened work-item index is derived from the *global* id: a LS0*LS1 group larger than the
+  // vector length Hwacha grants this kernel (maxvl depends on its register count) is executed as
+  // several stripmines, and get_local_id(0) / get_group_id(0) then count within a stripmine, not
+  // within the work-group. gid = group*LS0*LS1 + lane is unaffected.
+  Value *Gid = B.CreateCall(decl("_Z13get_global_idj"), {B.getInt32(0)}, "gid");
+  Value *LS0 = B.CreateLoad(I64, glob("hwacha_ls0"), "ls0"), *LS1 = B.CreateLoad(I64, glob("hwacha_ls1"), "ls1"), *NG0 = B.CreateLoad(I64, glob("hwacha_ng0"), "ng0");
+  Value *GS = B.CreateMul(LS0, LS1, "gs");
+  Value *Lane = B.CreateURem(Gid, GS, "lane"), *Grp = B.CreateUDiv(Gid, GS, "grp");
+  Value *Lid0 = B.CreateURem(Lane, LS0, "lid0"), *Lid1 = B.CreateUDiv(Lane, LS0, "lid1");
+  Value *Grp0 = B.CreateURem(Grp, NG0, "grp0"), *Grp1 = B.CreateUDiv(Grp, NG0, "grp1");
+  Value *Gid0 = B.CreateAdd(B.CreateMul(Grp0, LS0), Lid0, "gid0"), *Gid1 = B.CreateAdd(B.CreateMul(Grp1, LS1), Lid1, "gid1");
+  for (CallInst *CI : Q) {
+    int D = dimOf(CI); if (D < 0 || D > 1) continue;
+    StringRef N = CI->getCalledFunction()->getName(); Value *R = nullptr;
+    if (N == "_Z12get_local_idj") R = D ? Lid1 : Lid0;
+    else if (N == "_Z12get_group_idj") R = D ? Grp1 : Grp0;
+    else if (N == "_Z13get_global_idj") R = D ? Gid1 : Gid0;
+    else if (N == "_Z14get_local_sizej") R = D ? LS1 : LS0;
+    else if (N == "_Z15get_global_sizej") { IRBuilder<> Bi(CI); R = D ? Bi.CreateMul(B.CreateLoad(I64, glob("hwacha_ng1")), LS1) : Bi.CreateMul(NG0, LS0); }
+    else if (N == "_Z14get_num_groupsj") R = D ? B.CreateLoad(I64, glob("hwacha_ng1")) : NG0;
+    if (R) { CI->replaceAllUsesWith(R); CI->eraseFromParent(); }
+  }
+}
+
+
+// Drop `nuw` from the kernel's integer arithmetic. clang infers it from a dominating guard (nw's
+// `if (tx <= m)` makes `(m - tx) * 17 + 17` unsigned-no-wrap), and SCEV then turns the sext of such an
+// expression into a zext and distributes it over its re-associated parts (`zext(17 - 17*tx) + 17*m`),
+// which is wrong as soon as a part wraps on its own (tx = 2: zext(-17) + 34 = 2^32 + 17). Registers
+// hold sign-extended values and sext distributes over nsw adds, so nothing is lost without nuw.
+void hwacha::dropNUW(Function &F) {
+  for (Instruction &I : instructions(F))
+    if (auto *BO = dyn_cast<OverflowingBinaryOperator>(&I))
+      if (BO->hasNoUnsignedWrap()) cast<Instruction>(BO)->setHasNoUnsignedWrap(false);
+}
+
+
+// llvm.memcpy / llvm.memset with a constant size (clang emits them for struct assignments such as
+// lavaMD's `rA_shared[wtx] = d_rv_gpu[first_i + wtx]`) -> element-wise loads and stores. The codegen
+// only knows loads and stores; a memcpy it does not recognise is silently dropped (the destination
+// stays undef). Widths: 8-byte units while the size and both alignments allow, else 4, else 1.
+void hwacha::expandMemIntrinsics(Function &F) {
+  SmallVector<CallInst *, 8> Calls;
+  for (Instruction &I : instructions(F)) if (auto *CI = dyn_cast<CallInst>(&I)) if (auto *II = dyn_cast<IntrinsicInst>(CI))
+    if (II->getIntrinsicID() == Intrinsic::memcpy || II->getIntrinsicID() == Intrinsic::memmove || II->getIntrinsicID() == Intrinsic::memset)
+      if (isa<ConstantInt>(II->getArgOperand(2))) Calls.push_back(CI);
+  for (CallInst *CI : Calls) {
+    auto *II = cast<IntrinsicInst>(CI);
+    uint64_t N = cast<ConstantInt>(II->getArgOperand(2))->getZExtValue();
+    IRBuilder<> B(CI); LLVMContext &C = F.getContext();
+    Value *Dst = II->getArgOperand(0);
+    bool IsSet = II->getIntrinsicID() == Intrinsic::memset;
+    Value *Src = IsSet ? nullptr : II->getArgOperand(1);
+    uint64_t DA = cast<MemIntrinsic>(II)->getDestAlign().valueOrOne().value();
+    uint64_t SA = IsSet ? 8 : cast<MemTransferInst>(II)->getSourceAlign().valueOrOne().value();
+    uint64_t W = 8; while (W > 1 && (N % W || DA % W || SA % W)) W /= 2;
+    Type *ET = W == 8 ? Type::getInt64Ty(C) : W == 4 ? Type::getInt32Ty(C) : Type::getInt8Ty(C);
+    Value *SetV = nullptr;
+    if (IsSet) {   // splat the byte
+      uint64_t Byte = cast<ConstantInt>(II->getArgOperand(1))->getZExtValue() & 0xff, V = 0;
+      for (unsigned i = 0; i < W; i++) V |= Byte << (8 * i);
+      SetV = ConstantInt::get(ET, V);
+    }
+    for (uint64_t Off = 0; Off < N; Off += W) {
+      Value *D = B.CreateInBoundsGEP(B.getInt8Ty(), Dst, B.getInt64(Off));
+      Value *V = IsSet ? SetV : B.CreateAlignedLoad(ET, B.CreateInBoundsGEP(B.getInt8Ty(), Src, B.getInt64(Off)), Align(W));
+      B.CreateAlignedStore(V, D, Align(W));
+    }
+    CI->eraseFromParent();
   }
 }

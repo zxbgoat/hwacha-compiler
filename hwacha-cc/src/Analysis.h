@@ -53,6 +53,17 @@ bool isLocalId(const llvm::Value *V);
 // Uniform per-group queries (get_local_size(0), get_group_id(0)) and barrier().
 bool isLocalSizeCall(const llvm::Value *V);
 bool isGroupIdCall(const llvm::Value *V);
+bool isGlobalSizeCall(const llvm::Value *V);
+// OpenCL ceil / mul24 / abs(int) / llvm.usub.sat as arithmetic; run before expandFloorf / expandAbsI.
+void expandOpenCLMisc(llvm::Function &F);
+// switch -> conditional branches
+void lowerSwitches(llvm::Function &F);
+// strip nuw from integer arithmetic (guard-derived nuw lets SCEV zext-split addresses wrongly)
+void dropNUW(llvm::Function &F);
+// constant-size llvm.memcpy / memmove / memset -> element loads and stores (the codegen drops them otherwise)
+void expandMemIntrinsics(llvm::Function &F);
+// 2-D NDRange queries rewritten onto the flattened 1-D lane / group index (see Analysis.cpp)
+void flattenNDRange(llvm::Function &F);
 bool isBarrierCall(const llvm::Value *V);
 // work_group_reduce_{add,min,max}(x): cross-lane reduction over the work-group; Op receives "add"/"min"/"max"
 bool isWorkGroupReduce(const llvm::Value *V, llvm::StringRef *Op = nullptr);
