@@ -62,6 +62,10 @@ void lowerSwitches(llvm::Function &F);
 void dropNUW(llvm::Function &F);
 // constant-size llvm.memcpy / memmove / memset -> element loads and stores (the codegen drops them otherwise)
 void expandMemIntrinsics(llvm::Function &F);
+// allocas -> per-lane slices of a per-kernel private buffer
+void expandAllocas(llvm::Function &F);
+// inline the defined functions kernels call, then SROA the kernels
+void inlineCallees(llvm::Module &M);
 // 2-D NDRange queries rewritten onto the flattened 1-D lane / group index (see Analysis.cpp)
 void flattenNDRange(llvm::Function &F);
 bool isBarrierCall(const llvm::Value *V);

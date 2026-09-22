@@ -240,7 +240,7 @@ void hwacha::expandLogExpM1Pow(Function &F) {
     if (CI->getType()->isFloatTy()) {
       if (CI->arg_size() == 1 && isNamed(CI, {"log1pf", "llvm.log1p.f32", "__nv_log1pf"})) log1p.push_back(CI);
       else if (CI->arg_size() == 1 && isNamed(CI, {"expm1f", "llvm.expm1.f32", "__nv_expm1f"})) expm1.push_back(CI);
-      else if (CI->arg_size() == 2 && isNamed(CI, {"powf", "llvm.pow.f32", "__nv_powf"})) pow.push_back(CI);
+      else if (CI->arg_size() == 2 && isNamed(CI, {"powf", "llvm.pow.f32", "__nv_powf", "_Z3powff"})) pow.push_back(CI);
       else if (CI->arg_size() == 2 && isNamed(CI, {"powif", "llvm.powi.f32", "__nv_powif"})) powi.push_back(CI);
     }
   }
@@ -480,7 +480,29 @@ void KernelAnalysis::print(raw_ostream &OS) const {
 
 // ceil(float) -> -floor(-x) (expandFloorf then inlines the floor), mul24 -> mul, abs(int) and
 // llvm.usub.sat -> selects. Run before expandFloorf / expandAbsI.
+// log10(x) = log(x) * log10(e) and fmod(x, y) = x - trunc(x / y) * y (trunc via the integer
+// conversion, exact while the quotient fits an i32), emitted before expandLogf runs.
+static void expandLog10Fmod(Function &F) {
+  SmallVector<CallInst *, 8> Calls;
+  for (Instruction &I : instructions(F)) if (auto *CI = dyn_cast<CallInst>(&I)) if (CI->getCalledFunction()) Calls.push_back(CI);
+  for (CallInst *CI : Calls) {
+    StringRef N = CI->getCalledFunction()->getName();
+    if (!CI->getType()->isFloatTy()) continue;
+    IRBuilder<> B(CI); Value *R = nullptr;
+    if ((N == "_Z5log10f" || N == "log10f" || N == "llvm.log10.f32") && CI->arg_size() == 1) {
+      Function *LogF = cast<Function>(F.getParent()->getOrInsertFunction("logf", B.getFloatTy(), B.getFloatTy()).getCallee());
+      R = B.CreateFMul(B.CreateCall(LogF, {CI->getArgOperand(0)}), ConstantFP::get(B.getFloatTy(), 0.43429448190325182765));
+    } else if ((N == "_Z4fmodff" || N == "fmodf") && CI->arg_size() == 2) {
+      Value *X = CI->getArgOperand(0), *Y = CI->getArgOperand(1);
+      Value *Q = B.CreateSIToFP(B.CreateFPToSI(B.CreateFDiv(X, Y), B.getInt32Ty()), B.getFloatTy());
+      R = B.CreateFSub(X, B.CreateFMul(Q, Y));
+    }
+    if (R) { CI->replaceAllUsesWith(R); CI->eraseFromParent(); }
+  }
+}
+
 void hwacha::expandOpenCLMisc(Function &F) {
+  expandLog10Fmod(F);
   SmallVector<CallInst *, 8> Calls;
   for (Instruction &I : instructions(F)) if (auto *CI = dyn_cast<CallInst>(&I)) if (CI->getCalledFunction()) Calls.push_back(CI);
   for (CallInst *CI : Calls) {
@@ -606,5 +628,55 @@ void hwacha::expandMemIntrinsics(Function &F) {
       B.CreateAlignedStore(V, D, Align(W));
     }
     CI->eraseFromParent();
+  }
+}
+
+
+// Private (per-work-item) memory: an alloca in a kernel becomes a slice of a per-kernel buffer,
+// indexed by the lane (get_local_id(0) = the element index within the stripmine; groups run one
+// after another, so one buffer per kernel is enough). The buffer is a kernel-module global the
+// control-thread module clones like the __local arrays.
+void hwacha::expandAllocas(Function &F) {
+  SmallVector<AllocaInst *, 8> Allocas;
+  for (Instruction &I : instructions(F)) if (auto *A = dyn_cast<AllocaInst>(&I)) Allocas.push_back(A);
+  if (Allocas.empty()) return;
+  Module &M = *F.getParent(); LLVMContext &Ctx = F.getContext(); const DataLayout &DL = M.getDataLayout();
+  const uint64_t Lanes = 512;   // >= any vector length Hwacha grants (maxvl <= 2048 / registers)
+  FunctionCallee Lid = M.getOrInsertFunction("_Z12get_local_idj", FunctionType::get(Type::getInt64Ty(Ctx), {Type::getInt32Ty(Ctx)}, false));
+  unsigned n = 0;
+  for (AllocaInst *A : Allocas) {
+    if (!A->isStaticAlloca()) { errs() << "hwacha-cc: " << F.getName() << ": dynamic alloca is not supported\n"; continue; }
+    uint64_t S = (DL.getTypeAllocSize(A->getAllocatedType()) * cast<ConstantInt>(A->getArraySize())->getZExtValue() + 7) & ~7ULL;
+    auto *AT = ArrayType::get(Type::getInt8Ty(Ctx), Lanes * S);
+    auto *G = new GlobalVariable(M, AT, false, GlobalValue::InternalLinkage, ConstantAggregateZero::get(AT), (F.getName() + ".priv" + Twine(n++)).str());
+    G->setAlignment(Align(8));
+    IRBuilder<> B(A);
+    Value *Lane = B.CreateCall(Lid, {B.getInt32(0)}, "lane");
+    Value *P = B.CreateInBoundsGEP(B.getInt8Ty(), G, B.CreateMul(Lane, B.getInt64(S)), "priv");
+    A->replaceAllUsesWith(P); A->eraseFromParent();
+  }
+}
+
+
+// Inline every defined non-kernel function a kernel calls (clang keeps large helpers such as dwt2d's
+// `transform` as calls; hwacha-cc only emits kernels, and a dropped call means dropped work), then
+// SROA the kernels so the callees' small structs become registers before expandAllocas.
+#include "llvm/Transforms/IPO/AlwaysInliner.h"
+#include "llvm/Transforms/Scalar/SROA.h"
+void hwacha::inlineCallees(Module &M) {
+  bool Any = false;
+  for (Function &F : M) {
+    if (F.isDeclaration() || isKernel(F)) continue;
+    F.removeFnAttr(Attribute::NoInline); F.removeFnAttr(Attribute::OptimizeNone);
+    F.addFnAttr(Attribute::AlwaysInline); Any = true;
+  }
+  if (!Any) return;
+  PassBuilder PB;
+  LoopAnalysisManager LAM; FunctionAnalysisManager FAM; CGSCCAnalysisManager CGAM; ModuleAnalysisManager MAM;
+  PB.registerModuleAnalyses(MAM); PB.registerCGSCCAnalyses(CGAM); PB.registerFunctionAnalyses(FAM); PB.registerLoopAnalyses(LAM);
+  PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+  ModulePassManager MPM; MPM.addPass(AlwaysInlinerPass()); MPM.run(M, MAM);
+  for (Function &F : M) if (!F.isDeclaration() && isKernel(F)) {
+    FunctionPassManager FPM; FPM.addPass(SROAPass(SROAOptions::ModifyCFG)); FPM.run(F, FAM);
   }
 }

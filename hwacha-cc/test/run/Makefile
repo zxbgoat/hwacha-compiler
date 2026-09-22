@@ -3,6 +3,7 @@ ROOT    := ../../..
 COMMON  := $(ROOT)/esp-tests/benchmarks/common
 CLANG   := $(HOME)/miniforge3/bin/clang
 HWCC    := ../../build/hwacha-cc
+HWCCFLAGS ?=          # e.g. "-vregs 6 -vpregs 8" to run the suite through the register spillers
 CC      := riscv64-unknown-elf-gcc-xhwacha
 CLFLAGS := -x cl -cl-std=CL1.2 -Xclang -finclude-default-header --target=riscv64-unknown-elf -march=rv64gc -O2 \
            -Xclang -cl-ext=+cl_khr_fp64 -fno-vectorize -fno-slp-vectorize -fno-unroll-loops -emit-llvm -S
@@ -11,7 +12,7 @@ CFLAGS  := -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -f
 LDFLAGS := -static -nostdlib -nostartfiles -lm -lgcc -T $(COMMON)/test.ld
 SPIKE   := spike --isa=rv64gc --extension=hwacha
 
-TESTS := spec gather cf lc local misc flag pfmin red
+TESTS := spec gather cf lc local misc flag pfmin red pload
 
 all: $(addsuffix .riscv,$(TESTS))
 run: $(addsuffix .run,$(TESTS))
@@ -19,7 +20,7 @@ run: $(addsuffix .run,$(TESTS))
 %.ll: %.cl
 	$(CLANG) $(CLFLAGS) $< -o $@
 %.s: %.ll $(HWCC)
-	$(HWCC) $< -o $@
+	$(HWCC) $(HWCCFLAGS) $< -o $@
 %.riscv: %_main.c %.s $(COMMON)/crt.S $(COMMON)/syscalls.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 %.run: %.riscv

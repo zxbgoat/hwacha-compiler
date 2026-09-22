@@ -1,3 +1,4 @@
+#include <cstdlib>
 // hwacha-cc: OpenCL (via clang LLVM IR) -> Hwacha vector-fetch code.
 //   hwacha-cc kernels.ll -o kernels.s        emit assembly (worker threads + control threads)
 //   hwacha-cc kernels.ll --analyze           print the analysis report only
@@ -25,6 +26,9 @@ static cl::opt<bool> NoSkip("no-skip", cl::desc("ablation: no consensual jumps a
 static cl::opt<bool> NoCoalesce("no-coalesce", cl::desc("ablation: no phi coalescing"));
 static cl::opt<bool> ScalarFP("scalar-fp", cl::desc("allow uniform floating-point ops in vs registers (Spike only)"));
 static cl::opt<bool> VerboseOpt("verbose", cl::desc("print code generation diagnostics"));
+static cl::opt<unsigned> VPRegs("vpregs", cl::desc("testing: predicate registers usable (forces predicate spills)"), cl::init(0));
+static cl::opt<unsigned> VSRegs("vsregs", cl::desc("testing: shared registers usable (forces uniform spills)"), cl::init(0));
+static cl::opt<unsigned> VRegs("vregs", cl::desc("cap on vector registers (64-bit + 32-bit) per kernel; live values beyond it spill to memory (default: 2048/reqd_work_group_size, else no cap)"), cl::init(0));
 static cl::opt<bool> NoCTLoops("no-ct-loops", cl::desc("do not run uniform loops on the control thread (ablation)"));
 static cl::opt<bool> SubwordRMW("subword-rmw", cl::desc("lower masked sub-word stores to load/select/store (workaround for the unpatched Hwacha RTL store-credit bug)"));
 static cl::opt<bool> GPUBlock1("gpu-block1", cl::desc("GPU-dialect input: treat every kernel as launched with block size 1 (block id = work-item id)"));
@@ -45,22 +49,24 @@ int main(int argc, char **argv) {
         for (Argument &A : F.args()) if (A.getType()->isPointerTy()) A.addAttr(Attribute::NoAlias);
   bool FromGPU = false;
   if (!hwacha::adaptGPUModule(*M, GPUBlock1, GPUNoOpt, errs(), FromGPU)) return 1;
+  hwacha::inlineCallees(*M);
   if (FromGPU && KeepTemps) { std::error_code EC; raw_fd_ostream O((OutputFile.empty() ? std::string("out") : OutputFile.substr(0, OutputFile.rfind('.'))) + ".gpu.ll", EC); if (!EC) M->print(O, nullptr); }
 
   auto CT = std::make_unique<Module>("hwacha-ct", Ctx);
   CT->setTargetTriple(M->getTargetTriple());
   CT->setDataLayout(M->getDataLayout());
   std::string WTText; raw_string_ostream WT(WTText);
-  hwacha::CodeGenOptions Opts; Opts.Stats = Stats; Opts.NoV32 = NoV32; Opts.NoSkip = NoSkip; Opts.NoCoalesce = NoCoalesce; Opts.ScalarFP = ScalarFP; Opts.SubwordRMW = SubwordRMW; Opts.NoCTLoops = NoCTLoops; Opts.Verbose = VerboseOpt;
+  hwacha::CodeGenOptions Opts; Opts.Stats = Stats; Opts.NoV32 = NoV32; Opts.NoSkip = NoSkip; Opts.NoCoalesce = NoCoalesce; Opts.ScalarFP = ScalarFP; Opts.SubwordRMW = SubwordRMW; Opts.NoCTLoops = NoCTLoops; Opts.Verbose = VerboseOpt; Opts.MaxVRegs = VRegs; Opts.MaxVPRegs = VPRegs; Opts.MaxVSRegs = VSRegs;
   int n = 0;
   for (Function &F : *M) {
     if (!hwacha::isKernel(F)) continue;
-    hwacha::lowerSwitches(F); hwacha::flattenNDRange(F); hwacha::expandOpenCLMisc(F); hwacha::expandMemIntrinsics(F);
+    hwacha::lowerSwitches(F); hwacha::flattenNDRange(F); hwacha::expandAllocas(F); hwacha::expandOpenCLMisc(F); hwacha::expandMemIntrinsics(F);
     hwacha::expandAbsI(F); hwacha::expandLogExpM1Pow(F); hwacha::expandTanhf(F); hwacha::expandFloorf(F); hwacha::expandErff(F); hwacha::expandLogf(F);
     hwacha::expandExpf(F);
     if (FPContract) hwacha::contractFMA(F);
     hwacha::prepareKernel(F);
     hwacha::lowerSwitches(F); hwacha::expandOpenCLMisc(F); hwacha::dropNUW(F);   // InstCombine / SimplifyCFG re-form usub.sat and switches
+    if (getenv("HWCC_DUMP_IR")) { errs() << "=== kernel IR after preparation: " << F.getName() << "\n"; F.print(errs()); }
     hwacha::KernelAnalysis KA(F);
     if (AnalyzeOnly) { KA.print(outs()); n++; continue; }
     if (!hwacha::generateKernel(F, KA, *CT, WT, errs(), Opts)) return 1;

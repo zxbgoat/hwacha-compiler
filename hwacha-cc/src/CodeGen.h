@@ -19,6 +19,9 @@ struct CodeGenOptions {
   bool SubwordRMW = false;   // lower masked sub-word unit-stride stores to load/select/store: workaround for the
                              // unpatched Hwacha RTL (store-credit overflow, see patches/); default: emit them directly
   bool NoCTLoops = false;  // keep every loop inside the vf block (ablation: no control-thread-driven loops)
+  unsigned MaxVRegs = 0;
+  unsigned MaxVPRegs = 0;  // testing: predicate registers usable (forces predicate spills)
+  unsigned MaxVSRegs = 0;  // testing: shared registers usable (forces uniform spills)   // cap on vv+vw registers (0: 2048/reqd_work_group_size if present, else none); the rest spill
 };
 
 // Returns false and writes a diagnostic to Err if the kernel uses something unsupported.
