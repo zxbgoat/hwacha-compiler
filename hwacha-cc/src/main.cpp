@@ -50,6 +50,7 @@ int main(int argc, char **argv) {
   bool FromGPU = false;
   if (!hwacha::adaptGPUModule(*M, GPUBlock1, GPUNoOpt, errs(), FromGPU)) return 1;
   hwacha::inlineCallees(*M);
+  hwacha::scalarizeVectors(*M);
   if (FromGPU && KeepTemps) { std::error_code EC; raw_fd_ostream O((OutputFile.empty() ? std::string("out") : OutputFile.substr(0, OutputFile.rfind('.'))) + ".gpu.ll", EC); if (!EC) M->print(O, nullptr); }
 
   auto CT = std::make_unique<Module>("hwacha-ct", Ctx);
@@ -61,11 +62,11 @@ int main(int argc, char **argv) {
   for (Function &F : *M) {
     if (!hwacha::isKernel(F)) continue;
     hwacha::lowerSwitches(F); hwacha::flattenNDRange(F); hwacha::expandAllocas(F); hwacha::expandOpenCLMisc(F); hwacha::expandMemIntrinsics(F);
-    hwacha::expandAbsI(F); hwacha::expandLogExpM1Pow(F); hwacha::expandTanhf(F); hwacha::expandFloorf(F); hwacha::expandErff(F); hwacha::expandLogf(F);
+    hwacha::expandAbsI(F); hwacha::expandFunnelShift(F); hwacha::expandLogExpM1Pow(F); hwacha::expandTanhf(F); hwacha::expandSinCosf(F); hwacha::expandFloorf(F); hwacha::expandErff(F); hwacha::expandLogf(F);
     hwacha::expandExpf(F);
     if (FPContract) hwacha::contractFMA(F);
     hwacha::prepareKernel(F);
-    hwacha::lowerSwitches(F); hwacha::expandOpenCLMisc(F); hwacha::dropNUW(F);   // InstCombine / SimplifyCFG re-form usub.sat and switches
+    hwacha::lowerSwitches(F); hwacha::expandOpenCLMisc(F); hwacha::expandFunnelShift(F); hwacha::dropNUW(F);   // InstCombine / SimplifyCFG re-form usub.sat, switches and rotates
     if (getenv("HWCC_DUMP_IR")) { errs() << "=== kernel IR after preparation: " << F.getName() << "\n"; F.print(errs()); }
     hwacha::KernelAnalysis KA(F);
     if (AnalyzeOnly) { KA.print(outs()); n++; continue; }
@@ -78,7 +79,7 @@ int main(int argc, char **argv) {
   if (!HostFile.empty()) {   // host code from hwacha-mlir: same -O2, linked into the control-thread module
     std::unique_ptr<Module> HM = parseIRFile(HostFile, Err, Ctx);
     if (!HM) { Err.print(argv[0], errs()); return 1; }
-    for (Function &F : *HM) if (!F.isDeclaration()) { hwacha::expandAbsI(F); hwacha::expandLogExpM1Pow(F); hwacha::expandTanhf(F); hwacha::expandFloorf(F); hwacha::expandErff(F); hwacha::expandLogf(F); hwacha::expandExpf(F); }
+    for (Function &F : *HM) if (!F.isDeclaration()) { hwacha::expandAbsI(F); hwacha::expandFunnelShift(F); hwacha::expandLogExpM1Pow(F); hwacha::expandTanhf(F); hwacha::expandSinCosf(F); hwacha::expandFloorf(F); hwacha::expandErff(F); hwacha::expandLogf(F); hwacha::expandExpf(F); }
     hwacha::optimizeModule(*HM);
     for (StringRef G : {"hwacha_group_size", "hwacha_grid_size"})   // written by the lowered launches
       if (!CT->getGlobalVariable(G, true)) {

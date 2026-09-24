@@ -165,6 +165,8 @@ public:
   unsigned VSOffset = 0;      // vs register that receives the stripmine element offset, 0 if unused
   unsigned VSLocalSize = 0;   // vs register that receives vl (get_local_size), 0 if unused
   unsigned VSGlobalSize = 0;  // vs register that receives n (get_global_size), 0 if unused
+  unsigned VSNumGroups = 0;   // vs register that receives ceil(n / group size) (get_num_groups(0)), 0 if unused
+  bool NumGroupsUsedInCT = false;   // a get_num_groups(0) is evaluated by the control thread (uniform)
   unsigned VSGroupId = 0;     // vs register that receives the stripmine iteration index, 0 if unused
   bool UsesBarrier = false;
   uint64_t GroupSize = 0;     // reqd_work_group_size(X,1,1) if present
@@ -654,6 +656,7 @@ bool WTGen::spillOneVec(RC C, bool Diag) {
         if (CurOperands.count(KV.first)) r += "(curop)"; if (PreferReg.count(KV.first)) r += "(prefer)"; if (CTPinned.count(KV.first)) r += "(ctpinned)"; if (KV.first == CurInst) r += "(cur)";
         if (auto *I = dyn_cast<Instruction>(KV.first)) if (SpecialCalls.count(I)) r += "(special)";
         if (Excluded.count(KV.second.Idx)) r += "(excluded)";
+        if (auto *VI = dyn_cast<Instruction>(KV.first)) { if (isa<PHINode>(VI) && !phiOk(cast<PHINode>(VI))) r += "[phi:ct/captured]"; if (CTPinned.count(VI)) r += "[ctpinned]"; if (PreferReg.count(VI)) r += "[prefer]"; if (CurOperands.count(VI)) r += "[curop]"; if (SpecialCalls.count(VI)) r += "[special]"; if (SpilledVec.count(VI)) r += "[spilled]"; if (!DefEnd.count(VI)) r += "[nodefend]"; if (!loopSafe(VI, false)) r += "[loop:def " + std::to_string(DefPos.lookup(VI)) + " pos " + std::to_string(CurPos) + "]"; }
         errs() << "  " << KV.second.str() << ": " << r << " lastuse " << LastUse.lookup(KV.first) << "\n"; }
     }
     return false;
@@ -770,6 +773,8 @@ Reg WTGen::regOfValue(Value *V) {
     Reg R = allocInputVS(); RegOf[V] = R; VSInputs.push_back({R.Idx, V}); return R;
   }
   std::string Str; raw_string_ostream OS(Str); V->print(OS);
+  if (auto *VI = dyn_cast<Instruction>(V)) OS << "  [defined in block " << VI->getParent()->getName() << (Needed.count(VI) ? ", needed" : ", NOT needed") << (inCTBody(VI) ? ", in a control-thread region" : "") << "]";
+  OS << "  while emitting " << DbgWhere;
   report_fatal_error(Twine("operand has no register: ") + Str);
 }
 
@@ -833,7 +838,7 @@ bool WTGen::ctCloneableImpl(Value *V, DenseSet<Value *> &Seen, unsigned Depth) {
   auto *I = dyn_cast<Instruction>(V);
   if (!I || !isUniform(I)) return false;
   if (isWorkItemId(I)) return false;
-  if (isLocalSizeCall(I) || isGroupIdCall(I) || isGlobalSizeCall(I)) return true;
+  if (isLocalSizeCall(I) || isGroupIdCall(I) || isGlobalSizeCall(I) || isNumGroupsCall(I)) return true;
   if (isWorkGroupReduce(I)) return true;   // the control thread computes it itself
   if (isa<CallBase>(I)) return false;
   if (auto *LD = dyn_cast<LoadInst>(I)) { if (!ctLoadOK(LD)) return false; return ctCloneable(LD->getPointerOperand(), Seen, Depth + 1); }
@@ -899,7 +904,7 @@ void WTGen::selectCTLoops() {
         if (I.isTerminator() || isa<StoreInst>(I)) continue;
         if (isWorkGroupReduce(&I)) continue;                                                     // a segment boundary inside the region
         if (isBarrierCall(&I) || (isa<CallBase>(I) && I.mayWriteToMemory())) { Ok = false; break; }   // barriers, atomics
-        if (isa<CallBase>(I) && !isLocalSizeCall(&I) && !isGroupIdCall(&I) && !isGlobalSizeCall(&I)) { if (isUniform(&I)) Ok = false; continue; }   // uniform builtin
+        if (isa<CallBase>(I) && !isLocalSizeCall(&I) && !isGroupIdCall(&I) && !isGlobalSizeCall(&I) && !isNumGroupsCall(&I)) { if (isUniform(&I)) Ok = false; continue; }   // uniform builtin
         if (isUniform(&I)) Ok = ctCloneable(&I, Seen);
       }
     }
@@ -1200,7 +1205,7 @@ bool WTGen::handleEdge(BasicBlock *From, BasicBlock *To, unsigned Mask, unsigned
     // capture LCSSA phi values for lanes leaving now
     for (PHINode &Phi : To->phis()) {
       int Idx = Phi.getBasicBlockIndex(From);
-      if (Idx < 0) continue;
+      if (Idx < 0 || !Needed.count(&Phi)) continue;
       Reg &Cap = Captured[&Phi];
       if (!Cap.Idx && Cap.Class != RC::VP && !RegOf.count(&Phi)) { Cap = alloc(classOf(&Phi)); RegOf[&Phi] = Cap; }
       Cap = RegOf[&Phi];
@@ -1230,6 +1235,7 @@ bool WTGen::beginLoop(Loop *L, unsigned &Pos) {
   if (PreMask == 0) emit("", "vpset", {vp(LS.Active)});
   else emit("", "vpop", {vp(LS.Active), vp(PreMask), vp(PreMask), vp(PreMask), "0xAA"});
   for (PHINode &Phi : H->phis()) {
+    if (!Needed.count(&Phi)) continue;   // e.g. a pointer walked by a stream: its address lives in a va register
     Reg D = alloc(classOf(&Phi)); RegOf[&Phi] = D;
     CurInst = &Phi;
     movePred(PreMask, D, Phi.getIncomingValueForBlock(Pre));
@@ -1260,6 +1266,7 @@ bool WTGen::endLoop(Loop *L, unsigned &Pos) {
   unsigned Back = EdgeMask.lookup({Latch, H});
   // lanes taking the back edge are exactly the still-active ones
   for (PHINode &Phi : H->phis()) {
+    if (!Needed.count(&Phi)) continue;
     CurInst = &Phi;
     if (SpilledVec.count(&Phi)) phiStore(Back, &Phi, Phi.getIncomingValueForBlock(Latch));
     else movePred(Back, RegOf[&Phi], Phi.getIncomingValueForBlock(Latch));
@@ -1309,6 +1316,7 @@ bool WTGen::emitBlock(BasicBlock *BB, unsigned &Pos) {
   if (!IsHeader)
     for (PHINode &Phi : BB->phis()) {
       if (Captured.count(&Phi)) continue;             // LCSSA phi already resolved at the exit edges
+      if (!Needed.count(&Phi)) continue;
       Reg D = alloc(classOf(&Phi)); RegOf[&Phi] = D;
       CurInst = &Phi;
       for (unsigned i = 0; i < Phi.getNumIncomingValues(); i++) {
@@ -1384,6 +1392,11 @@ bool WTGen::emitBlock(BasicBlock *BB, unsigned &Pos) {
 // under the mask that reached the loop, so a divergent guard around the nest is fine.
 bool WTGen::emitCTRegion(size_t &Idx, unsigned &Pos) {
   Loop *L = Order[Idx].L; BasicBlock *H = L->getHeader(), *Pre = L->getLoopPreheader();
+  // Region entry is the last point where vector values defined before the region can still leave
+  // their registers (nothing inside has read them yet; every use inside reloads): make room for the
+  // region's own values under a register cap (SHOC gemm: 64-lane groups need the 32-register cap).
+  CurPos = Pos + 1;
+  if (VCap < 256) while (freeVec() < 10 && (spillOneVec(RC::VW) || spillOneVec(RC::VV))) {}
   CTLoop &C = CTLoops[CTLoopOf[L]];
   restoreEdgesTo(H);
   unsigned PreMask = EdgeMask.lookup({Pre, H});
@@ -1536,6 +1549,7 @@ bool WTGen::run() {
   { unsigned Next = Streams.size(); for (auto &S : Streams) if (!S.Unit) S.StrideVA = Next++; ScratchVA = Next; TreeVA = Next + 1; }
   KA.recomputeUniformity();
   computeNeeded();
+  for (Instruction &I : instructions(F)) if (isNumGroupsCall(&I)) NumGroupsUsedInCT = true;
   for (auto &KV : GatherBase) ImplicitUsers.insert(KV.second);
   for (auto &KV : GatherIndex) ImplicitUsers.insert(KV.second);
   computeClasses();
@@ -1588,6 +1602,10 @@ bool WTGen::run() {
       SpecialCalls.insert(&I);
       if (!VSGlobalSize) VSGlobalSize = allocInputVS().Idx;
       RegOf[&I] = Reg{RC::VS, VSGlobalSize};
+    } else if (isNumGroupsCall(&I)) {
+      SpecialCalls.insert(&I);
+      if (!VSNumGroups) VSNumGroups = allocInputVS().Idx;
+      RegOf[&I] = Reg{RC::VS, VSNumGroups};
     }
   }
   // inputs (arguments, constants) get their vs registers before any temporary so they never collide
@@ -2188,7 +2206,7 @@ struct CTCloner {
   Function &K; WTGen &WT; ValueToValueMapTy &VMap; raw_ostream &Err; LoopInfo &LI;
   IRBuilder<> *Outside = nullptr; Loop *L = nullptr;
   DenseMap<const BasicBlock *, BasicBlock *> *CtBlock = nullptr;   // region block -> its control-thread clone
-  Value *VL = nullptr, *Grp = nullptr; GlobalVariable *Scratch = nullptr;
+  Value *VL = nullptr, *Grp = nullptr, *NG = nullptr; GlobalVariable *Scratch = nullptr;
   Value *clone(Value *V) {
     if (auto It = VMap.find(V); It != VMap.end()) return It->second;
     IRBuilder<> &B = *Outside;
@@ -2198,6 +2216,7 @@ struct CTCloner {
     bool InRegion = L && L->contains(I) && CtBlock;
     if (isLocalSizeCall(I)) { VMap[V] = VL; return VL; }
     if (isGroupIdCall(I)) { VMap[V] = Grp; return Grp; }
+    if (isNumGroupsCall(I) && NG) { VMap[V] = NG; return NG; }
     if (auto *Phi = dyn_cast<PHINode>(I)) {
       if (Phi->getNumIncomingValues() == 1) { Value *C = clone(Phi->getIncomingValue(0)); VMap[V] = C; return C; }   // LCSSA
       Err << "hwacha-cc: control thread cannot evaluate " << *V << "\n"; return nullptr;
@@ -2260,6 +2279,22 @@ static bool generateCT(Function &K, WTGen &WT, Module &CT, raw_ostream &Err) {
   // vsetcfg: VCFG(nvvd, nvvw, nvvh, nvp) | VRU bit
   uint64_t Cfg = (WT.NumVV & 0x1ff) | ((uint64_t)(WT.NumVP & 0x1f) << 9) | ((uint64_t)(WT.NumVW & 0x1ff) << 14) | (1ull << 63);
   asmCall(B, "vsetcfg $0", "r", {ConstantInt::get(I64, Cfg)});
+  // get_num_groups(0): ceil(n / group size) with the group size the kernel declares or the host sets
+  // (hwacha_group_size == 0 lets the hardware choose one group per stripmine: reported as 1 group)
+  Value *NG = nullptr;
+  if (WT.VSNumGroups || WT.NumGroupsUsedInCT) {
+    Value *G0;
+    if (WT.GroupSize) G0 = ConstantInt::get(I64, WT.GroupSize);
+    else {
+      GlobalVariable *GS = CT.getGlobalVariable("hwacha_group_size", true);
+      if (!GS) { GS = new GlobalVariable(CT, I64, false, GlobalValue::WeakAnyLinkage, ConstantInt::get(I64, 0), "hwacha_group_size"); GS->setAlignment(Align(8)); }
+      G0 = B.CreateLoad(I64, GS, "gs0");
+    }
+    Value *Zero = B.CreateICmpEQ(G0, ConstantInt::get(I64, 0));
+    Value *Gsafe = B.CreateSelect(Zero, ConstantInt::get(I64, 1), G0);
+    NG = B.CreateSelect(Zero, ConstantInt::get(I64, 1), B.CreateUDiv(B.CreateAdd(N, B.CreateSub(Gsafe, ConstantInt::get(I64, 1))), Gsafe), "ngroups");
+    if (WT.VSNumGroups) asmCall(B, "vmcs vs" + std::to_string(WT.VSNumGroups) + ", $0", "r", {NG});
+  }
   // uniform inputs -> vs registers, as 64-bit integer payloads
   if (WT.PoolVS) {   // the uniform pool: i64 payloads in the same format the vs registers hold
     SmallVector<Constant *, 64> Payloads; SmallVector<std::pair<unsigned, Value *>, 8> ArgSlots;
@@ -2304,7 +2339,7 @@ static bool generateCT(Function &K, WTGen &WT, Module &CT, raw_ostream &Err) {
   }
   // stream bases that are fixed for the whole kernel, and stride registers
   SmallVector<Value *, 8> Bases;
-  CTCloner EntryCloner{K, WT, VMap, Err, KLI}; EntryCloner.Outside = &B;
+  CTCloner EntryCloner{K, WT, VMap, Err, KLI}; EntryCloner.Outside = &B; EntryCloner.NG = NG;
   for (auto &S : WT.Streams) {
     if (S.PerIter >= 0) { Bases.push_back(nullptr); continue; }
     Value *Bv = EntryCloner.clone(S.Base); if (!Bv) return false; Bases.push_back(Bv);
@@ -2366,7 +2401,7 @@ static bool generateCT(Function &K, WTGen &WT, Module &CT, raw_ostream &Err) {
   // Per-group values the kernel's uniform slice may reference are cloned fresh for every group
   // (they can depend on the offset / vl), so start from the entry-level map each time.
   ValueToValueMapTy GMap; for (auto KV : VMap) GMap[KV.first] = KV.second;
-  CTCloner Cl{K, WT, GMap, Err, KLI}; Cl.VL = VL; Cl.Grp = Grp; Cl.Outside = &B;
+  CTCloner Cl{K, WT, GMap, Err, KLI}; Cl.VL = VL; Cl.Grp = Grp; Cl.NG = NG; Cl.Outside = &B;
   Cl.Scratch = WT.Reductions.empty() ? nullptr : CT.getGlobalVariable((K.getName() + "_scratch").str(), true);
   DenseMap<BasicBlock *, Value *> Reached;
   std::function<Value *(BasicBlock *)> reached = [&](BasicBlock *BB) -> Value * {

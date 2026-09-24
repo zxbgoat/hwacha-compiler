@@ -147,6 +147,54 @@ void hwacha::expandTanhf(Function &F) {
   }
 }
 
+// sinf / cosf (SHOC's fft twiddles: exp_i(phi) = (cos(phi), sin(phi))) as straight-line arithmetic:
+// k = round(x * 2/pi) (floor(t + 0.5) via truncation, corrected for negatives), r = x - k*pi/2 in
+// two Cody-Waite parts (|x| up to a few thousand keeps r accurate to ~1e-6), Taylor polynomials on
+// |r| <= pi/4 (degree 9 for sin, 8 for cos: error ~2e-7), quadrant q = k & 3 selects and negates.
+// Applies to sinf / cosf, llvm.sin/cos.f32, _Z3sinf / _Z3cosf and their native_ / __nv_ variants.
+static int sinCosKind(const CallInst *CI) {   // 1 = sin, 2 = cos, 0 = neither
+  const Function *Callee = CI->getCalledFunction();
+  if (!Callee || CI->arg_size() != 1 || !CI->getType()->isFloatTy() || !CI->getArgOperand(0)->getType()->isFloatTy()) return 0;
+  StringRef N = Callee->getName();
+  if (N == "sinf" || N == "llvm.sin.f32" || N == "_Z3sinf" || N == "_Z10native_sinf" || N == "_Z8half_sinf" || N == "__nv_sinf") return 1;
+  if (N == "cosf" || N == "llvm.cos.f32" || N == "_Z3cosf" || N == "_Z10native_cosf" || N == "_Z8half_cosf" || N == "__nv_cosf") return 2;
+  return 0;
+}
+void hwacha::expandSinCosf(Function &F) {
+  SmallVector<std::pair<CallInst *, int>, 8> Calls;
+  for (Instruction &I : instructions(F)) if (auto *CI = dyn_cast<CallInst>(&I)) if (int K = sinCosKind(CI)) Calls.push_back({CI, K});
+  for (auto &[CI, Kind] : Calls) {
+    IRBuilder<> B(CI);
+    Type *FT = B.getFloatTy(), *IT = B.getInt32Ty();
+    auto C = [&](double v) { return ConstantFP::get(FT, v); };
+    Value *X = CI->getArgOperand(0);
+    Value *T = B.CreateFAdd(B.CreateFMul(X, C(0.63661977236758134)), C(0.5));          // x * 2/pi + 0.5
+    Value *Ti = B.CreateFPToSI(T, IT);
+    Value *Tf = B.CreateSIToFP(Ti, FT);
+    Value *Neg = B.CreateFCmpOGT(Tf, T);                                                // truncation rounded up: floor is one less
+    Value *K = B.CreateSelect(Neg, B.CreateSub(Ti, ConstantInt::get(IT, 1)), Ti);
+    Value *Kf = B.CreateSIToFP(K, FT);
+    Value *R = B.CreateFSub(X, B.CreateFMul(Kf, C(1.5707963705062866)));               // pi/2 high part (float)
+    R = B.CreateFSub(R, B.CreateFMul(Kf, C(-4.3711388286737929e-08)));                 // pi/2 low part
+    Value *R2 = B.CreateFMul(R, R);
+    Value *S = B.CreateFAdd(B.CreateFMul(R2, C(2.7557319223985893e-06)), C(-1.9841269841269841e-04));   // sin: r (1 - r2/6 + r4/120 - r6/5040 + r8/362880)
+    S = B.CreateFAdd(B.CreateFMul(S, R2), C(8.3333333333333332e-03));
+    S = B.CreateFAdd(B.CreateFMul(S, R2), C(-1.6666666666666666e-01));
+    S = B.CreateFMul(R, B.CreateFAdd(B.CreateFMul(S, R2), C(1.0)));
+    Value *Co = B.CreateFAdd(B.CreateFMul(R2, C(2.4801587301587302e-05)), C(-1.3888888888888889e-03));   // cos: 1 - r2/2 + r4/24 - r6/720 + r8/40320
+    Co = B.CreateFAdd(B.CreateFMul(Co, R2), C(4.1666666666666664e-02));
+    Co = B.CreateFAdd(B.CreateFMul(Co, R2), C(-0.5));
+    Co = B.CreateFAdd(B.CreateFMul(Co, R2), C(1.0));
+    Value *Q = B.CreateAnd(K, ConstantInt::get(IT, 3));
+    Value *Odd = B.CreateICmpNE(B.CreateAnd(Q, ConstantInt::get(IT, 1)), ConstantInt::get(IT, 0));
+    Value *Hi = B.CreateICmpNE(B.CreateAnd(Q, ConstantInt::get(IT, 2)), ConstantInt::get(IT, 0));
+    Value *Res;
+    if (Kind == 1) { Res = B.CreateSelect(Odd, Co, S); Res = B.CreateSelect(Hi, B.CreateFNeg(Res), Res); }             // sin: q0 s, q1 c, q2 -s, q3 -c
+    else { Res = B.CreateSelect(Odd, B.CreateFNeg(S), Co); Res = B.CreateSelect(Hi, B.CreateFNeg(Res), Res); }          // cos: q0 c, q1 -s, q2 -c, q3 s
+    CI->replaceAllUsesWith(Res); CI->eraseFromParent();
+  }
+}
+
 // floorf(x) for the value range models actually use (upsample index math): trunc toward zero, then step
 // down by one where truncation rounded up (negatives with a fraction). Pure vector arithmetic.
 static bool isFloorfCall(const CallInst *CI) {
@@ -182,6 +230,29 @@ void hwacha::expandAbsI(Function &F) {
     Value *X = CI->getArgOperand(0);
     Value *Neg = B.CreateNeg(X);
     Value *R = B.CreateSelect(B.CreateICmpSLT(X, ConstantInt::get(X->getType(), 0)), Neg, X);
+    CI->replaceAllUsesWith(R); CI->eraseFromParent();
+  }
+}
+
+// llvm.fshl / llvm.fshr (rotates: SHOC's md5 LEFTROTATE, InstCombine forms them) -> shifts and an or:
+// fshl(a, b, c) = (a << c) | (b >> (w - c)), fshr(a, b, c) = (a >> c) | (b << (w - c)), c mod w.
+void hwacha::expandFunnelShift(Function &F) {
+  SmallVector<CallInst *, 8> Calls;
+  for (Instruction &I : instructions(F)) if (auto *CI = dyn_cast<CallInst>(&I)) {
+    const Function *Callee = CI->getCalledFunction();
+    if (Callee && (Callee->getName().starts_with("llvm.fshl.") || Callee->getName().starts_with("llvm.fshr.")) && CI->getType()->isIntegerTy()) Calls.push_back(CI);
+  }
+  for (CallInst *CI : Calls) {
+    IRBuilder<> B(CI);
+    bool Left = CI->getCalledFunction()->getName().starts_with("llvm.fshl.");
+    Value *A = CI->getArgOperand(0), *Bv = CI->getArgOperand(1), *C = CI->getArgOperand(2);
+    Type *T = CI->getType(); unsigned W = T->getIntegerBitWidth();
+    Value *Sh = B.CreateAnd(C, ConstantInt::get(T, W - 1));
+    Value *Inv = B.CreateAnd(B.CreateSub(ConstantInt::get(T, W), Sh), ConstantInt::get(T, W - 1));
+    // c == 0 (mod w): the result is a (fshl) / b (fshr); the (w - 0) shift would be undefined
+    Value *Zero = B.CreateICmpEQ(Sh, ConstantInt::get(T, 0));
+    Value *R = Left ? B.CreateOr(B.CreateShl(A, Sh), B.CreateLShr(Bv, Inv)) : B.CreateOr(B.CreateLShr(Bv, Sh), B.CreateShl(A, Inv));
+    R = B.CreateSelect(Zero, Left ? A : Bv, R);
     CI->replaceAllUsesWith(R); CI->eraseFromParent();
   }
 }
@@ -492,6 +563,8 @@ static void expandLog10Fmod(Function &F) {
     if ((N == "_Z5log10f" || N == "log10f" || N == "llvm.log10.f32") && CI->arg_size() == 1) {
       Function *LogF = cast<Function>(F.getParent()->getOrInsertFunction("logf", B.getFloatTy(), B.getFloatTy()).getCallee());
       R = B.CreateFMul(B.CreateCall(LogF, {CI->getArgOperand(0)}), ConstantFP::get(B.getFloatTy(), 0.43429448190325182765));
+    } else if ((N == "_Z5exp10f" || N == "exp10f" || N == "llvm.exp10.f32") && CI->arg_size() == 1) {   // exp10(x) = exp(x ln 10) (s3d's ratx)
+      R = B.CreateIntrinsic(Intrinsic::exp, {B.getFloatTy()}, {B.CreateFMul(CI->getArgOperand(0), ConstantFP::get(B.getFloatTy(), 2.30258509299404568402))});
     } else if ((N == "_Z4fmodff" || N == "fmodf") && CI->arg_size() == 2) {
       Value *X = CI->getArgOperand(0), *Y = CI->getArgOperand(1);
       Value *Q = B.CreateSIToFP(B.CreateFPToSI(B.CreateFDiv(X, Y), B.getInt32Ty()), B.getFloatTy());
@@ -534,6 +607,7 @@ void hwacha::lowerSwitches(Function &F) {
 }
 
 bool hwacha::isGlobalSizeCall(const Value *V) { return dim0Call(V, "_Z15get_global_sizej"); }
+bool hwacha::isNumGroupsCall(const Value *V) { return dim0Call(V, "_Z14get_num_groupsj"); }
 
 // 2-D NDRanges: a work-group of LS0 x LS1 work-items is flattened onto LS0*LS1 lanes and the NG0 x NG1
 // groups onto NG0*NG1 sequential groups. (Barriers keep their meaning only while the whole group fits
@@ -570,6 +644,7 @@ void hwacha::flattenNDRange(Function &F) {
   Value *Lid0 = B.CreateURem(Lane, LS0, "lid0"), *Lid1 = B.CreateUDiv(Lane, LS0, "lid1");
   Value *Grp0 = B.CreateURem(Grp, NG0, "grp0"), *Grp1 = B.CreateUDiv(Grp, NG0, "grp1");
   Value *Gid0 = B.CreateAdd(B.CreateMul(Grp0, LS0), Lid0, "gid0"), *Gid1 = B.CreateAdd(B.CreateMul(Grp1, LS1), Lid1, "gid1");
+  Value *NG1 = B.CreateLoad(I64, glob("hwacha_ng1"), "ng1");   // loaded here: the entry builder's insertion point may be a query call erased below
   for (CallInst *CI : Q) {
     int D = dimOf(CI); if (D < 0 || D > 1) continue;
     StringRef N = CI->getCalledFunction()->getName(); Value *R = nullptr;
@@ -577,8 +652,8 @@ void hwacha::flattenNDRange(Function &F) {
     else if (N == "_Z12get_group_idj") R = D ? Grp1 : Grp0;
     else if (N == "_Z13get_global_idj") R = D ? Gid1 : Gid0;
     else if (N == "_Z14get_local_sizej") R = D ? LS1 : LS0;
-    else if (N == "_Z15get_global_sizej") { IRBuilder<> Bi(CI); R = D ? Bi.CreateMul(B.CreateLoad(I64, glob("hwacha_ng1")), LS1) : Bi.CreateMul(NG0, LS0); }
-    else if (N == "_Z14get_num_groupsj") R = D ? B.CreateLoad(I64, glob("hwacha_ng1")) : NG0;
+    else if (N == "_Z15get_global_sizej") { IRBuilder<> Bi(CI); R = D ? Bi.CreateMul(NG1, LS1) : Bi.CreateMul(NG0, LS0); }
+    else if (N == "_Z14get_num_groupsj") R = D ? NG1 : NG0;
     if (R) { CI->replaceAllUsesWith(R); CI->eraseFromParent(); }
   }
 }
@@ -663,6 +738,7 @@ void hwacha::expandAllocas(Function &F) {
 // SROA the kernels so the callees' small structs become registers before expandAllocas.
 #include "llvm/Transforms/IPO/AlwaysInliner.h"
 #include "llvm/Transforms/Scalar/SROA.h"
+#include "llvm/Transforms/Scalar/Scalarizer.h"
 void hwacha::inlineCallees(Module &M) {
   bool Any = false;
   for (Function &F : M) {
@@ -679,4 +755,16 @@ void hwacha::inlineCallees(Module &M) {
   for (Function &F : M) if (!F.isDeclaration() && isKernel(F)) {
     FunctionPassManager FPM; FPM.addPass(SROAPass(SROAOptions::ModifyCFG)); FPM.run(F, FAM);
   }
+}
+
+// OpenCL vector types (float2 / float4 / uint4: SHOC's fft, md, scan, sort) -> scalar operations,
+// including vector loads and stores (LLVM's scalarizer with load-store scalarization). The codegen
+// only knows scalar values.
+void hwacha::scalarizeVectors(Module &M) {
+  PassBuilder PB;
+  LoopAnalysisManager LAM; FunctionAnalysisManager FAM; CGSCCAnalysisManager CGAM; ModuleAnalysisManager MAM;
+  PB.registerModuleAnalyses(MAM); PB.registerCGSCCAnalyses(CGAM); PB.registerFunctionAnalyses(FAM); PB.registerLoopAnalyses(LAM);
+  PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+  ScalarizerPassOptions Opts; Opts.ScalarizeLoadStore = true;
+  for (Function &F : M) if (!F.isDeclaration()) { FunctionPassManager FPM; FPM.addPass(ScalarizerPass(Opts)); FPM.run(F, FAM); }
 }

@@ -30,10 +30,12 @@ bool isKernel(const llvm::Function &F);
 void expandErff(llvm::Function &F);
 // Inline tanhf as 1 - 2/(exp(2x)+1); emits an llvm.exp.f32, so run before expandExpf.
 void expandTanhf(llvm::Function &F);
+void expandSinCosf(llvm::Function &F);   // sinf / cosf as range reduction + polynomials
 // Inline floorf as trunc-toward-zero with a step-down for negatives (vector arithmetic).
 void expandFloorf(llvm::Function &F);
 // Expand llvm.abs.iN integer-abs intrinsics to arith (x < 0 ? -x : x).
 void expandAbsI(llvm::Function &F);
+void expandFunnelShift(llvm::Function &F);   // llvm.fshl / fshr (rotates) -> shifts
 // Inline logf (logf / llvm.log.f32 / _Z4logf) as vector arithmetic (Cephes single-precision logf).
 void expandLogf(llvm::Function &F);
 // Inline log1pf / expm1f / powf via the log and exp primitives; emits llvm.log.f32 / llvm.exp.f32, so
@@ -54,6 +56,9 @@ bool isLocalId(const llvm::Value *V);
 bool isLocalSizeCall(const llvm::Value *V);
 bool isGroupIdCall(const llvm::Value *V);
 bool isGlobalSizeCall(const llvm::Value *V);
+bool isNumGroupsCall(const llvm::Value *V);   // get_num_groups(0)
+// OpenCL vector types -> scalar operations (LLVM scalarizer with load / store scalarization)
+void scalarizeVectors(llvm::Module &M);
 // OpenCL ceil / mul24 / abs(int) / llvm.usub.sat as arithmetic; run before expandFloorf / expandAbsI.
 void expandOpenCLMisc(llvm::Function &F);
 // switch -> conditional branches
