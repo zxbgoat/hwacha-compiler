@@ -43,6 +43,7 @@ Only first-party work is tracked. Large upstream trees and build products are **
 |---|---|---|
 | `esp-isa-sim.patch` | `esp-isa-sim` (Spike) | `insn_t::bits()` undefined shift for 8-byte insns (every worker insn reads 0 under GCC 13); missing `<cstdint>` |
 | `esp-isa-sim-hwacha-trace.patch` | `esp-isa-sim` | optional `H:` commit-log of Hwacha commands, for debugging vf blocks |
+| `esp-isa-sim-hwacha-half-rm.patch` | `esp-isa-sim` | half-precision results (`vfmadd.h`, `vfcvt.h.s` ...) rounded with the vector rounding-mode field (`VFRM`); `WRITE_HFRD` read the scalar `RM` field, which for the worker encodings is another field, so halves were truncated |
 | `chipyard-hwacha-rtl-fixes.patch` | `chipyard/generators/hwacha` | four integration bugs (icache row width, frontend row reuse, SMU TLB `prv`, predicate ALL reduction), the FPU type-tag fix, the VMU store-credit overflow fix (masked sub-word store deadlock), and plusarg-gated VMU/TileLink/credit traces |
 | `chipyard-rocketchip-fpu-fix.patch` | `chipyard/generators/rocket-chip` | RoCC FPU port was tied to `DontCare` after the arbiter connection, hanging Hwacha scalar FP |
 
@@ -80,6 +81,7 @@ The RTL path needs `chipyard`; the Spike-only path needs just `esp-isa-sim` and 
 cd ~/hwacha-compiler
 git clone https://github.com/ucb-bar/esp-isa-sim
 git -C esp-isa-sim apply patches/esp-isa-sim.patch
+git -C esp-isa-sim apply patches/esp-isa-sim-hwacha-half-rm.patch
 mkdir -p build/spike && (cd build/spike && ../../esp-isa-sim/configure --prefix=$PWD/../../install && make -j$(nproc) && make install)
 # optional commit-log build for debugging vf blocks:
 git -C esp-isa-sim apply patches/esp-isa-sim-hwacha-trace.patch

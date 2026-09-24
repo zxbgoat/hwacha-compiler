@@ -1,0 +1,15 @@
+Half-precision results (vfadd.h, vfmadd.h, vfcvt.h.s ...) must be rounded with the vector
+instruction's rounding-mode field. WRITE_HFRD used the scalar RM macro, which decodes the rm field at
+the scalar encoding's bit position: for the worker-thread encodings that is some other field, so half
+results were mostly truncated (or could trap as illegal). Every other precision already uses VFRM.
+--- a/hwacha/decode_hwacha_ut.h
++++ b/hwacha/decode_hwacha_ut.h
+@@ -123,7 +123,7 @@
+ #define HFRS3 cvt_hs(FRS3)
+ 
+ #define WRITE_SFRD(value) WRITE_RD((sreg_t)((int32_t)(value)))
+-#define WRITE_HFRD(value) WRITE_RD((sreg_t)((int16_t)cvt_sh(*freg(value).v, RM)))
++#define WRITE_HFRD(value) WRITE_RD((sreg_t)((int16_t)cvt_sh(*freg(value).v, VFRM)))   /* VFRM: the vector rounding-mode field (RM reads the scalar encoding's bits: wrong mode, mostly truncation) */
+ 
+ #define VEC_SEG_LOAD VEC_UT_SEG_LOAD
+ #define VEC_SEG_ST_LOAD VEC_UT_SEG_ST_LOAD
