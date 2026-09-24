@@ -203,16 +203,40 @@ static bool isFloorfCall(const CallInst *CI) {
   StringRef N = Callee->getName();
   return N == "floorf" || N == "llvm.floor.f32" || N == "_Z5floorf" || N == "__nv_floorf";
 }
+// rint / nearbyint / roundeven (round half to even: torch.round, torch.special.round) and round (half
+// away from zero) are built on the same trunc-and-fix floor; |x| < 2^31.
+static int roundKind(const CallInst *CI) {   // 0: not a rounding call, 1: floor, 2: half to even, 3: half away from zero
+  const Function *Callee = CI->getCalledFunction();
+  if (!Callee || CI->arg_size() != 1 || !CI->getType()->isFloatTy() || !CI->getArgOperand(0)->getType()->isFloatTy()) return 0;
+  StringRef N = Callee->getName();
+  if (isFloorfCall(CI)) return 1;
+  if (N == "llvm.rint.f32" || N == "llvm.nearbyint.f32" || N == "llvm.roundeven.f32" || N == "rintf" || N == "nearbyintf" || N == "roundevenf" || N == "_Z4rintf") return 2;
+  if (N == "llvm.round.f32" || N == "roundf" || N == "_Z5roundf" || N == "__nv_roundf") return 3;
+  return 0;
+}
 void hwacha::expandFloorf(Function &F) {
   SmallVector<CallInst *, 8> Calls;
-  for (Instruction &I : instructions(F)) if (auto *CI = dyn_cast<CallInst>(&I)) if (isFloorfCall(CI)) Calls.push_back(CI);
+  for (Instruction &I : instructions(F)) if (auto *CI = dyn_cast<CallInst>(&I)) if (roundKind(CI)) Calls.push_back(CI);
   for (CallInst *CI : Calls) {
     IRBuilder<> B(CI);
     Type *FT = B.getFloatTy(), *IT = B.getInt32Ty();
     auto C = [&](double v) { return ConstantFP::get(FT, v); };
-    Value *X = CI->getArgOperand(0);
-    Value *T = B.CreateSIToFP(B.CreateFPToSI(X, IT), FT);          // trunc toward zero
-    Value *R = B.CreateSelect(B.CreateFCmpOGT(T, X), B.CreateFSub(T, C(1.0)), T);
+    auto floorOf = [&](Value *X) {
+      Value *T = B.CreateSIToFP(B.CreateFPToSI(X, IT), FT);          // trunc toward zero
+      return B.CreateSelect(B.CreateFCmpOGT(T, X), B.CreateFSub(T, C(1.0)), T);
+    };
+    Value *X = CI->getArgOperand(0), *R;
+    int K = roundKind(CI);
+    if (K == 1) R = floorOf(X);
+    else if (K == 2) {   // f = floor(x + 0.5); a tie (x + 0.5 integral) with f odd rounds down to the even f - 1
+      Value *T = B.CreateFAdd(X, C(0.5)), *Fl = floorOf(T);
+      Value *Half = B.CreateFMul(Fl, C(0.5)), *Odd = B.CreateFCmpOEQ(B.CreateFSub(Fl, B.CreateFMul(floorOf(Half), C(2.0))), C(1.0));
+      Value *Tie = B.CreateFCmpOEQ(T, Fl);
+      R = B.CreateSelect(B.CreateAnd(Tie, Odd), B.CreateFSub(Fl, C(1.0)), Fl);
+    } else {             // trunc(x + copysign(0.5, x))
+      Value *T = B.CreateFAdd(X, B.CreateSelect(B.CreateFCmpOLT(X, C(0.0)), C(-0.5), C(0.5)));
+      R = B.CreateSIToFP(B.CreateFPToSI(T, IT), FT);
+    }
     CI->replaceAllUsesWith(R); CI->eraseFromParent();
   }
 }

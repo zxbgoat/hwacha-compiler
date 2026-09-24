@@ -1929,7 +1929,7 @@ bool WTGen::emitInstImpl(Instruction &I, unsigned Pos) {
   }
   if (auto *C = dyn_cast<CmpInst>(&I)) {
     Value *A = C->getOperand(0), *B = C->getOperand(1);
-    bool Neg = false, Swap = false; std::string Op;
+    bool Neg = false, Swap = false; std::string Op, Two;   // Two: "and" / "or" of two compares
     if (auto *IC = dyn_cast<ICmpInst>(C)) {
       switch (IC->getPredicate()) {
       case CmpInst::ICMP_EQ:  Op = "vcmpeq"; break;
@@ -1957,19 +1957,31 @@ bool WTGen::emitInstImpl(Instruction &I, unsigned Pos) {
       case CmpInst::FCMP_UGT: Op = "vcmpfle" + S; Neg = true; break;          // !(a<=b)
       case CmpInst::FCMP_ULE: Op = "vcmpflt" + S; Swap = true; Neg = true; break;
       case CmpInst::FCMP_ULT: Op = "vcmpfle" + S; Swap = true; Neg = true; break;
+      // the unordered / ordered pairs are two compares joined by a predicate op: ord = (a==a)&(b==b),
+      // one = (a<b)|(b<a); uno / ueq negate them (isnan(x) is fcmp uno x, 0: torch's entr, nan_to_num ...)
+      case CmpInst::FCMP_ORD: Op = "vcmpfeq" + S; Two = "and"; break;
+      case CmpInst::FCMP_UNO: Op = "vcmpfeq" + S; Two = "and"; Neg = true; break;
+      case CmpInst::FCMP_ONE: Op = "vcmpflt" + S; Two = "or"; break;
+      case CmpInst::FCMP_UEQ: Op = "vcmpflt" + S; Two = "or"; Neg = true; break;
       default: return fail("unsupported fcmp", &I);
       }
     }
     if (Swap) std::swap(A, B);
     std::string D = dest(I);
-    std::string RA = R(A);
-    Reg Bcast{RC::VS, 0}; bool DidBcast = false;
-    if (classOf(A) == RC::VS && classOf(B) == RC::VS) {   // scalar compare would only write lane 0
-      Bcast = alloc(isNarrow(A) ? RC::VW : RC::VV); DidBcast = true;
-      emit("", isNarrow(A) ? "vaddw" : "vadd", {Bcast.str(), RA, "vs0"}); RA = Bcast.str();
+    std::string RA = R(A), RB = R(B);
+    // a compare of two scalars would only write lane 0: broadcast one of them (both for the two-compare forms)
+    SmallVector<Reg, 2> Bcasts;
+    auto bcast = [&](Value *V, std::string &RV) { Reg T = alloc(isNarrow(V) ? RC::VW : RC::VV); Bcasts.push_back(T); emit("", isNarrow(V) ? "vaddw" : "vadd", {T.str(), RV, "vs0"}); RV = T.str(); };
+    if (classOf(A) == RC::VS && (classOf(B) == RC::VS || !Two.empty())) bcast(A, RA);
+    if (classOf(B) == RC::VS && !Two.empty()) bcast(B, RB);
+    if (Two.empty()) emit("", Op, {D, RA, RB});
+    else {
+      unsigned T = allocVP(); std::string TS = vp(T);
+      if (Two == "and") { emit("", Op, {D, RA, RA}); emit("", Op, {TS, RB, RB}); emit("", "vpop", {D, D, TS, TS, "0x80"}); }
+      else { emit("", Op, {D, RA, RB}); emit("", Op, {TS, RB, RA}); emit("", "vpop", {D, D, TS, TS, "0xEE"}); }
+      freeVP(T);
     }
-    emit("", Op, {D, RA, R(B)});
-    if (DidBcast) (Bcast.Class == RC::VV ? VVUsed : VWUsed)[Bcast.Idx] = false;
+    for (Reg &T : Bcasts) (T.Class == RC::VV ? VVUsed : VWUsed)[T.Idx] = false;
     if (Neg) emit("", "vpop", {D, D, D, D, "0x55"});   // not
     return true;
   }
