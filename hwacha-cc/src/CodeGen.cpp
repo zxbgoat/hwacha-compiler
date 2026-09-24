@@ -137,7 +137,7 @@ public:
   void vecSlotAddr(unsigned Slot);
   std::string vecSlotAddrText(unsigned Slot);
   void phiStore(unsigned Mask, PHINode *Phi, Value *Src);   // @Mask slot(Phi) = Src, for a spilled header phi
-  std::string DbgWhere; std::string VPAllocSite[16];
+  std::string DbgWhere; std::string VPAllocSite[16]; DenseMap<unsigned, std::string> VecAllocSite;   // (class<<8|idx) -> DbgWhere
   const Instruction *CurInst = nullptr;   // being emitted: its destination is never a spill victim
   // A no-op cast of a value that is not register-resident (pooled constant / argument, spilled
   // value, rematerialized address) cannot share a register: regOfValue re-derives the source at
@@ -230,6 +230,7 @@ private:
   DenseMap<const SelectInst *, Reg> SelectReg;             // select whose arm was computed straight into its register
   DenseMap<const Value *, Reg> PreferReg;                  // loop-carried value -> its header phi's register
   DenseMap<const Value *, const Value *> PreferPhi;        // loop-carried value -> its header phi
+  void coalesceLatch(PHINode &Phi, Loop *L, Reg D);
   DenseMap<const Value *, unsigned> PhiRealLast;           // header phi -> last read inside the loop body
   std::vector<int> VPRef;                                  // refcount per vp register (masks)
   std::string CurPred;                                     // predicate applied to vector/memory ops of the current block
@@ -303,6 +304,9 @@ private:
   }
   unsigned LastReleasePos = 0;   // RegOf keeps dead entries; a value with LastUse <= this is dead
   bool liveInst(const Value *V) const { return isa<Instruction>(V) && LastUse.lookup(V) > LastReleasePos; }
+  // temporaries of a completed move (a reload of a spilled value): the move consumed them, and the
+  // latch / exit moves of a loop with many phis would otherwise pile one up per phi
+  void releasePendingVec() { for (Reg &R : PendingVec) (R.Class == RC::VV ? VVUsed : VWUsed)[R.Idx] = false; PendingVec.clear(); }
   void releaseAt(unsigned Pos) { LastReleasePos = Pos; for (auto &KV : LastUse) if (KV.second == Pos) release(KV.first); for (unsigned T : PendingTemps) VSUsed[T] = false; PendingTemps.clear(); for (unsigned P : PendingVP) { VPUsed[P] = false; if (VPRef.size() > P) VPRef[P] = 0; } PendingVP.clear(); for (Reg &R : PendingVec) (R.Class == RC::VV ? VVUsed : VWUsed)[R.Idx] = false; PendingVec.clear(); }
   std::vector<bool> VVUsed, VSUsed, VPUsed, VWUsed;
   std::vector<bool> VSEverUsed;   // vs registers a temporary has ever occupied (unsafe for a late input)
@@ -449,8 +453,8 @@ Reg WTGen::alloc(RC C) {
       if (spillOneVec(C)) continue;
       // a narrow value may live in a free 64-bit register (every vw is renamed to a vv in the end anyway)
       if (C == RC::VW) {
-        for (unsigned j = 0; j < NumVV; j++) if (!VVUsed[j]) { VVUsed[j] = true; return Reg{RC::VV, j}; }
-        if (spillOneVec(RC::VV)) { for (unsigned j = 0; j < NumVV; j++) if (!VVUsed[j]) { VVUsed[j] = true; return Reg{RC::VV, j}; } }
+        for (unsigned j = 0; j < NumVV; j++) if (!VVUsed[j]) { VVUsed[j] = true; if (getenv("HWCC_DEBUG_VS")) VecAllocSite[((unsigned)RC::VV << 8) | j] = DbgWhere; return Reg{RC::VV, j}; }
+        if (spillOneVec(RC::VV)) { for (unsigned j = 0; j < NumVV; j++) if (!VVUsed[j]) { VVUsed[j] = true; if (getenv("HWCC_DEBUG_VS")) VecAllocSite[((unsigned)RC::VV << 8) | j] = DbgWhere; return Reg{RC::VV, j}; } }
       }
       if (!spillOneVec(C, true)) report_fatal_error(Twine("out of Hwacha vector registers under the register cap (nothing to spill) in ") + F.getName());
     }
@@ -467,6 +471,7 @@ Reg WTGen::alloc(RC C) {
       if (C == RC::VP) NumVP = std::max(NumVP, i + 1);
       if (C == RC::VS) { NumVS = std::max(NumVS, i + 1); if (VSEverUsed.size() < 64) VSEverUsed.resize(64, false); VSEverUsed[i] = true; }
       if (C == RC::VW) NumVW = std::max(NumVW, i + 1);
+      if ((C == RC::VV || C == RC::VW) && getenv("HWCC_DEBUG_VS")) VecAllocSite[((unsigned)C << 8) | i] = DbgWhere;
       return Reg{C, i};
     }
   if (getenv("HWCC_DEBUG_VS") && C == RC::VP) { unsigned used = 0; for (unsigned i = 1; i < 16; i++) if (VPUsed[i]) used++; errs() << "vp exhausted: used " << used << ", edge masks " << EdgeMask.size() << ", loop depth " << LoopStack.size() << ", captured " << Captured.size() << "\n"; for (auto &KV : EdgeMask) errs() << "  edge " << KV.first.first->getName() << " -> " << KV.first.second->getName() << " vp" << KV.second << "\n"; }
@@ -485,6 +490,7 @@ void WTGen::release(const Value *V) {
   if (Transferred.count(V)) return;                  // the register now belongs to another value
   if (auto *I = dyn_cast<Instruction>(V)) if (SpecialCalls.count(I)) return;
   Reg R = It->second;
+  if (getenv("HWCC_DEBUG_REL") && (R.Class == RC::VV || R.Class == RC::VW)) { errs() << "release " << R.str() << " at " << LastReleasePos << " held by "; V->printAsOperand(errs(), false); errs() << (isa<Instruction>(V) && !liveInst(V) ? " (dead)" : "") << "\n"; }
   (R.Class == RC::VV ? VVUsed : R.Class == RC::VS ? VSUsed : R.Class == RC::VP ? VPUsed : VWUsed)[R.Idx] = false;
 }
 
@@ -627,6 +633,38 @@ void WTGen::vecSlotAddr(unsigned Slot) { Out << vecSlotAddrText(Slot); NumInsts+
 
 // Free one vector register of class C: the live value with the farthest last use is stored to its
 // per-lane spill slot (unpredicated: inactive lanes park garbage in their own slot).
+// Coalesce: the latch value may be computed straight into the phi register if the phi is not read
+// after that point in the body (its register is kept allocated until LoopEnd anyway). When the latch
+// value is the end of a chain of single-use instructions starting at the phi (an accumulator updated
+// several times per iteration: c += a0*b0; c += a1*b1; ...), the whole chain computes in place: the
+// phi dies at its first update, and a fresh register per intermediate would hold the phi's register
+// idle for the rest of the body (SHOC gemm: 16 accumulators, 16 idle registers).
+void WTGen::coalesceLatch(PHINode &Phi, Loop *L, Reg D) {
+  if (Opts.NoCoalesce) return;
+  auto *NI = dyn_cast<Instruction>(Phi.getIncomingValueForBlock(L->getLoopLatch()));
+  if (!NI || !L->contains(NI) || isa<PHINode>(NI) || classOf(NI) != classOf(&Phi) || PreferReg.count(NI)) return;
+  PreferReg[NI] = D; PreferPhi[NI] = &Phi;
+  // the chain: every link is in the latch value's block, has the phi's class, and is read only by the next link
+  auto linkOK = [&](Instruction *U) {
+    return U->getParent() == NI->getParent() && !isa<PHINode>(U) && !isa<LoadInst>(U) && !isa<SelectInst>(U) && !isa<CallBase>(U) ||
+           (isa<IntrinsicInst>(U) && cast<IntrinsicInst>(U)->getIntrinsicID() == Intrinsic::fmuladd && U->getParent() == NI->getParent()); };
+  SmallVector<Instruction *, 8> Chain;
+  Value *Cur = &Phi;
+  for (unsigned Steps = 0; Steps < 64; Steps++) {
+    Instruction *U = nullptr; unsigned Uses = 0;
+    for (User *X : Cur->users()) { auto *XI = dyn_cast<Instruction>(X); if (!XI) return; if (XI == &Phi) continue; Uses++; U = XI; }
+    if (Uses != 1 || !L->contains(U) || !linkOK(U) || classOf(U) != classOf(&Phi) || SpecialCalls.count(U)) {
+      if (Verbose) errs() << "hwacha-cc: chain stop at " << *Cur << " uses " << Uses << (U ? (linkOK(U) ? " linkOK" : " !linkOK") : "") << "\n";
+      return; }
+    if (U == NI) break;
+    if (PreferReg.count(U) || !Needed.count(U)) { if (Verbose) errs() << "hwacha-cc: chain stop (prefer/needed) at " << *U << "\n"; return; }
+    Chain.push_back(U); Cur = U;
+    if (Steps == 63) return;
+  }
+  if (Verbose && !Chain.empty()) errs() << "hwacha-cc: accumulator chain of " << Chain.size() + 1 << " for " << Phi << "\n";
+  for (Instruction *C : Chain) { PreferReg[C] = D; PreferPhi[C] = &Phi; }
+}
+
 bool WTGen::spillOneVec(RC C, bool Diag) {
   std::vector<bool> &Used = C == RC::VV ? VVUsed : VWUsed;
   DenseSet<unsigned> Excluded; DenseMap<unsigned, unsigned> Far;
@@ -658,6 +696,15 @@ bool WTGen::spillOneVec(RC C, bool Diag) {
         if (Excluded.count(KV.second.Idx)) r += "(excluded)";
         if (auto *VI = dyn_cast<Instruction>(KV.first)) { if (isa<PHINode>(VI) && !phiOk(cast<PHINode>(VI))) r += "[phi:ct/captured]"; if (CTPinned.count(VI)) r += "[ctpinned]"; if (PreferReg.count(VI)) r += "[prefer]"; if (CurOperands.count(VI)) r += "[curop]"; if (SpecialCalls.count(VI)) r += "[special]"; if (SpilledVec.count(VI)) r += "[spilled]"; if (!DefEnd.count(VI)) r += "[nodefend]"; if (!loopSafe(VI, false)) r += "[loop:def " + std::to_string(DefPos.lookup(VI)) + " pos " + std::to_string(CurPos) + "]"; }
         errs() << "  " << KV.second.str() << ": " << r << " lastuse " << LastUse.lookup(KV.first) << "\n"; }
+      for (RC K : {RC::VV, RC::VW}) {
+        std::vector<bool> &U = K == RC::VV ? VVUsed : VWUsed; unsigned N = K == RC::VV ? NumVV : NumVW;
+        for (unsigned i = 0; i < N && i < U.size(); i++) {
+          if (!U[i]) { errs() << "  " << Reg{K, i}.str() << ": free\n"; continue; }
+          bool Held = false;
+          for (auto &KV : RegOf) if (KV.second.Class == K && KV.second.Idx == i && (!isa<Instruction>(KV.first) || liveInst(KV.first))) Held = true;
+          if (!Held) { errs() << "  " << Reg{K, i}.str() << ": used, no live holder, allocated at " << VecAllocSite.lookup(((unsigned)K << 8) | i); for (Reg &P : PendingVec) if (P.Class == K && P.Idx == i) errs() << " [pending]"; for (auto &KV : SelectReg) if (KV.second.Class == K && KV.second.Idx == i) errs() << " [select]"; for (auto &KV : Captured) if (KV.second.Class == K && KV.second.Idx == i) errs() << " [captured]"; errs() << "\n"; }
+        }
+      }
     }
     return false;
   }
@@ -931,12 +978,22 @@ bool WTGen::materializeAddresses() {
       auto *U = dyn_cast<SCEVUnknown>(X); return U && !isUniform(U->getValue()); });
   };
   // indexed access: uniform base in a vs register (scalar code in the block), divergent byte offset in vv
+  // The expander does not reuse an expansion made at another insertion point, so the same divergent
+  // offset expanded for several accesses (SHOC gemm: four A[ii*lda] loads sharing 4*id) would occupy
+  // one vector register each for the whole loop; share the first expansion wherever it dominates.
+  DenseMap<const SCEV *, SmallVector<Value *, 2>> IdxCache;
+  auto expandIdx = [&](const SCEV *D, Instruction *At) -> Value * {
+    for (Value *V : IdxCache[D]) { auto *VI = dyn_cast<Instruction>(V); if (!VI || DT->dominates(VI, At)) return V; }
+    Value *V = Exp.expandCodeFor(D, Type::getInt64Ty(F.getContext()), At);
+    IdxCache[D].push_back(V);
+    return V;
+  };
   auto indexed = [&](const MemAccess &A) -> bool {
     Value *Ptr = isa<LoadInst>(A.I) ? cast<LoadInst>(A.I)->getPointerOperand() : cast<StoreInst>(A.I)->getPointerOperand();
     const SCEV *S = SE.getSCEV(Ptr), *U, *D;
     splitUniform(SE, S, isUniformSCEV, U, D);
     GatherBase[A.I] = Exp.expandCodeFor(U, PointerType::get(F.getContext(), 0), A.I);
-    GatherIndex[A.I] = Exp.expandCodeFor(D, Type::getInt64Ty(F.getContext()), A.I);
+    GatherIndex[A.I] = expandIdx(D, A.I);
     KindOf[A.I] = AddrKind::Gather;
     return true;
   };
@@ -1162,11 +1219,12 @@ void WTGen::computePositions() {
       if (L > LastUse.lookup(Src)) { LastUse[Src] = L; Changed = true; }
     }
   }
-  // values defined before a loop and used inside it live until the loop ends
+  // values defined before a loop and used inside it live until the loop ends (a use at the LoopBegin
+  // position itself is the header phis' entry move, done once before the body: not extended)
   for (auto &KV : LastUse) {
     unsigned D = DefPos.lookup(KV.first);
     for (auto &LR : LoopRange)
-      if (KV.second >= LR.second.first && KV.second <= LR.second.second && D < LR.second.first)
+      if (KV.second > LR.second.first && KV.second <= LR.second.second && D < LR.second.first)
         KV.second = std::max(KV.second, LR.second.second);
   }
 }
@@ -1202,14 +1260,40 @@ bool WTGen::handleEdge(BasicBlock *From, BasicBlock *To, unsigned Mask, unsigned
   for (int i = (int)LoopStack.size() - 1; i >= 0; i--) {
     LoopState &LS = LoopStack[i];
     if (LS.L->contains(To)) break;
-    // capture LCSSA phi values for lanes leaving now
+    // capture LCSSA phi values for lanes leaving now. When every lane leaves together (the loop's
+    // only exit, a uniform condition) an exit phi of a value coalesced into a header phi register
+    // simply aliases that register: no copy of every accumulator at the exit (SHOC gemm: 21 copies
+    // doubling the live set at the peak).
+    bool UniformExit = false;
+    if (auto *Br = dyn_cast<BranchInst>(From->getTerminator()))
+      UniformExit = Br->isConditional() && LS.L->getExitingBlock() == From && isUniform(Br->getCondition());
     for (PHINode &Phi : To->phis()) {
       int Idx = Phi.getBasicBlockIndex(From);
       if (Idx < 0 || !Needed.count(&Phi)) continue;
+      if (UniformExit && !RegOf.count(&Phi)) {
+        // any register-resident value: the exiting lanes are all the active ones, so nothing updates
+        // the register afterwards; it stays allocated until the exit phi's last use (a value coalesced
+        // into a header phi register: that phi's register)
+        Value *V = Phi.getIncomingValue(Idx);
+        auto *VI = dyn_cast<Instruction>(V);
+        if (VI && RegOf.count(V) && !SpilledVec.count(V) && !SpecialCalls.count(VI) && classOf(&Phi) == RegOf.lookup(V).Class && RegOf.lookup(V).Idx != 0) {
+          Reg D = RegOf[V]; RegOf[&Phi] = D; Captured[&Phi] = D; Alias.insert(&Phi);
+          if (getenv("HWCC_DEBUG_REL")) { errs() << "exit alias "; Phi.printAsOperand(errs(), false); errs() << " (lastuse " << LastUse.lookup(&Phi) << ") = "; V->printAsOperand(errs(), false); errs() << " (lastuse " << LastUse.lookup(V) << ") in " << D.str() << " at pos " << Pos << "\n"; }
+          LastUse[V] = std::max(LastUse[V], LastUse.lookup(&Phi));
+          auto PI = PreferPhi.find(V);
+          if (PI != PreferPhi.end()) LastUse[PI->second] = std::max(LastUse[PI->second], LastUse.lookup(&Phi));
+          // other live holders of the register (a chain computed in place); a dead holder's stale
+          // RegOf entry must not be revived: release() would free the register under its new owner
+          for (auto &KV : RegOf)
+            if (KV.second.Class == D.Class && KV.second.Idx == D.Idx && KV.first != &Phi && liveInst(KV.first)) LastUse[KV.first] = std::max(LastUse[KV.first], LastUse.lookup(&Phi));
+          continue;
+        }
+      }
       Reg &Cap = Captured[&Phi];
       if (!Cap.Idx && Cap.Class != RC::VP && !RegOf.count(&Phi)) { Cap = alloc(classOf(&Phi)); RegOf[&Phi] = Cap; }
       Cap = RegOf[&Phi];
       movePred(Mask, Cap, Phi.getIncomingValue(Idx));
+      releasePendingVec();
     }
     emit("", "vpop", {vp(LS.ExitTotal[To]), vp(LS.ExitTotal[To]), vp(Mask), vp(Mask), "0xEE"});   // ExitTotal |= Mask
     emit("", "vpop", {vp(LS.Active), vp(LS.Active), vp(Mask), vp(Mask), "0x02"});   // Active &= !Mask, in place
@@ -1242,10 +1326,7 @@ bool WTGen::beginLoop(Loop *L, unsigned &Pos) {
     CurInst = nullptr; DefEnd[&Phi] = Text.size();
     // coalesce: the latch value may be computed straight into the phi register if the phi is not
     // read after that point in the body (its register is kept allocated until LoopEnd anyway)
-    Value *Next = Phi.getIncomingValueForBlock(L->getLoopLatch());
-    if (auto *NI = dyn_cast<Instruction>(Next))
-      if (!Opts.NoCoalesce && L->contains(NI) && !isa<PHINode>(NI) && classOf(NI) == classOf(&Phi) && !PreferReg.count(NI))
-        { PreferReg[NI] = D; PreferPhi[NI] = &Phi; }
+    coalesceLatch(Phi, L, D);
   }
   // one accumulator per exit block, cleared before the loop, OR-ed at every exit edge
   SmallVector<BasicBlock *, 4> Exits; L->getExitBlocks(Exits);
@@ -1270,6 +1351,7 @@ bool WTGen::endLoop(Loop *L, unsigned &Pos) {
     CurInst = &Phi;
     if (SpilledVec.count(&Phi)) phiStore(Back, &Phi, Phi.getIncomingValueForBlock(Latch));
     else movePred(Back, RegOf[&Phi], Phi.getIncomingValueForBlock(Latch));
+    releasePendingVec();
   }
   CurInst = nullptr;
   if (!LinkVS) LinkVS = alloc(RC::VS).Idx;
@@ -1415,10 +1497,7 @@ bool WTGen::emitCTRegion(size_t &Idx, unsigned &Pos) {
     for (PHINode &Phi : NL->getHeader()->phis()) {
       if (!Needed.count(&Phi) || ctSkip(&Phi)) continue;
       Reg D = phiReg(&Phi);
-      Value *Next = Phi.getIncomingValueForBlock(NL->getLoopLatch());
-      if (auto *NI = dyn_cast<Instruction>(Next))
-        if (!Opts.NoCoalesce && NL->contains(NI) && !isa<PHINode>(NI) && classOf(NI) == classOf(&Phi) && !PreferReg.count(NI))
-          { PreferReg[NI] = D; PreferPhi[NI] = &Phi; }
+      coalesceLatch(Phi, NL, D);
     }
   releaseAt(Pos);
   Out << "    vstop\n";
