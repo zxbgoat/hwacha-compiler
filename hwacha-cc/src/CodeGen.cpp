@@ -1799,7 +1799,7 @@ bool WTGen::emitInstImpl(Instruction &I, unsigned Pos) {
     if (isPred) { pTmp = alloc(RC::VW); LD = pTmp.str(); Suf = "b"; }
     // a narrow integer load whose users are all zero-extensions is a zero-extending load
     else if (L->getType()->isIntegerTy() && L->getType()->getIntegerBitWidth() < 64 && !L->use_empty() &&
-        all_of(L->users(), [](const User *U) { return isa<ZExtInst>(U); })) { Suf += "u"; UnsignedLoads.insert(L); }
+        all_of(L->users(), [](const User *U) { return isa<ZExtInst>(U) || isa<UIToFPInst>(U); })) { Suf += "u"; UnsignedLoads.insert(L); }
     auto finish = [&]() {
       if (isPred) {
         std::string D = dest(I);   // one call: dest(I) allocates a fresh predicate each time it is invoked
@@ -2196,7 +2196,14 @@ bool WTGen::emitInstImpl(Instruction &I, unsigned Pos) {
         return true;
       }
       if (Cast->getOpcode() == Instruction::SIToFP) emit("", "vfcvt" + fpSuffix(T) + (is32(ST) ? ".w" : ".l"), {dest(I), R(Src)});
-      else emit("", "vfcvt" + fpSuffix(T) + (is32(ST) ? ".wu" : ".lu"), {dest(I), R(Src)});
+      else {
+        unsigned Bits = ST->getIntegerBitWidth();
+        if (Bits < 32 && !UnsignedLoads.count(Src)) {   // a sub-word value is sign-extended in its register (vlb, vfcvt...): zero-extend it first
+          std::string D = dest(I); Value *K = ConstantInt::get(Type::getInt64Ty(F.getContext()), 64 - Bits); std::string KR = R(K);
+          emit("", "vsll", {D, R(Src), KR}); emit("", "vsrl", {D, D, KR}); emit("", "vfcvt" + fpSuffix(T) + ".lu", {D, D});
+        }
+        else emit("", "vfcvt" + fpSuffix(T) + (is32(ST) ? ".wu" : ".lu"), {dest(I), R(Src)});
+      }
       return true;
     // C float->int conversion truncates: encode rtz explicitly (the assembler default is dyn = frm, normally RNE)
     case Instruction::FPToSI: emit("", "vfcvt" + std::string(is32(T) ? ".w" : ".l") + fpSuffix(ST), {dest(I), R(Src), "rtz"}); return true;
