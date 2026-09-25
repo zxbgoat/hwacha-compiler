@@ -31,6 +31,7 @@ void expandErff(llvm::Function &F);
 // Inline tanhf as 1 - 2/(exp(2x)+1); emits an llvm.exp.f32, so run before expandExpf.
 void expandTanhf(llvm::Function &F);
 void expandSinCosf(llvm::Function &F);   // sinf / cosf as range reduction + polynomials
+void expandAtanf(llvm::Function &F);     // atanf: argument reduction to |t| <= tan(pi/8) + a Taylor polynomial
 // Inline floorf as trunc-toward-zero with a step-down for negatives (vector arithmetic).
 void expandFloorf(llvm::Function &F);
 // Expand llvm.abs.iN integer-abs intrinsics to arith (x < 0 ? -x : x).

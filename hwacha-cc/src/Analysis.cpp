@@ -160,6 +160,41 @@ static int sinCosKind(const CallInst *CI) {   // 1 = sin, 2 = cos, 0 = neither
   if (N == "cosf" || N == "llvm.cos.f32" || N == "_Z3cosf" || N == "_Z10native_cosf" || N == "_Z8half_cosf" || N == "__nv_cosf") return 2;
   return 0;
 }
+// atanf(x) (torchvision's complete_box_iou): |x| > 1 -> pi/2 - atan(1/|x|); then t > tan(pi/8) ->
+// pi/4 + atan((t - 1) / (t + 1)); the rest, |t| <= 0.4142, by the odd Taylor polynomial to t^17
+// (truncation < 3e-9). The sign of x is restored at the end.
+static bool isAtanfCall(const CallInst *CI) {
+  const Function *Callee = CI->getCalledFunction();
+  if (!Callee || CI->arg_size() != 1 || !CI->getType()->isFloatTy() || !CI->getArgOperand(0)->getType()->isFloatTy()) return false;
+  StringRef N = Callee->getName();
+  return N == "atanf" || N == "llvm.atan.f32" || N == "_Z4atanf" || N == "__nv_atanf";
+}
+void hwacha::expandAtanf(Function &F) {
+  SmallVector<CallInst *, 8> Calls;
+  for (Instruction &I : instructions(F)) if (auto *CI = dyn_cast<CallInst>(&I)) if (isAtanfCall(CI)) Calls.push_back(CI);
+  for (CallInst *CI : Calls) {
+    IRBuilder<> B(CI);
+    Type *FT = B.getFloatTy();
+    auto C = [&](double v) { return ConstantFP::get(FT, v); };
+    Value *X = CI->getArgOperand(0);
+    Value *Neg = B.CreateFCmpOLT(X, C(0.0));
+    Value *A = B.CreateSelect(Neg, B.CreateFNeg(X), X);
+    Value *Big = B.CreateFCmpOGT(A, C(1.0));
+    Value *T = B.CreateSelect(Big, B.CreateFDiv(C(1.0), A), A);
+    Value *Mid = B.CreateFCmpOGT(T, C(0.41421356237309503));
+    Value *T2 = B.CreateSelect(Mid, B.CreateFDiv(B.CreateFSub(T, C(1.0)), B.CreateFAdd(T, C(1.0))), T);
+    Value *S = B.CreateFMul(T2, T2);
+    // Horner over the odd series: t (1 - s/3 + s^2/5 - ... + s^8/17)
+    Value *P = C(1.0 / 17.0);
+    const double Coef[] = {-1.0 / 15.0, 1.0 / 13.0, -1.0 / 11.0, 1.0 / 9.0, -1.0 / 7.0, 1.0 / 5.0, -1.0 / 3.0, 1.0};
+    for (double c : Coef) P = B.CreateFAdd(C(c), B.CreateFMul(P, S));
+    Value *R = B.CreateFMul(T2, P);
+    R = B.CreateSelect(Mid, B.CreateFAdd(R, C(0.78539816339744831)), R);
+    R = B.CreateSelect(Big, B.CreateFSub(C(1.5707963267948966), R), R);
+    R = B.CreateSelect(Neg, B.CreateFNeg(R), R);
+    CI->replaceAllUsesWith(R); CI->eraseFromParent();
+  }
+}
 void hwacha::expandSinCosf(Function &F) {
   SmallVector<std::pair<CallInst *, int>, 8> Calls;
   for (Instruction &I : instructions(F)) if (auto *CI = dyn_cast<CallInst>(&I)) if (int K = sinCosKind(CI)) Calls.push_back({CI, K});

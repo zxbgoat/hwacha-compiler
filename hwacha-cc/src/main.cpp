@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
   for (Function &F : *M) {
     if (!hwacha::isKernel(F)) continue;
     hwacha::lowerSwitches(F); hwacha::flattenNDRange(F); hwacha::expandAllocas(F); hwacha::expandOpenCLMisc(F); hwacha::expandMemIntrinsics(F);
-    hwacha::expandAbsI(F); hwacha::expandFunnelShift(F); hwacha::expandLogExpM1Pow(F); hwacha::expandTanhf(F); hwacha::expandSinCosf(F); hwacha::expandFloorf(F); hwacha::expandErff(F); hwacha::expandLogf(F);
+    hwacha::expandAbsI(F); hwacha::expandFunnelShift(F); hwacha::expandLogExpM1Pow(F); hwacha::expandTanhf(F); hwacha::expandSinCosf(F); hwacha::expandAtanf(F); hwacha::expandFloorf(F); hwacha::expandErff(F); hwacha::expandLogf(F);
     hwacha::expandExpf(F);
     if (FPContract) hwacha::contractFMA(F);
     hwacha::prepareKernel(F);
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
   if (!HostFile.empty()) {   // host code from hwacha-mlir: same -O2, linked into the control-thread module
     std::unique_ptr<Module> HM = parseIRFile(HostFile, Err, Ctx);
     if (!HM) { Err.print(argv[0], errs()); return 1; }
-    for (Function &F : *HM) if (!F.isDeclaration()) { hwacha::expandAbsI(F); hwacha::expandFunnelShift(F); hwacha::expandLogExpM1Pow(F); hwacha::expandTanhf(F); hwacha::expandSinCosf(F); hwacha::expandFloorf(F); hwacha::expandErff(F); hwacha::expandLogf(F); hwacha::expandExpf(F); }
+    for (Function &F : *HM) if (!F.isDeclaration()) { hwacha::expandAbsI(F); hwacha::expandFunnelShift(F); hwacha::expandLogExpM1Pow(F); hwacha::expandTanhf(F); hwacha::expandSinCosf(F); hwacha::expandAtanf(F); hwacha::expandFloorf(F); hwacha::expandErff(F); hwacha::expandLogf(F); hwacha::expandExpf(F); }
     hwacha::optimizeModule(*HM);
     for (StringRef G : {"hwacha_group_size", "hwacha_grid_size"})   // written by the lowered launches
       if (!CT->getGlobalVariable(G, true)) {
