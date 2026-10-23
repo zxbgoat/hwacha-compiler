@@ -2,6 +2,7 @@
 // hwacha-cc: OpenCL (via clang LLVM IR) -> Hwacha vector-fetch code.
 //   hwacha-cc kernels.ll -o kernels.s        emit assembly (worker threads + control threads)
 //   hwacha-cc kernels.ll --analyze           print the analysis report only
+//   hwacha-cc k.ll --host k.host.ll -o k.s   GPU-dialect / CUDA input: also compile the host side
 #include "Analysis.h"
 #include "CodeGen.h"
 #include "llvm/IRReader/IRReader.h"
@@ -35,7 +36,7 @@ static cl::opt<bool> GPUBlock1("gpu-block1", cl::desc("GPU-dialect input: treat 
 static cl::opt<bool> GPUNoOpt("gpu-no-opt", cl::desc("GPU-dialect input: skip the -O2 pipeline after adaptation"));
 static cl::opt<bool> AssumeNoAlias("assume-noalias", cl::desc("treat every pointer kernel argument as restrict (lets accumulators stay in registers across control-thread loops)"));
 static cl::opt<bool> FPContract("fp-contract", cl::desc("fuse fmul+fadd into vfmadd (like -ffp-contract=fast; changes rounding)"));
-static cl::opt<std::string> HostFile("host", cl::desc("host LLVM IR (from hwacha-mlir --host) to optimize, compile with llc and append to the output"));
+static cl::opt<std::string> HostFile("host", cl::desc("host LLVM IR (hwacha-mlir --host, or clang --cuda-host-only -O0) to optimize, compile with llc and append to the output"));
 static cl::opt<std::string> LLCPath("llc", cl::desc("path to llc"), cl::init(LLC_DEFAULT_PATH));
 
 int main(int argc, char **argv) {
@@ -79,9 +80,10 @@ int main(int argc, char **argv) {
   if (!HostFile.empty()) {   // host code from hwacha-mlir: same -O2, linked into the control-thread module
     std::unique_ptr<Module> HM = parseIRFile(HostFile, Err, Ctx);
     if (!HM) { Err.print(argv[0], errs()); return 1; }
+    if (!hwacha::lowerCUDALaunches(*HM, *CT, errs())) return 1;   // CUDA <<<>>> stubs, if any
     for (Function &F : *HM) if (!F.isDeclaration()) { hwacha::expandAbsI(F); hwacha::expandFunnelShift(F); hwacha::expandLogExpM1Pow(F); hwacha::expandTanhf(F); hwacha::expandSinCosf(F); hwacha::expandAtanf(F); hwacha::expandFloorf(F); hwacha::expandErff(F); hwacha::expandLogf(F); hwacha::expandExpf(F); }
     hwacha::optimizeModule(*HM);
-    for (StringRef G : {"hwacha_group_size", "hwacha_grid_size"})   // written by the lowered launches
+    for (StringRef G : {"hwacha_group_size", "hwacha_grid_size", "hwacha_ls0", "hwacha_ls1", "hwacha_ng0", "hwacha_ng1"})   // written by the lowered launches
       if (!CT->getGlobalVariable(G, true)) {
         Type *I64 = Type::getInt64Ty(Ctx);
         auto *GV = new GlobalVariable(*CT, I64, false, GlobalValue::WeakAnyLinkage, ConstantInt::get(I64, 0), G);

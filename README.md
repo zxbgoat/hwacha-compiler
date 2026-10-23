@@ -28,6 +28,7 @@ Only first-party work is tracked. Large upstream trees and build products are **
 | `hwacha-cc/test/mnist` | three MNIST DDPMs (bot66/MNISTDiffusion depthwise UNet, TeaPearce/Conditional_Diffusion_MNIST ContextUnet with classifier-free guidance, aestuans/mnist-diffusion ResNet UNet) on one kernel set; `export.py` exports weights + PyTorch reference outputs |
 | `hwacha-cc/test/torch` | PyTorch entry: `export_aestuans.py` (torch.export → torch-mlir linalg) + bufferize + `hwacha-mlir` + `hwacha-cc --host`; one forward of the aestuans UNet checked against PyTorch |
 | `hwacha-cc/mlir` | `hwacha-mlir`, the MLIR front end: linalg/scf.parallel → gpu (collapse, outline), `gpu.launch_func` → host calls, embedded transform scripts; emits kernel + host LLVM IR |
+| `hwacha-cc/test/cuda` | CUDA entry: `include/cuda_runtime.h` (clang-only stand-in for the NVIDIA headers), `hwcuda_rt.c` (bump-allocated device memory, launch configuration), saxpy / shared-memory reduction / 2-D launch tests |
 | `hwacha-cc/test/mlir` | MLIR entry tests: `gpu.func` with CUDA-style and grid-stride indexing, `linalg.generic`/`linalg.matmul` auto-outlined, workgroup memory + barrier, math incl. `exp`, register-blocked matmul via a transform script |
 | `hwacha-cc/test/rtl-run.sh` | run one or more binaries on the RTL sim (adds `+loadmem`), log to a file |
 | `scripts/build-sim.sh` | build the Chipyard Verilator sim of `HwachaRocketConfig` (threads/opt configurable) |
@@ -185,6 +186,24 @@ block size of 1 maps `block_id` to the work-item), `nvvm.barrier` becomes `barri
 expanded into vector arithmetic. `hwacha-cc/test/mlir/mlir_main.c` shows how C calls the MLIR host
 functions under both memref conventions.
 
+### CUDA entry
+
+A `.cu` file compiles through clang's own CUDA front end: no nvcc and no NVIDIA headers, a 60-line
+`cuda_runtime.h` (`hwacha-cc/test/cuda/include`) stands in for them and pulls clang's device-side
+headers (`threadIdx`, `__syncthreads`, `expf` → `__nv_expf`). The device pass emits the same NVVM
+form as the MLIR entry, so the kernel side needs nothing new; the host pass (`--cuda-host-only
+-O0`, riscv64) keeps clang's `<<<>>>` launch stubs, which `hwacha-cc --host` replaces by
+`<kernel>_ct(n, args...)` calls that publish grid/block (x, y: 2-D launches are flattened like 2-D
+NDRanges) in the `hwacha_*` globals. `hwcuda_rt.c` is the runtime: `cudaMalloc` is a bump allocator
+in the flat address space, `cudaMemcpy` is `memcpy`, events read `rdcycle`.
+
+```bash
+cd hwacha-cc/test/cuda && make run        # saxpy, __shared__ + __syncthreads reduction, 2-D grid → ok
+```
+
+Not available on Hwacha: atomics (`atomicAdd` — rewrite as a reduction), warp primitives
+(`__shfl_*`, `__ballot`), textures, streams with concurrency.
+
 ## Reproduce the tests
 
 `source env.sh` and build the compiler first. Fastest path to confidence is the **Spike column** — it
@@ -194,6 +213,7 @@ minutes to hours.
 | suite | Spike (correctness) | RTL (cycles) |
 |---|---|---|
 | regression | `cd hwacha-cc/test/run && make run` → 9× `ALL KERNELS PASSED` | `make <name>.rtl` for one binary |
+| CUDA | `cd ../cuda && make run` → 3× `ok` | `make saxpy.rtl` |
 | microbench | `cd ../bench && make N=1024 && spike --isa=rv64gc --extension=hwacha bench-n1024.riscv` → `ALL VERIFIED` | `./run-all.sh 1024` (~15 min); `make N=4096 bench-n4096.riscv` (~40 min) |
 | Rodinia | `cd ../apps && make spike` → 6× `PASS` | `./run-rtl-seq.sh results/x.out nn.riscv kmeans.riscv pgain.riscv pathfinder.riscv bfs.riscv` (~1 h) |
 | llama2.c | `cd ../llama && make llama.riscv && spike --isa=rv64gc --extension=hwacha llama.riscv` → 40 tokens match x86, `llama PASS` | `make llama_rtl.riscv && ../rtl-run.sh results/x.out llama_rtl.riscv` (4 tokens, ~1.5 h) |

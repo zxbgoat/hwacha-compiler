@@ -1339,3 +1339,48 @@ GNU as 对纯 `.word` 内存轻且快(DiT-B 的 7.9GB .s 汇编+链接只 29s / 
 **仍未解决 / 后续**:unpatchify 与 sin/cos 若要全在片上跑,需要 codegen 支持转置/gather 不被完全展开、
 以及 sinf/cosf 内联;权重 `.incbin` 以支持 DiT-L/XL(见上);cross-attention(PixArt)、MMDiT 双流
 (SD3/FLUX)是原版 DiT 之外的额外结构,需要再接。
+
+## 接入 CUDA：clang 前端直出，无需 nvcc（2026-10-24）
+
+**结论**：`.cu` 不需要新的内核侧代码。`clang -x cuda --cuda-device-only` 的设备端 IR 和 MLIR
+`convert-gpu-to-nvvm` 的输出是同一种形态（`ptx_kernel`、`llvm.nvvm.read.ptx.sreg.*`、
+`llvm.nvvm.barrier.*`、`addrspace(3)` 的 `__shared__`、`__nv_expf`），`GPUAdapt.cpp` 现成全吃。
+`blockIdx.x*blockDim.x+threadIdx.x` 被 `foldGlobalId` 折成 `get_global_id(0)`，saxpy 得到的就是
+单位步长 `vlw/vsw` 的 vf 块。
+
+**主机侧才是工作量**。clang 把 `K<<<g,b>>>(args)` 降成 `__cudaPushCallConfiguration(g,b,shm,stream)`
++ `__device_stub__K(args)`，stub 内部 `__cudaPopCallConfiguration` 后调 `cudaLaunchKernel(&stub, g, b,
+&args[], ...)`。新加的 `lowerCUDALaunches`（GPUAdapt.cpp）在 `--host` 路径上找到所有
+`__device_stub__` 函数，把函数体整个换成：pop 配置 → `hwacha_group_size`（block 乘积，1 时写 0 让硬件
+选 vl）、`hwacha_grid_size`、`hwacha_ls0/ls1/ng0/ng1` → `K_ct(n, args...)`。stub 签名就是内核签名，
+所以参数一一对应，和 `hwacha-mlir` 的 `lowerLaunches` 产出完全一致。stub 名 → 内核名：Itanium 名里
+`<len>__device_stub__<name>` 变 `<len-15><name>`。**主机侧必须 -O0**：-O2 会把 stub 内联进 main，
+留下的是 `cudaLaunchKernel(&stub, ..., args[])`，参数要从 `void*[]` 里按类型捞回来，不划算；
+-O0 的 IR 之后由 hwacha-cc 跑同一套 -O2。
+
+**y 维**：之前 `tid.y/ctaid.y/ntid.y` 硬编 0/1。现在映射到 `get_local_id(1)` 等 dimension-1 查询，
+`flattenNDRange` 用 host 写的 `hwacha_ls0/ls1/ng0/ng1` 把 2-D block×grid 铺到 lane 上，`nctaid.*`
+走 `get_num_groups`。z 维仍是 0/1。MLIR 测试不受影响（它们全是 1-D）。
+
+**头文件**：NVIDIA 的 `cuda_runtime.h` 依赖 libstdc++ 的 `<utility>` 等，riscv64 newlib 环境编不过，
+所以 `test/cuda/include/cuda_runtime.h` 是一个 60 行替身：`__global__/__shared__/dim3/cudaMalloc...`
++ 直接包含 clang 自带的 `__clang_cuda_builtin_vars.h`、`__clang_cuda_libdevice_declares.h`、
+`__clang_cuda_device_functions.h`、`__clang_cuda_math.h`。三个坑：
+1. 这些头要 `CUDA_VERSION`，而 clang 选 `__cudaPushCallConfiguration` 还是老的 `cudaConfigureCall`
+   看的是 `-target-sdk-version`，没 CUDA 安装时它默认旧协议 → `use of undeclared identifier
+   cudaConfigureCall`。`-Xclang -target-sdk-version=12.0` 解决，不必伪造 CUDA 目录。
+2. 主机 pass 也语义检查内核体，`expf` 只有 newlib 的 `__host__` 版 → `no matching function`。
+   照 clang 自己的 `__clang_cuda_runtime_wrapper.h` 做法：主机侧也临时 `#define __CUDA_ARCH__ 9999`
+   再包含设备 math 头。
+3. `__clang_cuda_math.h` 用 `INT_MAX/HUGE_VAL`，先包 `<limits.h>/<math.h>`。
+
+**运行时** `hwcuda_rt.c`：一个地址空间，`cudaMalloc` 是 16MB arena 上的 bump allocator（`HWCUDA_ARENA`
+可改），`cudaMemcpy=memcpy`，`cudaDeviceSynchronize/GetLastError` 返回 0，event 用 rdcycle，
+`ElapsedTime` 按 1GHz 折成"毫秒"。`dim3` 在 lp64d 下按两个 i64 传，Push 的 C 签名照此写。
+
+**测试** `test/cuda`：saxpy（1-D，边界 if）、rowsumexp（`__shared__` + `__syncthreads` 树归约 +
+`expf`）、grid2d（16×8 block，7×5 grid，边界 if）全部 Spike `ok`；run/mlir/apps 回归不变。
+
+**没有的**：原子（Hwacha 无向量原子；`atomicAdd` 改写成 reduction）、warp 原语（`__shfl_*`、
+`__ballot`）、纹理、`__constant__`（addrspace(4)，和 addrspace(3) 同样扁平化即可，还没做）、
+struct 按值传参（主机/设备 ABI 不同，`lowerCUDALaunches` 检测签名不一致会报错）。

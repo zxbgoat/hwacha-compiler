@@ -49,6 +49,8 @@ void contractFMA(llvm::Function &F);
 // Run the clang-equivalent -O2 pipeline (no vectorization / unrolling) on a module.
 void optimizeModule(llvm::Module &M);
 bool adaptGPUModule(llvm::Module &M, bool ForceBlock1, bool NoOpt, llvm::raw_ostream &Err, bool &Adapted);
+// CUDA host module (clang --cuda-host-only -O0): launch stubs -> <kernel>_ct calls (CT holds the kernels).
+bool lowerCUDALaunches(llvm::Module &HM, llvm::Module &CT, llvm::raw_ostream &Err);
 // Work-item id calls: get_global_id(0) / get_local_id(0). Both are divergence sources.
 bool isWorkItemId(const llvm::Value *V);
 bool isGlobalId(const llvm::Value *V);
