@@ -1092,6 +1092,8 @@ void WTGen::computeNeeded() {
   SmallVector<const Value *, 32> Work;
   for (Instruction &I : instructions(F))
     if (isa<StoreInst>(I) || I.isTerminator() || isBarrierCall(&I) ||
+        // atomics (CUDA atomicAdd etc.): Hwacha has no vector atomics; kept so codegen reports them
+        isa<AtomicRMWInst>(I) || isa<AtomicCmpXchgInst>(I) || isa<FenceInst>(I) ||
         (isa<CallBase>(I) && cast<CallBase>(I).getCalledFunction() && cast<CallBase>(I).getCalledFunction()->getName().contains("atom")) ||
         // a call with memory side effects that is not a known builtin is work, not dead code: keep it so
         // that codegen reports it ("unsupported call") instead of silently dropping it
@@ -2240,6 +2242,8 @@ bool WTGen::emitInstImpl(Instruction &I, unsigned Pos) {
     if (First) emit("", "vadd", {D, Cur, "vs0"});
     return true;
   }
+  if (isa<AtomicRMWInst>(I) || isa<AtomicCmpXchgInst>(I))
+    return fail("atomic operation: Hwacha has no vector atomics (rewrite as a work_group_reduce / per-lane partial sums)", &I);
   return fail("unsupported instruction", &I);
 }
 
@@ -2262,6 +2266,10 @@ static Value *cloneUniform(Value *V, ValueToValueMapTy &VMap, IRBuilder<> &B, ra
         // a weight stripped to the .incbin blob (external constant): keep it an external declaration so
         // it resolves against that blob at link time, rather than reserving a zero copy in .bss here.
         C = new GlobalVariable(CT, GV->getValueType(), true, GlobalValue::ExternalLinkage, nullptr, GV->getName());
+      } else if (GV->hasMetadata("hwacha.device_global")) {
+        // a CUDA __constant__ / __device__ variable: the one definition the host's cudaMemcpyToSymbol targets
+        C = new GlobalVariable(CT, GV->getValueType(), false, GlobalValue::ExternalLinkage, Data ? GV->getInitializer() : Constant::getNullValue(GV->getValueType()), GV->getName());
+        C->setMetadata("hwacha.device_global", MDNode::get(CT.getContext(), {}));
       } else
         C = new GlobalVariable(CT, GV->getValueType(), Data && GV->isConstant(), GV->isDeclaration() ? GlobalValue::WeakAnyLinkage : GlobalValue::InternalLinkage,
                                Data ? GV->getInitializer() : Constant::getNullValue(GV->getValueType()), GV->getName());

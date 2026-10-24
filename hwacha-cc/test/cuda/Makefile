@@ -20,7 +20,7 @@ LDFLAGS  := -static -nostdlib -nostartfiles -lm -lgcc -T $(COMMON)/test.ld
 SPIKE    := spike --isa=rv64gc --extension=hwacha
 SIM      := $(ROOT)/chipyard/sims/verilator/simulator-chipyard.harness-HwachaRocketConfig
 
-APPS := saxpy shared
+APPS := saxpy shared nn pathfinder hotspot bfs nw kmeans
 all: $(addsuffix .riscv,$(APPS))
 run: $(addsuffix .spike,$(APPS))
 

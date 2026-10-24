@@ -23,6 +23,10 @@ int cudaMalloc(void **p, size_t n) {
 int cudaFree(void *p) { (void)p; return 0; }
 int cudaMemcpy(void *d, const void *s, size_t n, int kind) { (void)kind; memcpy(d, s, n); return 0; }
 int cudaMemset(void *d, int v, size_t n) { memset(d, v, n); return 0; }
+// __constant__ / __device__ globals: the host passes the shadow variable clang gives it; hwacha-cc
+// makes the kernel read the very same symbol, so the copy lands where the kernel looks
+int cudaMemcpyToSymbol(void *sym, const void *s, size_t n, size_t off, int kind) { (void)kind; memcpy((char *)sym + off, s, n); return 0; }
+int cudaMemcpyFromSymbol(void *d, const void *sym, size_t n, size_t off, int kind) { (void)kind; memcpy(d, (const char *)sym + off, n); return 0; }
 int cudaDeviceSynchronize(void) { return 0; }
 int cudaDeviceReset(void) { hwcuda_top = 0; return 0; }
 int cudaGetLastError(void) { return 0; }

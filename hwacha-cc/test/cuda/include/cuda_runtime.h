@@ -35,6 +35,8 @@ cudaError_t cudaMalloc(void **p, size_t n);
 cudaError_t cudaFree(void *p);
 cudaError_t cudaMemcpy(void *d, const void *s, size_t n, cudaMemcpyKind kind);
 cudaError_t cudaMemset(void *d, int v, size_t n);
+cudaError_t cudaMemcpyToSymbol(const void *sym, const void *s, size_t n, size_t off = 0, cudaMemcpyKind kind = cudaMemcpyHostToDevice);
+cudaError_t cudaMemcpyFromSymbol(void *d, const void *sym, size_t n, size_t off = 0, cudaMemcpyKind kind = cudaMemcpyDeviceToHost);
 cudaError_t cudaDeviceSynchronize(void);
 cudaError_t cudaDeviceReset(void);
 cudaError_t cudaGetLastError(void);
@@ -64,4 +66,25 @@ static inline cudaError_t cudaEventRecord(cudaEvent_t e) { return cudaEventRecor
 #include <__clang_cuda_libdevice_declares.h>
 #include <__clang_cuda_device_functions.h>
 #include <__clang_cuda_math.h>
+#define __CLANG_CUDA_INTRINSICS_H__   // its __ldg / shuffles need NVIDIA vector types; warp primitives have no Hwacha equivalent anyway
+// the public atomic names are NVIDIA's device_atomic_functions.hpp wrappers of clang's __*Atomic* builtins
+#define __HW_ATOMIC(NAME, T, IMPL) static __device__ __forceinline__ T NAME(T *p, T v) { return IMPL(p, v); }
+__HW_ATOMIC(atomicAdd, int, __iAtomicAdd)  __HW_ATOMIC(atomicAdd, unsigned, __uAtomicAdd)  __HW_ATOMIC(atomicAdd, unsigned long long, __ullAtomicAdd)  __HW_ATOMIC(atomicAdd, float, __fAtomicAdd)
+#undef __HW_ATOMIC
+static __device__ __forceinline__ int atomicSub(int *p, int v) { return __iAtomicAdd(p, -v); }
+static __device__ __forceinline__ unsigned atomicSub(unsigned *p, unsigned v) { return __uAtomicAdd(p, 0u - v); }
+static __device__ __forceinline__ int atomicExch(int *p, int v) { return __iAtomicExch(p, v); }
+static __device__ __forceinline__ unsigned atomicExch(unsigned *p, unsigned v) { return __uAtomicExch(p, v); }
+static __device__ __forceinline__ float atomicExch(float *p, float v) { return __fAtomicExch(p, v); }
+static __device__ __forceinline__ int atomicMin(int *p, int v) { return __iAtomicMin(p, v); }
+static __device__ __forceinline__ unsigned atomicMin(unsigned *p, unsigned v) { return __uAtomicMin(p, v); }
+static __device__ __forceinline__ int atomicMax(int *p, int v) { return __iAtomicMax(p, v); }
+static __device__ __forceinline__ unsigned atomicMax(unsigned *p, unsigned v) { return __uAtomicMax(p, v); }
+static __device__ __forceinline__ unsigned atomicInc(unsigned *p, unsigned v) { return __uAtomicInc(p, v); }
+static __device__ __forceinline__ unsigned atomicDec(unsigned *p, unsigned v) { return __uAtomicDec(p, v); }
+static __device__ __forceinline__ int atomicCAS(int *p, int c, int v) { return __iAtomicCAS(p, c, v); }
+static __device__ __forceinline__ unsigned atomicCAS(unsigned *p, unsigned c, unsigned v) { return __uAtomicCAS(p, c, v); }
+static __device__ __forceinline__ int atomicAnd(int *p, int v) { return __iAtomicAnd(p, v); }
+static __device__ __forceinline__ int atomicOr(int *p, int v) { return __iAtomicOr(p, v); }
+static __device__ __forceinline__ int atomicXor(int *p, int v) { return __iAtomicXor(p, v); }
 #pragma pop_macro("__CUDA_ARCH__")

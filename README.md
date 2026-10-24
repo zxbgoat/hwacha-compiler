@@ -197,12 +197,18 @@ form as the MLIR entry, so the kernel side needs nothing new; the host pass (`--
 NDRanges) in the `hwacha_*` globals. `hwcuda_rt.c` is the runtime: `cudaMalloc` is a bump allocator
 in the flat address space, `cudaMemcpy` is `memcpy`, events read `rdcycle`.
 
+`__constant__` / `__device__` variables are one definition shared by kernel and host, so
+`cudaMemcpyToSymbol` works.
+
 ```bash
-cd hwacha-cc/test/cuda && make run        # saxpy, __shared__ + __syncthreads reduction, 2-D grid → ok
+cd hwacha-cc/test/cuda && make run        # saxpy, shared-memory reduction, 2-D grid, and six Rodinia CUDA kernels
 ```
 
-Not available on Hwacha: atomics (`atomicAdd` — rewrite as a reduction), warp primitives
-(`__shfl_*`, `__ballot`), textures, streams with concurrency.
+Rodinia's CUDA versions compile unmodified (kernel code as in `rodinia_3.1/cuda`, host driven the
+same way): nn (2-D grid), pathfinder, hotspot (2-D block, 2-D `__shared__`), bfs (`bool` masks),
+nw (`__device__` helper, wavefront barriers), kmeans (`__constant__` centres). Not available on
+Hwacha and reported as errors: atomics (`atomicAdd` — rewrite as a reduction), warp primitives
+(`__shfl_*`, `__ballot`), textures.
 
 ## Reproduce the tests
 
@@ -213,7 +219,7 @@ minutes to hours.
 | suite | Spike (correctness) | RTL (cycles) |
 |---|---|---|
 | regression | `cd hwacha-cc/test/run && make run` → 9× `ALL KERNELS PASSED` | `make <name>.rtl` for one binary |
-| CUDA | `cd ../cuda && make run` → 3× `ok` | `make saxpy.rtl` |
+| CUDA | `cd ../cuda && make run` → 3× `ok`, 7× `PASS` | `make <name>.rtl` for one binary |
 | microbench | `cd ../bench && make N=1024 && spike --isa=rv64gc --extension=hwacha bench-n1024.riscv` → `ALL VERIFIED` | `./run-all.sh 1024` (~15 min); `make N=4096 bench-n4096.riscv` (~40 min) |
 | Rodinia | `cd ../apps && make spike` → 6× `PASS` | `./run-rtl-seq.sh results/x.out nn.riscv kmeans.riscv pgain.riscv pathfinder.riscv bfs.riscv` (~1 h) |
 | llama2.c | `cd ../llama && make llama.riscv && spike --isa=rv64gc --extension=hwacha llama.riscv` → 40 tokens match x86, `llama PASS` | `make llama_rtl.riscv && ../rtl-run.sh results/x.out llama_rtl.riscv` (4 tokens, ~1.5 h) |

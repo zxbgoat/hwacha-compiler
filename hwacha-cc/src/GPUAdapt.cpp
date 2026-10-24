@@ -64,20 +64,31 @@ bool blockSizeIsOne(const Function &F) {
   return false;
 }
 
-// Replace every reference to an addrspace(3) global by an addrspace(0) copy and fix the pointer
-// types of the instructions that flow from it.
+// Replace every reference to an addrspace(3) / (4) / (1) global by an addrspace(0) copy and fix the
+// pointer types of the instructions that flow from it. Workgroup memory (3) becomes an internal
+// `.local` buffer. CUDA's __constant__ (4) and __device__ (1) variables become external definitions
+// tagged !hwacha.device_global: the control-thread module keeps that one definition (CodeGen's
+// cloneUniform) and the host's shadow variable is turned into a declaration of it
+// (lowerCUDALaunches), so cudaMemcpyToSymbol writes where the kernel reads.
 bool flattenWorkgroupGlobals(Module &M, raw_ostream &Err) {
   SmallVector<GlobalVariable *, 8> WG;
-  for (GlobalVariable &G : M.globals()) if (G.getAddressSpace() == 3) WG.push_back(&G);
+  for (GlobalVariable &G : M.globals()) if (G.getAddressSpace() == 3 || G.getAddressSpace() == 4 || G.getAddressSpace() == 1) WG.push_back(&G);
   if (WG.empty()) return true;
+  for (StringRef N : {"llvm.compiler.used", "llvm.used"})   // keep-alive lists (NVPTX only)
+    if (GlobalVariable *U = M.getGlobalVariable(N)) U->eraseFromParent();
   SmallVector<Constant *, 8> Cs(WG.begin(), WG.end());
   convertUsersOfConstantsToInstructions(Cs);
   PointerType *P0 = PointerType::get(M.getContext(), 0);
   for (GlobalVariable *G : WG) {
     Constant *Init = G->hasInitializer() && !isa<UndefValue>(G->getInitializer()) && !isa<PoisonValue>(G->getInitializer())
                      ? G->getInitializer() : Constant::getNullValue(G->getValueType());
-    auto *G0 = new GlobalVariable(M, G->getValueType(), G->isConstant(), GlobalValue::InternalLinkage, Init, G->getName() + ".local", nullptr, GlobalValue::NotThreadLocal, 0);
+    bool Dev = G->getAddressSpace() != 3;
+    std::string Name = G->getName().str();
+    if (Dev) G->setName("");   // the copy takes the name: the host's shadow variable refers to it
+    auto *G0 = new GlobalVariable(M, G->getValueType(), !Dev && G->isConstant(), Dev ? GlobalValue::ExternalLinkage : GlobalValue::InternalLinkage, Init,
+                                  Dev ? Name : Name + ".local", nullptr, GlobalValue::NotThreadLocal, 0);
     G0->setAlignment(G->getAlign().value_or(Align(8)));
+    if (Dev) G0->setMetadata("hwacha.device_global", MDNode::get(M.getContext(), {}));
     for (Use &U : llvm::make_early_inc_range(G->uses())) {
       if (!isa<Instruction>(U.getUser())) { Err << "hwacha-cc: unsupported non-instruction use of workgroup global " << G->getName() << "\n"; return false; }
       U.set(G0);
@@ -181,6 +192,10 @@ bool adaptFunction(Function &F, bool Block1, raw_ostream &Err) {
 }
 
 // group_id*local_size + local_id is the global id: fold it so the address becomes a unit-stride stream.
+// group_id*C + local_id with a constant C (CUDA's `blockIdx.x * BLOCK + threadIdx.x`, clang's shl)
+// is folded the same way: it is the global id of a launch with block size C, and it stays right
+// when the hardware cannot give a group that many lanes (maxvl shrinks with the register count) and
+// the block runs as several stripmines, each of which is a "group" to the work-item ids.
 Value *stripIdCast(Value *V) {
   while (auto *C = dyn_cast<CastInst>(V)) {
     if (!isa<TruncInst>(C) && !isa<SExtInst>(C) && !isa<ZExtInst>(C)) break;
@@ -193,10 +208,14 @@ void foldGlobalId(Function &F) {
   SmallVector<Instruction *, 8> Work;
   for (Instruction &I : instructions(F)) {
     Value *A, *B, *C;
-    if (!match(&I, m_c_Add(m_c_Mul(m_Value(A), m_Value(B)), m_Value(C)))) continue;
-    A = stripIdCast(A); B = stripIdCast(B); C = stripIdCast(C);
-    if (!hwacha::isLocalId(C)) continue;
-    if (!((hwacha::isGroupIdCall(A) && hwacha::isLocalSizeCall(B)) || (hwacha::isGroupIdCall(B) && hwacha::isLocalSizeCall(A)))) continue;
+    if (match(&I, m_c_Add(m_c_Mul(m_Value(A), m_Value(B)), m_Value(C)))) {
+      A = stripIdCast(A); B = stripIdCast(B); C = stripIdCast(C);
+      if (!hwacha::isLocalId(C)) continue;
+      bool Const = (hwacha::isGroupIdCall(A) && isa<ConstantInt>(B)) || (hwacha::isGroupIdCall(B) && isa<ConstantInt>(A));
+      if (!Const && !((hwacha::isGroupIdCall(A) && hwacha::isLocalSizeCall(B)) || (hwacha::isGroupIdCall(B) && hwacha::isLocalSizeCall(A)))) continue;
+    } else if (match(&I, m_c_Add(m_Shl(m_Value(A), m_ConstantInt()), m_Value(C)))) {
+      if (!hwacha::isLocalId(stripIdCast(C)) || !hwacha::isGroupIdCall(stripIdCast(A))) continue;
+    } else continue;
     Work.push_back(&I);
   }
   for (Instruction *I : Work) {
@@ -317,6 +336,12 @@ bool hwacha::lowerCUDALaunches(Module &HM, Module &CT, raw_ostream &Err) {
     for (Argument &A : S->args()) Args.push_back(&A);
     B.CreateCall(cast<Function>(HM.getOrInsertFunction(KCT->getName(), CTT).getCallee()), Args);
     B.CreateRetVoid();
+  }
+  // __constant__ / __device__ shadows: the control-thread module owns the definition
+  for (GlobalVariable &G : HM.globals()) {
+    GlobalVariable *D = CT.getGlobalVariable(G.getName(), true);
+    if (!D || !D->hasMetadata("hwacha.device_global") || G.isDeclaration()) continue;
+    G.setInitializer(nullptr); G.setLinkage(GlobalValue::ExternalLinkage); G.setConstant(false);
   }
   if (Function *L = HM.getFunction("cudaLaunchKernel")) {
     if (!L->use_empty()) { Err << "hwacha-cc: cudaLaunchKernel is still called: compile the host side with -O0 (the inlined launch stubs cannot be recovered)\n"; return false; }

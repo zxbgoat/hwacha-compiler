@@ -1384,3 +1384,35 @@ GNU as 对纯 `.word` 内存轻且快(DiT-B 的 7.9GB .s 汇编+链接只 29s / 
 **没有的**：原子（Hwacha 无向量原子；`atomicAdd` 改写成 reduction）、warp 原语（`__shfl_*`、
 `__ballot`）、纹理、`__constant__`（addrspace(4)，和 addrspace(3) 同样扁平化即可，还没做）、
 struct 按值传参（主机/设备 ABI 不同，`lowerCUDALaunches` 检测签名不一致会报错）。
+
+### Rodinia 的 CUDA 版（2026-10-24 下午）
+
+把 nn、pathfinder、hotspot、bfs、nw、kmeans 的 CUDA 内核（`rodinia_3.1/cuda` 的原样代码）放进
+`test/cuda`，host 照原 `.cu` 的驱动方式写（`<<<>>>`、`cudaMalloc/Memcpy`、ping-pong 缓冲）。
+六个全部 Spike PASS，结果和 OpenCL 版逐元素一致。撞到三件事：
+
+1. **`blockIdx.x * 512 + threadIdx.x` 不等于 global id**（bfs，1777/2048 错）。CUDA 代码常用常量
+   `MAX_THREADS_PER_BLOCK` 而不是 `blockDim.x`。bfs 的 Kernel 用 12 个 vv，maxvl=168 < 512，一个
+   block 被切成 4 个 stripmine，而 `get_group_id(0)` 是 stripmine 序号——所以 `group*512+lane` 跳着
+   覆盖。`foldGlobalId` 现在把 `group_id * C + local_id`（含 clang 变出来的 `shl`）也折成
+   `get_global_id(0)`：这正是 block 大小为 C 时的全局 id，且与 vl 无关。OpenCL 版不受影响（它们
+   用 `get_global_id`）。注意这个折叠只在 host 真的以 C 为 block 启动时正确；CUDA 代码两边用同一个
+   宏，所以成立。
+2. **`__constant__` 被静默清零**。clang 设备侧给 `addrspace(4) externally_initialized`，主机侧给
+   同名 `internal global undef` 影子 + `cudaMemcpyToSymbol(影子, ...)`。处理：`flattenWorkgroupGlobals`
+   把 addrspace(4)/(1) 全局改成 addrspace(0) 的 **external 定义** 并打 `!hwacha.device_global`，
+   `cloneUniform` 把它原样搬进 CT 模块（而不是像 `__local` 那样做 internal 零拷贝），
+   `lowerCUDALaunches` 把 host 影子改成 declaration。于是三方指向同一个符号，MemcpyToSymbol 写到
+   内核读的地方。顺手删掉 `llvm.compiler.used`（它持有 addrspace(4) 的 cast）。
+3. **`atomicAdd` 被静默丢弃**：`atomicrmw` 没有副作用根（`computeNeeded` 只认 store/call），
+   kernel 编出一个空 vf 块。现在 `AtomicRMW/CmpXchg/Fence` 都是 needed 根，codegen 报
+   "atomic operation: Hwacha has no vector atomics"。shim 头里补了 `atomicAdd/Sub/Exch/Min/Max/
+   Inc/Dec/CAS/And/Or/Xor` 的声明（NVIDIA 的 `device_atomic_functions.hpp` 对 clang `__iAtomicAdd`
+   等 builtin 的包装），这样用户代码能编过、在 hwacha-cc 处得到明确的错误而不是找不到标识符。
+   `__clang_cuda_intrinsics.h`（`__shfl_*`、`__ldg`）依赖 NVIDIA 的 `char2` 等向量类型，直接用
+   include guard 跳过——warp 原语本来就没有对应物。
+
+此外 nn 的 `gridDim.x * blockIdx.y + blockIdx.x`（2-D grid、1-D block）走的是 y 维映射 →
+`get_group_id(1)`/`get_num_groups(0)` → `flattenNDRange`，不需要特殊处理；hotspot 的 2-D block
+`[ty][tx]` 二维 `__shared__` 同样。用新编译器重生成 hwacha-application 的 9 个 2-D/`__local`
+OpenCL 案例，全部 PASS，.s 只有寄存器重编号。
