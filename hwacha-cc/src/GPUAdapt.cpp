@@ -161,6 +161,10 @@ bool adaptFunction(Function &F, bool Block1, raw_ostream &Err) {
       B.CreateCall(Bar, {B.getInt32(1)});
       CI->eraseFromParent();
       continue;
+    } else if (N.starts_with("llvm.nvvm.membar")) {   // __threadfence[_block/_system] -> fence (vfence in the vf block)
+      B.CreateFence(AtomicOrdering::SequentiallyConsistent);
+      CI->eraseFromParent();
+      continue;
     } else if (N.starts_with("llvm.nvvm.")) {
       Err << "hwacha-cc: unsupported NVVM intrinsic " << N << "\n"; return false;
     } else if (N.starts_with("__nv_")) {

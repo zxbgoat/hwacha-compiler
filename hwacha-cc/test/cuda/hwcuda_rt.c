@@ -7,7 +7,7 @@
 #include <stdio.h>
 
 #ifndef HWCUDA_ARENA
-#define HWCUDA_ARENA (1 << 24)
+#define HWCUDA_ARENA (1 << 22)   // 4MB; override with -DHWCUDA_ARENA=... (it lives in .bss: run the RTL with +loadmem)
 #endif
 static char hwcuda_arena[HWCUDA_ARENA] __attribute__((aligned(64)));
 static long hwcuda_top;

@@ -950,7 +950,7 @@ void WTGen::selectCTLoops() {
         if (!Ok) break;
         if (I.isTerminator() || isa<StoreInst>(I)) continue;
         if (isWorkGroupReduce(&I)) continue;                                                     // a segment boundary inside the region
-        if (isBarrierCall(&I) || (isa<CallBase>(I) && I.mayWriteToMemory())) { Ok = false; break; }   // barriers, atomics
+        if (isBarrierCall(&I) || (isa<CallBase>(I) && I.mayWriteToMemory()) || isa<AtomicRMWInst>(I) || isa<AtomicCmpXchgInst>(I) || isa<FenceInst>(I)) { Ok = false; break; }   // barriers, atomics
         if (isa<CallBase>(I) && !isLocalSizeCall(&I) && !isGroupIdCall(&I) && !isGlobalSizeCall(&I) && !isNumGroupsCall(&I)) { if (isUniform(&I)) Ok = false; continue; }   // uniform builtin
         if (isUniform(&I)) Ok = ctCloneable(&I, Seen);
       }
@@ -1092,7 +1092,7 @@ void WTGen::computeNeeded() {
   SmallVector<const Value *, 32> Work;
   for (Instruction &I : instructions(F))
     if (isa<StoreInst>(I) || I.isTerminator() || isBarrierCall(&I) ||
-        // atomics (CUDA atomicAdd etc.): Hwacha has no vector atomics; kept so codegen reports them
+        // atomics (CUDA atomicAdd etc. -> vamo*) and fences (-> vfence) are work even when their result is unused
         isa<AtomicRMWInst>(I) || isa<AtomicCmpXchgInst>(I) || isa<FenceInst>(I) ||
         (isa<CallBase>(I) && cast<CallBase>(I).getCalledFunction() && cast<CallBase>(I).getCalledFunction()->getName().contains("atom")) ||
         // a call with memory side effects that is not a known builtin is work, not dead code: keep it so
@@ -2242,8 +2242,39 @@ bool WTGen::emitInstImpl(Instruction &I, unsigned Pos) {
     if (First) emit("", "vadd", {D, Cur, "vs0"});
     return true;
   }
-  if (isa<AtomicRMWInst>(I) || isa<AtomicCmpXchgInst>(I))
-    return fail("atomic operation: Hwacha has no vector atomics (rewrite as a work_group_reduce / per-lane partial sums)", &I);
+  if (auto *RMW = dyn_cast<AtomicRMWInst>(&I)) {
+    // Hwacha's vector AMOs (vamoadd/swap/and/or/xor/min/max/minu/maxu .w/.d): every active lane does one
+    // atomic read-modify-write on its own address, the memory system serialises lanes that collide,
+    // and the old value comes back per lane. Integer 32/64-bit only: no float AMO, no CAS, no inc/dec wrap.
+    const char *Op = nullptr; bool Neg = false;
+    switch (RMW->getOperation()) {
+    case AtomicRMWInst::Add: Op = "vamoadd"; break;
+    case AtomicRMWInst::Sub: Op = "vamoadd"; Neg = true; break;
+    case AtomicRMWInst::Xchg: Op = "vamoswap"; break;
+    case AtomicRMWInst::And: Op = "vamoand"; break;
+    case AtomicRMWInst::Or: Op = "vamoor"; break;
+    case AtomicRMWInst::Xor: Op = "vamoxor"; break;
+    case AtomicRMWInst::Min: Op = "vamomin"; break;
+    case AtomicRMWInst::Max: Op = "vamomax"; break;
+    case AtomicRMWInst::UMin: Op = "vamominu"; break;
+    case AtomicRMWInst::UMax: Op = "vamomaxu"; break;
+    default: return fail("atomic operation without a Hwacha vector AMO (vamo* are integer add/sub/xchg/and/or/xor/min/max: no float atomicAdd, no atomicInc/Dec wrap, no nand)", &I);
+    }
+    if (!T->isIntegerTy(32) && !T->isIntegerTy(64)) return fail("atomic operation on a type that is not a 32/64-bit integer (vamo*.w / vamo*.d)", &I);
+    std::string O = std::string(Op) + (T->isIntegerTy(64) ? ".d" : ".w");
+    Value *Src = RMW->getValOperand();
+    std::string SrcR;
+    Reg Tmp{RC::VS, 0}; bool DidTmp = false;
+    if (Neg && isa<ConstantInt>(Src)) SrcR = R(ConstantInt::get(Src->getType(), -cast<ConstantInt>(Src)->getValue()));
+    else if (Neg) { SrcR = R(Src); Tmp = alloc(classOf(Src)); DidTmp = true; emit("", "vsub", {Tmp.str(), "vs0", SrcR}); SrcR = Tmp.str(); }
+    else SrcR = R(Src);
+    std::string D = dest(I);
+    emit(VP, O, {D, "0(" + R(RMW->getPointerOperand()) + ")", SrcR});
+    if (DidTmp) { if (Tmp.Class == RC::VS) VSUsed[Tmp.Idx] = false; else (Tmp.Class == RC::VV ? VVUsed : VWUsed)[Tmp.Idx] = false; }
+    return true;
+  }
+  if (isa<AtomicCmpXchgInst>(I)) return fail("compare-and-swap: Hwacha has no vamocas (atomicCAS); use an AMO (atomicAdd/Max/...) or a reduction", &I);
+  if (isa<FenceInst>(I)) { emit("", "vfence", {}); return true; }   // __threadfence
   return fail("unsupported instruction", &I);
 }
 

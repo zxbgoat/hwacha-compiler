@@ -54,6 +54,13 @@ struct HwachaTTIImpl : public TargetTransformInfoImplBase {
   ValueUniformity getValueUniformity(const Value *V) const override {
     if (isWorkItemId(V)) return ValueUniformity::NeverUniform;
     if (isWorkGroupReduce(V)) return ValueUniformity::AlwaysUniform;   // the reduced value is the same in every lane
+    // an atomic read-modify-write returns a different old value to every lane even when its address
+    // and operand are uniform (atomicAdd(&counter, 1)): the vamo* result is per lane
+    if (isa<AtomicRMWInst>(V) || isa<AtomicCmpXchgInst>(V)) return ValueUniformity::NeverUniform;
+    if (auto *CB = dyn_cast<CallBase>(V))
+      if (Function *Callee = CB->getCalledFunction())
+        if (Callee->getName().starts_with("_Z") && (Callee->getName().contains("atomic_") || Callee->getName().contains("atom_")))
+          return ValueUniformity::NeverUniform;   // OpenCL atomic_add / atom_add ... builtins
     return ValueUniformity::Default;
   }
 };

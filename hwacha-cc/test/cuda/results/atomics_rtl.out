@@ -1,0 +1,13 @@
+hist_global  ok (12283 cycles)
+hist_shared  ok (28696 cycles)
+minmax       ok
+ticket       ok
+bits         ok
+sum64        ok
+exch         ok
+atomics PASS
+- /home/tesla/hwacha-compiler/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.HwachaRocketConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+
+real	1m4.682s
+user	8m37.228s
+sys	0m0.116s

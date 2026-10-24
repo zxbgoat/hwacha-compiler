@@ -1381,7 +1381,7 @@ GNU as 对纯 `.word` 内存轻且快(DiT-B 的 7.9GB .s 汇编+链接只 29s / 
 **测试** `test/cuda`：saxpy（1-D，边界 if）、rowsumexp（`__shared__` + `__syncthreads` 树归约 +
 `expf`）、grid2d（16×8 block，7×5 grid，边界 if）全部 Spike `ok`；run/mlir/apps 回归不变。
 
-**没有的**：原子（Hwacha 无向量原子；`atomicAdd` 改写成 reduction）、warp 原语（`__shfl_*`、
+**没有的**：~~原子~~（错：Hwacha 有 `vamo*`，见下文"原子操作"节）、warp 原语（`__shfl_*`、
 `__ballot`）、纹理、`__constant__`（addrspace(4)，和 addrspace(3) 同样扁平化即可，还没做）、
 struct 按值传参（主机/设备 ABI 不同，`lowerCUDALaunches` 检测签名不一致会报错）。
 
@@ -1405,8 +1405,9 @@ struct 按值传参（主机/设备 ABI 不同，`lowerCUDALaunches` 检测签�
    `lowerCUDALaunches` 把 host 影子改成 declaration。于是三方指向同一个符号，MemcpyToSymbol 写到
    内核读的地方。顺手删掉 `llvm.compiler.used`（它持有 addrspace(4) 的 cast）。
 3. **`atomicAdd` 被静默丢弃**：`atomicrmw` 没有副作用根（`computeNeeded` 只认 store/call），
-   kernel 编出一个空 vf 块。现在 `AtomicRMW/CmpXchg/Fence` 都是 needed 根，codegen 报
-   "atomic operation: Hwacha has no vector atomics"。shim 头里补了 `atomicAdd/Sub/Exch/Min/Max/
+   kernel 编出一个空 vf 块。现在 `AtomicRMW/CmpXchg/Fence` 都是 needed 根。（当时让 codegen 报
+   "Hwacha has no vector atomics"——**这是错的**，Hwacha 有 `vamo*`，而且 9 月 11 日的阶段 3b 已经给
+   OpenCL 的 `atomic_add` 接上了；下一节改成真正降到 `vamo*`。）shim 头里补了 `atomicAdd/Sub/Exch/Min/Max/
    Inc/Dec/CAS/And/Or/Xor` 的声明（NVIDIA 的 `device_atomic_functions.hpp` 对 clang `__iAtomicAdd`
    等 builtin 的包装），这样用户代码能编过、在 hwacha-cc 处得到明确的错误而不是找不到标识符。
    `__clang_cuda_intrinsics.h`（`__shfl_*`、`__ldg`）依赖 NVIDIA 的 `char2` 等向量类型，直接用
@@ -1416,3 +1417,49 @@ struct 按值传参（主机/设备 ABI 不同，`lowerCUDALaunches` 检测签�
 `get_group_id(1)`/`get_num_groups(0)` → `flattenNDRange`，不需要特殊处理；hotspot 的 2-D block
 `[ty][tx]` 二维 `__shared__` 同样。用新编译器重生成 hwacha-application 的 9 个 2-D/`__local`
 OpenCL 案例，全部 PASS，.s 只有寄存器重编号。
+
+### 原子操作：`atomicrmw` → `vamo*`（2026-10-24 晚）
+
+用户指出 Hwacha 有向量原子指令，我查了才确认：`esp-opcodes/opcodes-hwacha-ut` 205–224 行有
+`vamo{swap,add,xor,or,and,min,max,minu,maxu}.{w,d}` 共 18 条，带 `vaqrl` 和谓词；Spike
+（`hwacha/insns_ut/vamoadd_w.h`：`v = load32(RS1); store32(RS1, RS2+v); RD = v`，受 `VPRED`
+控制）、binutils（`vamoadd.w vd, 0(vs1), vs2`，vd 只能是 vv，vs1/vs2 可以是 vv 或 vs）、RTL
+（`scalar-decode.scala` 的 `VAMO*` 行、`sequencer-master.scala` 的 `vamo` 序列、`vmu-memif.scala`
+发 TileLink `acq_amo`）三层都有。而且 NOTES 第 404 行写着我 9 月 11 日就给 OpenCL 的
+`_Z10atomic_add...` 做过这个映射（hybridsort 在用）——前一节的"Hwacha 无向量原子"是凭印象写的，
+没查 opcode 表也没翻自己的笔记。教训：说"硬件没有"之前先 grep 一下 opcodes。
+
+**改动**（`CodeGen.cpp` `emitInstImpl` 末尾）：`atomicrmw add/sub/xchg/and/or/xor/min/max/umin/umax`
+的 i32/i64 → `@vp vamo<op>.{w,d} vd, 0(ptr), src`，和 OpenCL 路径同一条指令形态；sub 用取负后的
+add（常量直接取负，否则 `vsub tmp, vs0, src`）；`fence` → `vfence`（GPUAdapt 把
+`llvm.nvvm.membar.*` 即 `__threadfence` 变成 `fence seq_cst`）；`cmpxchg`（`atomicCAS`）、
+`fadd`（float `atomicAdd`）、`uinc_wrap/udec_wrap`（`atomicInc/Dec`）、`nand` 仍报错，错误信息列出
+原因（没有 `vamocas` / 没有浮点 AMO / 没有回绕语义）。地址 `0(ptr)`：ptr 是分歧的 GEP 结果时在 vv
+里，是 uniform 指针（所有 lane 打同一个计数器）时在 vs 里，汇编器两种都收。vw 寄存器最终统一改名成
+vv（`CodeGen.cpp` 1719 行），所以 "vd 只能是 vv" 在生成端不用管。
+
+**一个潜伏的分析 bug 顺带修了**：`atomicAdd(&counter, 1)` 的指针和操作数都 uniform，
+UniformityAnalysis 会把结果也判成 uniform（分到 vs），但 AMO 的旧值每个 lane 不同。
+`HwachaTTIImpl::getValueUniformity` 现在把 `AtomicRMW/CmpXchg` 和 OpenCL 的 `atomic_*/atom_*`
+调用都标 NeverUniform。OpenCL 路径此前也有同样的问题，只是 hybridsort 的 `atomic_add` 结果没被用到。
+控制线程区域的判定（950 行附近）也把原子/fence 当作不可进 CT 循环的指令。
+
+**测试** `test/cuda/atomics.cu`，7 个模式全部 Spike ok：全局 64-bin 直方图（4096 个 lane 争 64
+个地址）、`__shared__` 直方图 + 两次 `__syncthreads` + 冲刷、同一地址的 `atomicMax/Min`（signed +
+unsigned，uniform 指针 → `0(vs61)`）、ticket（`k = atomicAdd(&cnt, 1); out[k] = i`，四分之一 lane
+被谓词挡掉，检查返回值是 3072 个不同槽位——这是"旧值逐 lane 返回"+"谓词真的挡住 AMO"的直接证据）、
+`atomicOr` 位图 / `atomicXor` 翻转 / `atomicAnd` 清位 / `atomicSub` 倒数 + `__threadfence`、
+`atomicAdd(unsigned long long*)`（`vamoadd.d`）、`atomicExch`。hybridsort（OpenCL `atomic_add`）
+用新编译器重生成后仍 PASS。run/mlir/apps/cuda 回归全部不变。
+
+**RTL**：`atomics.riscv` 在 Chipyard Hwacha RTL 上 7/7 PASS（`results/atomics_rtl.out`，65 秒），
+hist_global 12283 周期、hist_shared 28696 周期（Spike 分别 476/496——Spike 的 rdcycle 只数控制线程
+指令，不含向量工作）。也就是 `vmu-memif.scala` 的 TileLink `acq_amo` 路径在 4096 lane 争 64 地址、
+同一地址的 max/min、谓词挡掉 1/4 lane 的 ticket 下都正确。
+
+踩的坑：第一次 RTL 跑了 146 分钟超时且**一行 UART 都没有**，我一度判断成"第一条 vamoadd 挂死向量
+单元"；用一个无冲突的 64-lane 单 AMO 用例二分，也是 15 分钟超时、连 AMO 之前的 printf 都没出来——
+原因是 `hwcuda_rt.c` 的 arena（当时 16MB）在 `.bss`，没加 `+loadmem`，2 亿周期全花在 TSI 加载零页上，
+根本没进 main（记忆里明明记着 llama 的这条规则）。加 `+loadmem` 后单 AMO 用例 1.3 秒 PASS。教训：
+RTL 超时且无任何输出时**先看 `size` 的 bss**，再怀疑硬件。`test/cuda/Makefile` 的 `%.rtl` 现在带
+`+loadmem=$(abspath $<)`，arena 缩到 4MB（`-DHWCUDA_ARENA`）。

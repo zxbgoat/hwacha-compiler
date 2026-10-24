@@ -20,7 +20,7 @@ LDFLAGS  := -static -nostdlib -nostartfiles -lm -lgcc -T $(COMMON)/test.ld
 SPIKE    := spike --isa=rv64gc --extension=hwacha
 SIM      := $(ROOT)/chipyard/sims/verilator/simulator-chipyard.harness-HwachaRocketConfig
 
-APPS := saxpy shared nn pathfinder hotspot bfs nw kmeans
+APPS := saxpy shared nn pathfinder hotspot bfs nw kmeans atomics
 all: $(addsuffix .riscv,$(APPS))
 run: $(addsuffix .spike,$(APPS))
 
@@ -34,8 +34,10 @@ run: $(addsuffix .spike,$(APPS))
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 %.spike: %.riscv
 	$(SPIKE) $<
+# +loadmem: hwcuda_rt.c's arena puts the "device" heap in .bss (HWCUDA_ARENA, 4MB); loading that over
+# TSI takes hours, the SimDRAM backdoor takes a second
 %.rtl: %.riscv
-	$(SIM) +permissive +max-cycles=2000000000 +permissive-off $< 2>&1 | grep -v "^\[UART\]"
+	$(SIM) +permissive +max-cycles=2000000000 +loadmem=$(abspath $<) +permissive-off $< 2>&1 | grep --line-buffered -v "^\[UART\] UART0"
 clean:
 	rm -f *.ll *.s *.riscv
 .PRECIOUS: %.dev.ll %.host.ll %.s
